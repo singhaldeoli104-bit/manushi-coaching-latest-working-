@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(for file in /c/PC/OLD/src/screens/parent/*.tsx)",
+      "Bash(done)",
+      "Bash(for:*)",
+      "Bash(do echo \"=== $f ===\")",
+      "Bash(npx react-native log-android:*)",
+      "Bash(do echo \"=== $file ===\")",
+      "Bash(adb logcat:*)",
+      "mcp__supabase__execute_sql",
+      "mcp__supabase__list_tables",
+      "mcp__supabase__search_docs",
+      "mcp__supabase__get_logs",
+      "Bash(adb shell pm:*)",
+      "Bash(git init:*)",
+      "Bash(git remote add:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
