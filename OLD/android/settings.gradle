@@ -1,0 +1,18 @@
+pluginManagement { includeBuild("../node_modules/@react-native/gradle-plugin") }
+plugins { id("com.facebook.react.settings") }
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)
+    repositories {
+        maven {
+            url file("../node_modules/@notifee/react-native/android/libs")
+        }
+        google()
+        mavenCentral()
+    }
+}
+
+extensions.configure(com.facebook.react.ReactSettingsExtension){ ex -> ex.autolinkLibrariesFromCommand() }
+rootProject.name = 'PackageCheck'
+include ':app'
+includeBuild('../node_modules/@react-native/gradle-plugin')
