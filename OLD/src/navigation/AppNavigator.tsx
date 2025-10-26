@@ -900,42 +900,9 @@ export const AppNavigator: React.FC<AppNavigatorProps> = ({
         );
 
       case 'parent-dashboard':
-        return (
-          <ParentDashboard
-            parentName={navState.currentUser ? `${navState.currentUser.firstName} ${navState.currentUser.lastName}` : 'Jennifer Johnson'}
-            onNavigate={(screen) => {
-              if (screen === 'back' || screen === 'back-to-demo') {
-                navigate(navState.previousRoute || 'welcome');
-              } else if (screen === 'progress-detail') {
-                navigate('child-progress');
-              } else if (screen === 'download-reports') {
-                navigate('download-reports');
-              } else if (screen === 'make-payment') {
-                navigate('make-payment');
-              } else if (screen === 'financial-detail') {
-                navigate('financial-detail');
-              } else if (screen === 'contact-teacher') {
-                navigate('contact-teacher');
-              } else if (screen === 'community-hub') {
-                navigate('community-hub');
-              } else if (screen === 'view-timetable') {
-                navigate('view-timetable');
-              } else if (screen === 'information-hub') {
-                navigate('information-hub');
-              } else if (screen === 'parent-enhanced-dashboard') {
-                navigate('parent-dashboard');
-              } else if (screen === 'parent-feature-validation') {
-                navigate('parent-dashboard');
-              } else if (screen === 'parent-profile') {
-                navigate('profile');
-              } else if (screen === 'parent-settings') {
-                navigate('settings');
-              } else {
-                Alert.alert('Feature Coming Soon', `${screen} will be available in upcoming updates.`);
-              }
-            }}
-          />
-        );
+        // NEW: Use ParentNavigator with React Navigation bottom tabs
+        // This includes the NEW modern dashboard connected to Supabase
+        return <ParentNavigator />;
 
       case 'admin-dashboard':
         return (

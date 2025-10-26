@@ -11,7 +11,8 @@
     "test:e2e": "jest --testPathPattern=__tests__/e2e",
     "test:performance": "jest --testPathPattern=__tests__/performance",
     "test:security": "jest --testPathPattern=__tests__/security",
-    "test:ci": "jest --ci --coverage --maxWorkers=2"
+    "test:ci": "jest --ci --coverage --maxWorkers=2",
+    "analysis:run": "ts-node --project analysis/tsconfig.json analysis/run-analysis.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
@@ -24,6 +25,9 @@
     "ts-jest": "^29.1.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3",
-    "react-native-dotenv": "^3.4.11"
+    "react-native-dotenv": "^3.4.11",
+    "ts-morph": "^22.0.0",
+    "madge": "^6.0.0",
+    "fast-glob": "^3.3.2"
   }
 }

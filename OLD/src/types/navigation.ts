@@ -26,7 +26,7 @@ export type StudentStackParamList = {
   StudentDoubt: undefined;
   DoubtDetail: { doubtId: string };
   StudentAssignments: undefined;
-  AssignmentDetail: { assignmentId: string };
+  AssignmentDetail: { assignmentId: string; studentId: string };
   AssignmentSubmission: { assignmentId: string };
   StudentClasses: undefined;
   ClassDetail: { classId: string };
@@ -110,23 +110,85 @@ export type AdminStackParamList = {
 
 // Parent Stack
 export type ParentStackParamList = {
+  // Existing screens
   ParentDashboard: undefined;
   ParentProfile: undefined;
   ChildrenManagement: undefined;
   AddChild: undefined;
-  ChildDetail: { childId: string };
   ChildProgress: { childId: string };
   ChildAttendance: { childId: string };
-  ChildAssignments: { childId: string };
   ChildTests: { childId: string };
   ParentChat: { recipientId?: string };
   TeacherCommunication: { teacherId: string };
   ParentNotifications: undefined;
-  PaymentHistory: undefined;
   ParentSettings: undefined;
   EditParentProfile: undefined;
   ParentReports: { childId: string };
   ParentFeedback: undefined;
+
+  // Dashboard screens (Home Stack)
+  NewDashboard: undefined;
+  Dashboard: undefined;
+  InformationHub: undefined;
+
+  // ✅ PHASE 1: Overview Tab Screens (6 screens)
+  ChildDetail: { childId: string; childName?: string };
+  ChildrenList: undefined;
+  ActionItems: undefined;
+  ActionItemDetail: { itemId: string };
+  MessagesList: undefined;
+  MessageDetail: { messageId: string };
+
+  // ✅ PHASE 2B & 3: Detail Screens (Hybrid Approach - MD3 Navigation Cards)
+  AcademicsDetail: { childId: string; childName?: string };
+  BehaviorTracking: { childId: string; childName?: string };
+  GoalsAndMilestones: { childId: string; childName?: string };
+  StudentInsights: { childId: string; childName?: string };
+
+  // ✅ PHASE 2: Financial Tab Screens (4 screens)
+  PaymentHistory: undefined;
+  MakePayment: { amount?: number; description?: string };
+  Discounts: undefined;
+  FeeStructure: { studentId?: string };
+
+  // ✅ PHASE 3: Academic Tab Screens (6 screens)
+  SubjectDetail: { studentId: string; subject: string };
+  AssignmentsList: { studentId: string };
+  AssignmentDetail: { assignmentId: string; studentId: string };
+  UpcomingExams: { studentId?: string };
+  AcademicReports: { studentId: string };
+  StudyRecommendations: { studentId: string };
+
+  // ✅ PHASE 4: Communication Tab Screens (5 screens)
+  ComposeMessage: { recipientId?: string; subject?: string };
+  ScheduleMeeting: { teacherId?: string };
+  TeacherList: { studentId?: string };
+  MeetingsHistory: undefined;
+  Notifications: undefined;
+
+  // ✅ PHASE 5: Info Tab Screens (5 screens)
+  SchoolCalendar: undefined;
+  SchoolHandbook: undefined;
+  StaffDirectory: undefined;
+  SchoolPolicies: undefined;
+  Announcements: undefined;
+
+  // ✨ NEW: Global Screens (TopAppBar navigation)
+  NotificationsList: undefined;
+  Settings: undefined;
+  Profile: undefined;
+  LanguageSelection: undefined;
+
+  // Billing/Payment screens (Billing Stack)
+  BillingInvoice: undefined;
+  PaymentProcessing: undefined;
+
+  // Academic/Performance screens (Children Stack)
+  PerformanceAnalytics: undefined;
+  AcademicSchedule: undefined;
+
+  // Communication screens (Communication Stack)
+  CommunityEngagement: undefined;
 };
 
 // Bottom Tab Navigators

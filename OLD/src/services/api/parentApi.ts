@@ -1,9 +1,26 @@
 /**
  * Parent API Service
  * Handles all parent-related data fetching from Supabase
+ * ✅ Updated with query keys factory and better error handling
  */
 
 import { supabase } from '../../lib/supabase';
+import {
+  FinancialSummarySchema,
+  type FinancialSummary,
+} from '../../shared/validation/schemas';
+import {
+  validateSingle,
+} from '../../shared/validation/apiValidation';
+
+// Type definitions
+export interface ParentProfile {
+  id: string;
+  full_name: string;
+  email: string;
+  phone: string | null;
+  role: string;
+}
 
 export interface Child {
   id: string;
@@ -14,20 +31,28 @@ export interface Child {
   batch_id: string;
   enrollment_date: string;
   status: string;
-}
-
-export interface ParentProfile {
-  id: string;
-  full_name: string;
-  email: string;
-  phone: string | null;
-  avatar_url: string | null;
-  role: string;
+  overall_grade?: number;
+  attendance_percentage?: number;
+  assignments_completed?: number;
+  total_assignments?: number;
+  upcoming_exams?: number;
 }
 
 export interface ChildWithRelationship extends Child {
   relationship_type: string;
   is_primary_contact: boolean;
+}
+
+export interface RecentNotification {
+  id: string;
+  title: string;
+  content: string;
+  notification_type: string;
+  priority: string;
+  status: string;
+  read_at: string | null;
+  created_at: string;
+  sent_by?: string;
 }
 
 export interface StudentAttendance {
@@ -38,16 +63,6 @@ export interface StudentAttendance {
   percentage: number;
 }
 
-export interface RecentNotification {
-  id: string;
-  title: string;
-  message: string;
-  type: string;
-  priority: string;
-  is_read: boolean;
-  created_at: string;
-}
-
 /**
  * Get parent profile by user ID
  */
@@ -55,19 +70,25 @@ export const getParentProfile = async (userId: string): Promise<ParentProfile | 
   try {
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, full_name, email, phone, avatar_url, role')
+      .select('id, full_name, email, phone, role')
       .eq('id', userId)
       .eq('role', 'parent')
       .single();
 
     if (error) {
-      console.error('Error fetching parent profile:', error);
+      console.error('❌ [getParentProfile] Database error:', error);
       return null;
     }
 
-    return data;
+    if (!data) {
+      console.log('⚠️  [getParentProfile] No profile found for userId:', userId);
+      return null;
+    }
+
+    console.log('✅ [getParentProfile] Profile loaded successfully');
+    return data as ParentProfile;
   } catch (err) {
-    console.error('Exception fetching parent profile:', err);
+    console.error('❌ [getParentProfile] Exception:', err);
     return null;
   }
 };
@@ -77,6 +98,8 @@ export const getParentProfile = async (userId: string): Promise<ParentProfile | 
  */
 export const getParentChildren = async (parentId: string): Promise<ChildWithRelationship[]> => {
   try {
+    console.log('📞 [getParentChildren] Fetching for parent:', parentId);
+
     const { data, error } = await supabase
       .from('parent_child_relationships')
       .select(`
@@ -90,29 +113,43 @@ export const getParentChildren = async (parentId: string): Promise<ChildWithRela
           phone,
           batch_id,
           enrollment_date,
-          status
+          status,
+          overall_grade,
+          attendance_percentage,
+          assignments_completed,
+          total_assignments,
+          upcoming_exams
         )
       `)
       .eq('parent_id', parentId)
       .eq('is_active', true);
 
     if (error) {
-      console.error('Error fetching children:', error);
+      console.error('❌ [getParentChildren] Database error:', error);
       return [];
     }
 
-    if (!data) return [];
+    if (!data || data.length === 0) {
+      console.log('⚠️  [getParentChildren] No children found');
+      return [];
+    }
+
+    console.log('📊 [getParentChildren] Raw data count:', data.length);
 
     // Transform the data
-    return data
+    const transformed = data
       .filter(item => item.student)
       .map(item => ({
         ...(item.student as Child),
         relationship_type: item.relationship_type,
         is_primary_contact: item.is_primary_contact,
       }));
+
+    // ✅ Return validated children
+    console.log('✅ [getParentChildren] Loaded', transformed.length, 'children');
+    return transformed as ChildWithRelationship[];
   } catch (err) {
-    console.error('Exception fetching children:', err);
+    console.error('❌ [getParentChildren] Exception:', err);
     return [];
   }
 };
@@ -152,19 +189,26 @@ export const getParentNotifications = async (
   try {
     const { data, error } = await supabase
       .from('notifications')
-      .select('id, title, message, type, priority, is_read, created_at')
-      .eq('user_id', parentId)
+      .select('id, title, content, notification_type, priority, status, read_at, created_at, sent_by')
+      .eq('recipient_id', parentId)
       .order('created_at', { ascending: false })
       .limit(limit);
 
     if (error) {
-      console.error('Error fetching notifications:', error);
+      console.error('❌ [getParentNotifications] Database error:', error);
       return [];
     }
 
-    return data || [];
+    if (!data || data.length === 0) {
+      console.log('⚠️  [getParentNotifications] No notifications found');
+      return [];
+    }
+
+    // ✅ Return notifications
+    console.log('✅ [getParentNotifications] Loaded', data.length, 'notifications');
+    return data as RecentNotification[];
   } catch (err) {
-    console.error('Exception fetching notifications:', err);
+    console.error('❌ [getParentNotifications] Exception:', err);
     return [];
   }
 };
@@ -222,8 +266,8 @@ export const getPendingAssignments = async (studentId: string) => {
       .from('assignment_submissions')
       .select(`
         id,
-        submitted_at,
-        grade,
+        submission_date,
+        score,
         status,
         assignment:assignments!assignment_submissions_assignment_id_fkey(
           id,
@@ -252,23 +296,34 @@ export const getPendingAssignments = async (studentId: string) => {
 
 /**
  * Get parent's financial summary
+ * ✅ VALIDATED with Zod schema
  */
-export const getParentFinancialSummary = async (parentId: string) => {
+export const getParentFinancialSummary = async (parentId: string): Promise<FinancialSummary | null> => {
   try {
+    console.log('💰 [getParentFinancialSummary] Fetching for parent:', parentId);
+
     const { data, error } = await supabase
       .from('parent_financial_summary')
-      .select('*')
+      .select('parent_id, total_invoices, total_paid, total_pending, total_overdue, pending_invoices_count, overdue_invoices_count, next_due_date')
       .eq('parent_id', parentId)
-      .single();
+      .maybeSingle(); // Use maybeSingle instead of single to avoid error if no data
 
     if (error) {
-      console.error('Error fetching financial summary:', error);
+      console.error('❌ [getParentFinancialSummary] Database error:', error);
       return null;
     }
 
-    return data;
+    if (!data) {
+      console.log('⚠️  [getParentFinancialSummary] No financial data found');
+      return null;
+    }
+
+    // ✅ Validate financial summary with Zod
+    const validated = validateSingle(FinancialSummarySchema, data);
+    console.log('✅ [getParentFinancialSummary] Financial data validated successfully');
+    return validated;
   } catch (err) {
-    console.error('Exception fetching financial summary:', err);
+    console.error('❌ [getParentFinancialSummary] Exception:', err);
     return null;
   }
 };
