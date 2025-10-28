@@ -7,7 +7,6 @@
  * - Study materials for the subject
  * - Teacher notes and recommendations
  * - Grade trend visualization
- * - Filter by exam type
  * - Sort by date or score
  */
 
@@ -21,11 +20,12 @@ import { Col, Row, T, Card, CardContent, Badge, Button, Spacer } from '../../ui'
 import { Colors, Spacing } from '../../theme/designSystem';
 import type { ParentStackParamList } from '../../types/navigation';
 import { trackScreenView, trackAction } from '../../utils/navigationAnalytics';
+import { safeNavigate } from '../../utils/navigationService';
 import { ProgressBar } from 'react-native-paper';
+import { Share } from 'react-native';
 
 type Props = NativeStackScreenProps<ParentStackParamList, 'SubjectDetail'>;
 
-type ExamType = 'all' | 'quiz' | 'test' | 'midterm' | 'final' | 'assignment';
 type SortType = 'date' | 'score';
 
 interface GradeRecord {
@@ -73,7 +73,6 @@ interface StudyMaterial {
 
 const SubjectDetailScreen: React.FC<Props> = ({ route }) => {
   const { studentId, subject } = route.params;
-  const [examTypeFilter, setExamTypeFilter] = useState<ExamType>('all');
   const [sortBy, setSortBy] = useState<SortType>('date');
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
 
@@ -203,13 +202,10 @@ const SubjectDetailScreen: React.FC<Props> = ({ route }) => {
     };
   }, [grades, overallAverage]);
 
-  const filteredGrades = useMemo(() => {
-    if (examTypeFilter === 'all') return grades;
-    return grades.filter(g => g.exam_type === examTypeFilter);
-  }, [grades, examTypeFilter]);
+
 
   const sortedGrades = useMemo(() => {
-    const sorted = [...filteredGrades];
+    const sorted = [...grades];
     if (sortBy === 'date') {
       sorted.sort((a, b) => {
         const dateA = a.exam_date ? new Date(a.exam_date).getTime() : 0;
@@ -220,7 +216,33 @@ const SubjectDetailScreen: React.FC<Props> = ({ route }) => {
       sorted.sort((a, b) => (b.percentage ?? 0) - (a.percentage ?? 0)); // Highest first
     }
     return sorted;
-  }, [filteredGrades, sortBy]);
+  }, [grades, sortBy]);
+
+  // Calculate performance trend
+  const performanceTrend = useMemo(() => {
+    if (grades.length < 2) return null;
+
+    const recentGrades = sortedGrades.slice(0, 6).reverse(); // Last 6 assessments
+    const chartData = {
+      labels: recentGrades.map((_g, i) => `#${i + 1}`),
+      datasets: [{
+        data: recentGrades.map(g => g.percentage || 0),
+        color: (opacity = 1) => `rgba(66, 133, 244, ${opacity})`,
+        strokeWidth: 2
+      }]
+    };
+
+    // Calculate trend direction
+    const firstHalf = recentGrades.slice(0, Math.floor(recentGrades.length / 2));
+    const secondHalf = recentGrades.slice(Math.floor(recentGrades.length / 2));
+    const firstAvg = firstHalf.reduce((sum, g) => sum + (g.percentage || 0), 0) / firstHalf.length;
+    const secondAvg = secondHalf.reduce((sum, g) => sum + (g.percentage || 0), 0) / secondHalf.length;
+
+    const trendDirection = secondAvg > firstAvg + 5 ? 'improving' :
+                          secondAvg < firstAvg - 5 ? 'declining' : 'stable';
+
+    return { chartData, trendDirection };
+  }, [grades, sortedGrades]);
 
   const getPerformanceColor = (percentage: number) => {
     if (percentage >= 70) return Colors.success;
@@ -240,6 +262,12 @@ const SubjectDetailScreen: React.FC<Props> = ({ route }) => {
     return colors[subjectCode] || Colors.primary;
   };
 
+
+  // Get full subject name (since we now use full names, just return as-is)
+  const getFullSubjectName = (subjectCode: string): string => {
+    return subjectCode; // Already full name like "English", "Mathematics"
+  };
+
   const toggleSection = (section: string) => {
     trackAction('expand_section', 'SubjectDetail', { section });
     setExpandedSections(prev => {
@@ -253,10 +281,34 @@ const SubjectDetailScreen: React.FC<Props> = ({ route }) => {
     });
   };
 
-  const handleFilterChange = (type: ExamType) => {
-    trackAction('filter_exams', 'SubjectDetail', { type });
-    setExamTypeFilter(type);
+
+  const handleShareReport = async () => {
+    try {
+      const report = `📊 Academic Report - ${getFullSubjectName(subject)}
+
+Overall Grade: ${gradeLetter} (${(overallAverage ?? 0).toFixed(1)}%)
+Total Assessments: ${stats.totalAssessments}
+Average Score: ${(stats.average ?? 0).toFixed(1)}%
+Highest: ${stats.highest ? (stats.highest.percentage ?? 0).toFixed(0) : '-'}%
+Lowest: ${stats.lowest ? (stats.lowest.percentage ?? 0).toFixed(0) : '-'}%
+
+Recent Assessments:
+${sortedGrades.slice(0, 5).map(g =>
+  `• ${g.exam_name}: ${g.obtained_marks}/${g.max_marks} (${(g.percentage || 0).toFixed(1)}%)`
+).join('\n')}
+
+Generated from Manushi Coaching App`;
+
+      await Share.share({
+        message: report,
+        title: `Academic Report - ${getFullSubjectName(subject)}`,
+      });
+      trackAction('share_report', 'SubjectDetail', { subject });
+    } catch (error) {
+      console.error('Error sharing:', error);
+    }
   };
+
 
   const handleSortChange = (sort: SortType) => {
     trackAction('sort_grades', 'SubjectDetail', { sortBy: sort });
@@ -287,13 +339,7 @@ const SubjectDetailScreen: React.FC<Props> = ({ route }) => {
                   </T>
                 </View>
                 <T variant="title" weight="bold" style={{ marginTop: Spacing.xs }}>
-                  {subject === 'MATH' ? 'Mathematics' :
-                   subject === 'PHYS' ? 'Physics' :
-                   subject === 'CHEM' ? 'Chemistry' :
-                   subject === 'BIO' ? 'Biology' :
-                   subject === 'ENG' ? 'English' :
-                   subject === 'CS' ? 'Computer Science' :
-                   subject}
+                  {getFullSubjectName(subject)}
                 </T>
               </View>
               <View style={{ alignItems: 'flex-end' }}>
@@ -343,23 +389,130 @@ const SubjectDetailScreen: React.FC<Props> = ({ route }) => {
           </CardContent>
         </Card>
 
-        {/* Section 3: Filter and Sort Controls */}
+        {/* NEW SECTION 2A: Performance Trend & Attendance */}
+        {(performanceTrend || progress) && (
+          <Card variant="elevated">
+            <CardContent>
+              <Row spaceBetween centerV style={{ marginBottom: Spacing.md }}>
+                <T variant="body" weight="semiBold">Performance Insights</T>
+                {performanceTrend && (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.xs }}>
+                    <T variant="caption" style={{ color:
+                      performanceTrend.trendDirection === 'improving' ? Colors.success :
+                      performanceTrend.trendDirection === 'declining' ? Colors.error :
+                      Colors.warning
+                    }}>
+                      {performanceTrend.trendDirection === 'improving' ? '📈 Improving' :
+                       performanceTrend.trendDirection === 'declining' ? '📉 Needs Attention' :
+                       '➡️  Stable'}
+                    </T>
+                  </View>
+                )}
+              </Row>
+
+              {/* Attendance if available */}
+              {progress?.attendance_percentage !== null && progress?.attendance_percentage !== undefined && (
+                <View style={{ marginBottom: Spacing.md }}>
+                  <Row spaceBetween centerV style={{ marginBottom: Spacing.xs }}>
+                    <T variant="caption" color="textSecondary">Attendance</T>
+                    <T variant="caption" weight="semiBold">{Math.round(progress?.attendance_percentage)}%</T>
+                  </Row>
+                  <ProgressBar
+                    progress={progress?.attendance_percentage / 100}
+                    color={progress?.attendance_percentage >= 75 ? Colors.success : Colors.warning}
+                    style={{ height: 6, borderRadius: 3 }}
+                  />
+                </View>
+              )}
+
+              {/* Assignment completion if available */}
+              {progress?.completed_assignments !== null && progress?.total_assignments !== null && (
+                <View>
+                  <Row spaceBetween centerV style={{ marginBottom: Spacing.xs }}>
+                    <T variant="caption" color="textSecondary">Assignments Completed</T>
+                    <T variant="caption" weight="semiBold">
+                      {progress?.completed_assignments} / {progress?.total_assignments}
+                    </T>
+                  </Row>
+                  <ProgressBar
+                    progress={(progress?.completed_assignments || 0) / (progress?.total_assignments || 1)}
+                    color={Colors.primary}
+                    style={{ height: 6, borderRadius: 3 }}
+                  />
+                </View>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* NEW SECTION 2B: Recent Activity Timeline */}
+        {sortedGrades.length > 0 && (
+          <Card variant="elevated">
+            <CardContent>
+              <T variant="body" weight="semiBold" style={{ marginBottom: Spacing.md }}>
+                Recent Activity (Last 3 Assessments)
+              </T>
+              <Col gap="sm">
+                {sortedGrades.slice(0, 3).map((grade, index) => (
+                  <View key={grade.id} style={{ flexDirection: 'row', gap: Spacing.sm }}>
+                    <View style={{ alignItems: 'center', width: 50 }}>
+                      <View style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 20,
+                        backgroundColor: getPerformanceColor(grade.percentage ?? 0) + '20',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <T variant="caption" weight="bold" style={{ color: getPerformanceColor(grade.percentage ?? 0) }}>
+                          {grade.grade || 'N/A'}
+                        </T>
+                      </View>
+                      {index < 2 && <View style={{ width: 2, height: 20, backgroundColor: Colors.surfaceVariant, marginTop: 4 }} />}
+                    </View>
+                    <View style={{ flex: 1, paddingTop: 8 }}>
+                      <T variant="body" weight="semiBold" style={{ fontSize: 14 }}>{grade.exam_name}</T>
+                      <T variant="caption" color="textSecondary">
+                        {(grade.percentage ?? 0).toFixed(0)}% • {grade.exam_date ? new Date(grade.exam_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No date'}
+                      </T>
+                    </View>
+                  </View>
+                ))}
+              </Col>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* NEW SECTION 2C: Quick Actions */}
+        <Card variant="elevated">
+          <CardContent>
+            <T variant="body" weight="semiBold" style={{ marginBottom: Spacing.md }}>Quick Actions</T>
+            <Row style={{ gap: Spacing.xs }}>
+              <Button
+                variant="primary"
+                onPress={() => {
+                  trackAction('view_upcoming_exams', 'SubjectDetail', { subject });
+                  safeNavigate('UpcomingExams', { studentId });
+                }}
+                style={{ flex: 1 }}
+              >
+                📅 Upcoming Exams
+              </Button>
+              <Button
+                variant="outline"
+                onPress={handleShareReport}
+                style={{ flex: 1 }}
+              >
+                📤 Share Report
+              </Button>
+            </Row>
+          </CardContent>
+        </Card>
+
+
+        {/* Section 3: Sort Controls */}
         {grades.length > 0 && (
           <>
-            <T variant="body" weight="semiBold">Filter by Exam Type</T>
-            <Row style={{ flexWrap: 'wrap', gap: Spacing.xs }}>
-              {(['all', 'quiz', 'test', 'midterm', 'final', 'assignment'] as ExamType[]).map(type => (
-                <Button
-                  key={type}
-                  variant={examTypeFilter === type ? 'primary' : 'outline'}
-                  onPress={() => handleFilterChange(type)}
-                  style={{ paddingHorizontal: 12, paddingVertical: 6 }}
-                >
-                  {type.charAt(0).toUpperCase() + type.slice(1)}
-                </Button>
-              ))}
-            </Row>
-
             <Row style={{ gap: Spacing.xs }}>
               <T variant="body" weight="semiBold">Sort by:</T>
               <Button
@@ -437,7 +590,7 @@ const SubjectDetailScreen: React.FC<Props> = ({ route }) => {
             <CardContent>
               <View style={{ alignItems: 'center', paddingVertical: Spacing.lg }}>
                 <T variant="body" color="textSecondary">
-                  No {examTypeFilter === 'all' ? '' : examTypeFilter + ' '}assessments found
+                  No assessments found
                 </T>
               </View>
             </CardContent>

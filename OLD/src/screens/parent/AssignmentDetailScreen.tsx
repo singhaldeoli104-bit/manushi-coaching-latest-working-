@@ -1,5 +1,5 @@
 /**
- * AssignmentDetailScreen - View complete assignment details with submission status
+ * AssignmentDetailScreen - View assignment details and submit work
  *
  * Features:
  * - Assignment details (title, subject, description, instructions, due date, points)
@@ -9,18 +9,22 @@
  * - Teacher feedback display (if graded)
  * - Teacher attachments (assignment materials)
  * - Student attachments (submitted files)
- * - Days until due / days overdue calculation
+ * - Days until due / days overdue calculation (FIXED - accurate date calculation)
+ * - SUBMISSION FORM (NEW - text and photo upload)
+ * - File upload to Supabase Storage
+ * - Create submission mutation
  * - Pull to refresh
  *
  * Data Sources:
  * - assignments table (with teacher join)
  * - assignment_submissions table (with grader join)
+ * - Supabase Storage (for file uploads)
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Linking, Alert } from 'react-native';
+import { View, Linking, Alert, TextInput as RNTextInput, ScrollView, Platform } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { BaseScreen } from '../../shared/components/BaseScreen';
 import { Col, Row, T, Card, CardContent, Badge, Button } from '../../ui';
@@ -28,6 +32,7 @@ import { Colors, Spacing } from '../../theme/designSystem';
 import type { ParentStackParamList } from '../../types/navigation';
 import { trackScreenView, trackAction } from '../../utils/navigationAnalytics';
 import { ProgressBar } from 'react-native-paper';
+import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 
 type Props = NativeStackScreenProps<ParentStackParamList, 'AssignmentDetail'>;
 
@@ -73,9 +78,25 @@ interface Submission {
   } | null;
 }
 
+interface FileAttachment {
+  name: string;
+  url: string;
+  type: string;
+  size: number;
+}
+
 const AssignmentDetailScreen: React.FC<Props> = ({ route }) => {
   const { assignmentId, studentId } = route.params;
+  const queryClient = useQueryClient();
+
+  // UI State
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
+  const [showSubmitForm, setShowSubmitForm] = useState(false);
+
+  // Submission Form State
+  const [submissionText, setSubmissionText] = useState('');
+  const [attachments, setAttachments] = useState<FileAttachment[]>([]);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     trackScreenView('AssignmentDetail', {
@@ -156,14 +177,22 @@ const AssignmentDetailScreen: React.FC<Props> = ({ route }) => {
     refetchSubmission();
   };
 
-  // Calculation: Days until due / overdue
+  // ✅ FIXED: Days until due calculation with proper date normalization
   const daysRemaining = useMemo(() => {
-    if (!assignment) return null;
+    if (!assignment?.due_date) return null;
+
+    // Normalize both dates to midnight for accurate day comparison
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     const due = new Date(assignment.due_date);
+    due.setHours(0, 0, 0, 0);
+
     const diffTime = due.getTime() - today.getTime();
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  }, [assignment?.due_date]);
+    const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    return days;
+  }, [assignment]); // ✅ Correct dependency
 
   // Calculation: Submission status
   const submissionStatus = useMemo((): SubmissionStatus => {
@@ -232,6 +261,191 @@ const AssignmentDetailScreen: React.FC<Props> = ({ route }) => {
     return Colors.error;
   };
 
+  // 📤 NEW: File Upload to Supabase Storage
+  const uploadFileToStorage = async (file: any): Promise<FileAttachment> => {
+    try {
+      const fileName = `${Date.now()}_${file.name || 'file'}`;
+      const filePath = `assignment_submissions/${studentId}/${assignmentId}/${fileName}`;
+
+      console.log('📤 [Upload] Uploading file:', fileName);
+
+      // Convert file to blob for upload
+      const fileBlob = await fetch(file.uri).then(r => r.blob());
+
+      const { data, error } = await supabase.storage
+        .from('assignments')
+        .upload(filePath, fileBlob, {
+          contentType: file.type || 'application/octet-stream',
+          upsert: false,
+        });
+
+      if (error) throw error;
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('assignments')
+        .getPublicUrl(filePath);
+
+      console.log('✅ [Upload] File uploaded successfully');
+
+      return {
+        name: file.name || fileName,
+        url: urlData.publicUrl,
+        type: file.type || 'application/octet-stream',
+        size: file.fileSize || file.size || 0,
+      };
+    } catch (err) {
+      console.error('❌ [Upload] Error:', err);
+      throw err;
+    }
+  };
+
+  // Note: For PDF/document uploads, students can:
+  // 1. Upload photos of documents (using camera/gallery)
+  // 2. Or teacher can accept Google Drive/OneDrive links in the text field
+
+  // 🖼️ NEW: Pick Image from Gallery
+  const handlePickImage = async () => {
+    try {
+      trackAction('pick_image', 'AssignmentDetail', { assignmentId });
+
+      const result = await launchImageLibrary({
+        mediaType: 'photo',
+        quality: 0.8,
+        maxWidth: 1920,
+        maxHeight: 1920,
+      });
+
+      if (result.assets && result.assets[0]) {
+        setUploading(true);
+        const uploadedFile = await uploadFileToStorage({
+          uri: result.assets[0].uri,
+          name: result.assets[0].fileName || 'photo.jpg',
+          type: result.assets[0].type || 'image/jpeg',
+          size: result.assets[0].fileSize,
+        });
+        setAttachments(prev => [...prev, uploadedFile]);
+        setUploading(false);
+        Alert.alert('Success', 'Photo added successfully!');
+      }
+    } catch (err: any) {
+      setUploading(false);
+      console.error('Image picker error:', err);
+      Alert.alert('Error', 'Failed to pick image');
+    }
+  };
+
+  // 📸 NEW: Take Photo with Camera
+  const handleTakePhoto = async () => {
+    try {
+      trackAction('take_photo', 'AssignmentDetail', { assignmentId });
+
+      const result = await launchCamera({
+        mediaType: 'photo',
+        quality: 0.8,
+        maxWidth: 1920,
+        maxHeight: 1920,
+        saveToPhotos: true,
+      });
+
+      if (result.assets && result.assets[0]) {
+        setUploading(true);
+        const uploadedFile = await uploadFileToStorage({
+          uri: result.assets[0].uri,
+          name: result.assets[0].fileName || 'photo.jpg',
+          type: result.assets[0].type || 'image/jpeg',
+          size: result.assets[0].fileSize,
+        });
+        setAttachments(prev => [...prev, uploadedFile]);
+        setUploading(false);
+        Alert.alert('Success', 'Photo added successfully!');
+      }
+    } catch (err: any) {
+      setUploading(false);
+      console.error('Camera error:', err);
+      Alert.alert('Error', 'Failed to take photo');
+    }
+  };
+
+  // 🗑️ NEW: Remove Attachment
+  const handleRemoveAttachment = (index: number) => {
+    Alert.alert(
+      'Remove File',
+      'Are you sure you want to remove this file?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: () => {
+            setAttachments(prev => prev.filter((_, i) => i !== index));
+          },
+        },
+      ]
+    );
+  };
+
+  // ✅ NEW: Submit Assignment Mutation
+  const submitAssignmentMutation = useMutation({
+    mutationFn: async () => {
+      console.log('📝 [Submit] Creating submission...');
+
+      if (!submissionText.trim() && attachments.length === 0) {
+        throw new Error('Please provide either text or file attachments');
+      }
+
+      const { data, error } = await supabase
+        .from('assignment_submissions')
+        .insert({
+          assignment_id: assignmentId,
+          student_id: studentId,
+          submission_text: submissionText.trim() || null,
+          attachments: attachments.length > 0 ? attachments : null,
+          submission_date: new Date().toISOString(),
+          status: (daysRemaining ?? 0) < 0 ? 'late' : 'submitted',
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('❌ [Submit] Error:', error);
+        throw error;
+      }
+
+      console.log('✅ [Submit] Submission created successfully');
+      return data;
+    },
+    onSuccess: () => {
+      // Invalidate and refetch submission data
+      queryClient.invalidateQueries({ queryKey: ['submission', assignmentId, studentId] });
+      refetchSubmission();
+
+      // Reset form
+      setSubmissionText('');
+      setAttachments([]);
+      setShowSubmitForm(false);
+
+      // Track success
+      trackAction('submit_assignment_success', 'AssignmentDetail', { assignmentId, studentId });
+
+      // Show success message
+      Alert.alert(
+        'Success! 🎉',
+        'Your assignment has been submitted successfully!',
+        [{ text: 'OK' }]
+      );
+    },
+    onError: (error: any) => {
+      console.error('❌ [Submit] Submission failed:', error);
+      trackAction('submit_assignment_error', 'AssignmentDetail', { assignmentId, error: error.message });
+      Alert.alert(
+        'Submission Failed',
+        error.message || 'Failed to submit assignment. Please try again.',
+        [{ text: 'OK' }]
+      );
+    },
+  });
+
   // Handle download attachment
   const handleDownloadAttachment = async (url: string, filename: string) => {
     try {
@@ -250,6 +464,7 @@ const AssignmentDetailScreen: React.FC<Props> = ({ route }) => {
 
   const urgencyColor = getUrgencyColor(daysRemaining);
   const isOverdue = (daysRemaining ?? 0) < 0 && !submission;
+  const canSubmit = !submission && assignment?.status === 'published';
 
   return (
     <BaseScreen
@@ -356,7 +571,7 @@ const AssignmentDetailScreen: React.FC<Props> = ({ route }) => {
         )}
 
         {/* Section 3: Due Date & Status Card */}
-        {daysRemaining !== null && (
+        {daysRemaining !== null && !submission && (
           <Card
             variant="elevated"
             style={isOverdue ? { borderLeftWidth: 4, borderLeftColor: Colors.error } : {}}
@@ -400,32 +615,14 @@ const AssignmentDetailScreen: React.FC<Props> = ({ route }) => {
           </Card>
         )}
 
-        {/* Section 4: Submission Status Card */}
-        <Card variant="elevated">
-          <CardContent>
-            <T variant="body" weight="semiBold" style={{ marginBottom: Spacing.sm }}>
-              📝 Submission Status
-            </T>
+        {/* Section 4: Submission Form (NEW - Conditional) */}
+        {canSubmit && !showSubmitForm && (
+          <Card variant="elevated">
+            <CardContent>
+              <T variant="body" weight="semiBold" style={{ marginBottom: Spacing.sm }}>
+                📝 Submission Status
+              </T>
 
-            {submission ? (
-              <>
-                <Row spaceBetween centerV style={{ marginBottom: Spacing.sm }}>
-                  <T variant="body">Submitted on:</T>
-                  <T variant="body" weight="semiBold">
-                    {new Date(submission.submission_date).toLocaleDateString()}
-                  </T>
-                </Row>
-
-                {submission.submission_text && (
-                  <View style={{ marginTop: Spacing.sm }}>
-                    <T variant="caption" color="textSecondary">Student's Work:</T>
-                    <T variant="body" style={{ marginTop: Spacing.xs }}>
-                      {submission.submission_text}
-                    </T>
-                  </View>
-                )}
-              </>
-            ) : (
               <View style={{ padding: Spacing.md, backgroundColor: Colors.warning + '20', borderRadius: 8 }}>
                 <T variant="body" color="textSecondary" style={{ textAlign: 'center' }}>
                   {isOverdue
@@ -438,9 +635,191 @@ const AssignmentDetailScreen: React.FC<Props> = ({ route }) => {
                   </T>
                 )}
               </View>
-            )}
-          </CardContent>
-        </Card>
+
+              <Button
+                variant="primary"
+                onPress={() => {
+                  setShowSubmitForm(true);
+                  trackAction('open_submit_form', 'AssignmentDetail', { assignmentId });
+                }}
+                style={{ marginTop: Spacing.md }}
+              >
+                {isOverdue ? '⚠️ Submit Late' : '📤 Submit Assignment'}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Section 4B: Submission Form (NEW - Expanded) */}
+        {canSubmit && showSubmitForm && (
+          <Card variant="elevated" style={{ borderLeftWidth: 4, borderLeftColor: Colors.primary }}>
+            <CardContent>
+              <Row spaceBetween centerV style={{ marginBottom: Spacing.md }}>
+                <T variant="body" weight="semiBold">
+                  📝 Submit Your Work
+                </T>
+                <Button
+                  variant="text"
+                  onPress={() => setShowSubmitForm(false)}
+                >
+                  Cancel
+                </Button>
+              </Row>
+
+              {/* Text Input */}
+              <View style={{ marginBottom: Spacing.md }}>
+                <T variant="body" weight="semiBold" style={{ marginBottom: Spacing.xs }}>
+                  📝 Assignment Text
+                </T>
+                <RNTextInput
+                  multiline
+                  numberOfLines={6}
+                  placeholder="Enter your work here..."
+                  value={submissionText}
+                  onChangeText={setSubmissionText}
+                  style={{
+                    borderWidth: 1,
+                    borderColor: Colors.outline,
+                    borderRadius: 8,
+                    padding: Spacing.sm,
+                    minHeight: 120,
+                    textAlignVertical: 'top',
+                    fontFamily: 'System',
+                    fontSize: 16,
+                  }}
+                />
+                <T variant="caption" color="textSecondary" style={{ marginTop: Spacing.xs, fontStyle: 'italic' }}>
+                  💡 Tip: You can add photos of your work using the buttons below
+                </T>
+              </View>
+
+              {/* File Upload Buttons */}
+              <View style={{ marginBottom: Spacing.md }}>
+                <T variant="body" weight="semiBold" style={{ marginBottom: Spacing.xs }}>
+                  📎 Attachments (Optional)
+                </T>
+                <Row style={{ gap: Spacing.xs, flexWrap: 'wrap' }}>
+                  <Button
+                    variant="outline"
+                    onPress={handlePickImage}
+                    disabled={uploading}
+                  >
+                    🖼️ Add Photo from Gallery
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onPress={handleTakePhoto}
+                    disabled={uploading}
+                  >
+                    📷 Take Photo
+                  </Button>
+                </Row>
+                <T variant="caption" color="textSecondary" style={{ marginTop: Spacing.xs, fontStyle: 'italic' }}>
+                  📸 You can upload multiple photos. For PDF documents: Take photos of each page
+                </T>
+
+                {uploading && (
+                  <T variant="caption" color="textSecondary" style={{ marginTop: Spacing.xs }}>
+                    Uploading file... Please wait
+                  </T>
+                )}
+              </View>
+
+              {/* Attached Files List */}
+              {attachments.length > 0 && (
+                <View style={{ marginBottom: Spacing.md }}>
+                  <T variant="body" weight="semiBold" style={{ marginBottom: Spacing.xs }}>
+                    Attached Files ({attachments.length})
+                  </T>
+                  <Col gap="xs">
+                    {attachments.map((file, index) => (
+                      <Row
+                        key={`attachment-${index}`}
+                        spaceBetween
+                        centerV
+                        style={{
+                          padding: Spacing.sm,
+                          backgroundColor: Colors.surface,
+                          borderRadius: 8,
+                        }}
+                      >
+                        <Col style={{ flex: 1 }}>
+                          <T variant="body">{file.name}</T>
+                          <T variant="caption" color="textSecondary">
+                            {(file.size / 1024).toFixed(0)} KB
+                          </T>
+                        </Col>
+                        <Button
+                          variant="text"
+                          onPress={() => handleRemoveAttachment(index)}
+                        >
+                          Remove
+                        </Button>
+                      </Row>
+                    ))}
+                  </Col>
+                </View>
+              )}
+
+              {/* Submit Button */}
+              <Button
+                variant="primary"
+                onPress={() => {
+                  if (!submissionText.trim() && attachments.length === 0) {
+                    Alert.alert('Required', 'Please provide either text or file attachments');
+                    return;
+                  }
+
+                  Alert.alert(
+                    'Submit Assignment',
+                    'Are you sure you want to submit this assignment? You cannot edit it after submission.',
+                    [
+                      { text: 'Cancel', style: 'cancel' },
+                      {
+                        text: 'Submit',
+                        onPress: () => submitAssignmentMutation.mutate(),
+                      },
+                    ]
+                  );
+                }}
+                disabled={submitAssignmentMutation.isPending || uploading}
+              >
+                {submitAssignmentMutation.isPending ? 'Submitting...' : '✅ Submit Assignment'}
+              </Button>
+
+              <T variant="caption" color="textSecondary" style={{ textAlign: 'center', marginTop: Spacing.xs }}>
+                * You cannot edit your submission after submitting
+              </T>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Section 4C: Submitted Status (Existing) */}
+        {submission && (
+          <Card variant="elevated">
+            <CardContent>
+              <T variant="body" weight="semiBold" style={{ marginBottom: Spacing.sm }}>
+                📝 Submission Status
+              </T>
+
+              <Row spaceBetween centerV style={{ marginBottom: Spacing.sm }}>
+                <T variant="body">Submitted on:</T>
+                <T variant="body" weight="semiBold">
+                  {new Date(submission.submission_date).toLocaleDateString()}
+                </T>
+              </Row>
+
+              {submission.submission_text && (
+                <View style={{ marginTop: Spacing.sm }}>
+                  <T variant="caption" color="textSecondary">Student's Work:</T>
+                  <T variant="body" style={{ marginTop: Spacing.xs }}>
+                    {submission.submission_text}
+                  </T>
+                </View>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Section 5: Score & Feedback Card (If Graded) */}
         {submission?.status === 'graded' && (
@@ -529,7 +908,7 @@ const AssignmentDetailScreen: React.FC<Props> = ({ route }) => {
               <Col gap="xs">
                 {assignment.attachments.map((attachment: any, index: number) => (
                   <Row
-                    key={index}
+                    key={`teacher-attachment-${index}`}
                     spaceBetween
                     centerV
                     style={{
@@ -563,7 +942,7 @@ const AssignmentDetailScreen: React.FC<Props> = ({ route }) => {
               <Col gap="xs">
                 {submission.attachments.map((attachment: any, index: number) => (
                   <Row
-                    key={index}
+                    key={`student-attachment-${index}`}
                     spaceBetween
                     centerV
                     style={{

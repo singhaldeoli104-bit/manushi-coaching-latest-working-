@@ -314,19 +314,32 @@ const StudentInsightsScreen: React.FC<Props> = ({ route }) => {
           </CardContent>
         </Card>
 
-        {/* Category Filters */}
-        <Row style={{ flexWrap: 'wrap', gap: Spacing.xs }}>
-          {(['all', 'academic', 'behavioral', 'social'] as CategoryType[]).map(category => (
-            <Button
-              key={category}
-              variant={categoryFilter === category ? 'primary' : 'outline'}
-              onPress={() => setCategoryFilter(category)}
-              style={{ marginBottom: Spacing.xs }}
-            >
-              {category.charAt(0).toUpperCase() + category.slice(1)}
-            </Button>
-          ))}
-        </Row>
+        {/* Filters */}
+        <FilterDropdowns
+          filters={[
+            {
+              label: 'Category',
+              value: categoryFilter,
+              options: [
+                { value: 'all', label: 'All' },
+                { value: 'academic', label: 'Academic' },
+                { value: 'behavioral', label: 'Behavioral' },
+                { value: 'social', label: 'Social' },
+              ],
+              onChange: (value) => {
+                setCategoryFilter(value as CategoryType);
+                trackAction('filter_category', 'StudentInsights', { category: value });
+              },
+            },
+          ]}
+          activeFilters={[
+            categoryFilter !== 'all' && { label: categoryFilter.charAt(0).toUpperCase() + categoryFilter.slice(1), variant: 'info' as const },
+          ].filter(Boolean) as any}
+          onClearAll={() => {
+            setCategoryFilter('all');
+            trackAction('clear_filters', 'StudentInsights');
+          }}
+        />
 
         {/* Priority Insights */}
         {priorityInsights.length > 0 && (

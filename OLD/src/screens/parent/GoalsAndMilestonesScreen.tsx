@@ -17,6 +17,7 @@ import { supabase } from '../../lib/supabase';
 import { BaseScreen } from '../../shared/components/BaseScreen';
 import { Col, Row, T, Card, CardContent, Badge, Button } from '../../ui';
 import { Colors, Spacing } from '../../theme/designSystem';
+import { FilterDropdowns } from '../../components/common/FilterDropdowns';
 import type { ParentStackParamList } from '../../types/navigation';
 import { trackScreenView } from '../../utils/navigationAnalytics';
 import { ProgressBar } from 'react-native-paper';
@@ -189,17 +190,33 @@ const GoalsAndMilestonesScreen: React.FC<Props> = ({ route }) => {
         </Card>
 
         {/* Category Filters */}
-        <Row style={{ flexWrap: 'wrap', gap: Spacing.xs }}>
-          {(['all', 'academic', 'behavioral', 'social', 'extracurricular'] as CategoryFilter[]).map(category => (
-            <Button
-              key={category}
-              variant={categoryFilter === category ? 'primary' : 'outline'}
-              onPress={() => setCategoryFilter(category)}
-              style={{ marginBottom: Spacing.xs }}
-            >
-              {category === 'all' ? 'All' : category.charAt(0).toUpperCase() + category.slice(1)}
-            </Button>
-          ))}
+        {/* Filters */}
+        <FilterDropdowns
+          filters={[
+            {
+              label: 'Category',
+              value: categoryFilter,
+              options: [
+                { value: 'all', label: 'All' },
+                { value: 'academic', label: 'Academic' },
+                { value: 'behavioral', label: 'Behavioral' },
+                { value: 'social', label: 'Social' },
+              ],
+              onChange: (value) => {
+                setCategoryFilter(value as CategoryFilter);
+                trackAction('filter_category', 'GoalsAndMilestones', { category: value });
+              },
+            },
+          ]}
+          activeFilters={[
+            categoryFilter !== 'all' && { label: categoryFilter.charAt(0).toUpperCase() + categoryFilter.slice(1), variant: 'info' as const },
+          ].filter(Boolean) as any}
+          onClearAll={() => {
+            setCategoryFilter('all');
+            trackAction('clear_filters', 'GoalsAndMilestones');
+          }}
+        />
+
         </Row>
 
         {/* Active Goals */}

@@ -313,7 +313,7 @@ const UpcomingExamsScreen: React.FC<Props> = ({ route }) => {
           </CardContent>
         </Card>
 
-        {/* Filters */}
+        {/* Filter Controls */}
         {upcomingExams.length > 0 && (
           <FilterDropdowns
             filters={[
@@ -336,7 +336,7 @@ const UpcomingExamsScreen: React.FC<Props> = ({ route }) => {
               ...(subjects.length > 2 ? [{
                 label: 'Subject',
                 value: subjectFilter,
-                options: subjects.map(s => ({ value: s, label: s === 'all' ? 'All' : s })),
+                options: subjects.map(s => ({ value: s, label: s === 'all' ? 'All Subjects' : s })),
                 onChange: (value) => {
                   trackAction('filter_subject', 'UpcomingExams', { subject: value });
                   setSubjectFilter(value);
@@ -344,14 +344,8 @@ const UpcomingExamsScreen: React.FC<Props> = ({ route }) => {
               }] : []),
             ]}
             activeFilters={[
-              examTypeFilter !== 'all' && {
-                label: examTypeFilter.charAt(0).toUpperCase() + examTypeFilter.slice(1),
-                variant: 'info' as const
-              },
-              subjectFilter !== 'all' && {
-                label: subjectFilter,
-                variant: 'success' as const
-              },
+              examTypeFilter !== 'all' && { label: examTypeFilter.charAt(0).toUpperCase() + examTypeFilter.slice(1), variant: 'info' as const },
+              subjectFilter !== 'all' && { label: subjectFilter, variant: 'success' as const },
             ].filter(Boolean) as any}
             onClearAll={() => {
               setExamTypeFilter('all');

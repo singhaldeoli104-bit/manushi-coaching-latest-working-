@@ -14,13 +14,13 @@ import type { ParentStackParamList } from '../../types/navigation';
 
 type Props = NativeStackScreenProps<ParentStackParamList, 'NotificationsList'>;
 
-const NotificationsListScreen: React.FC<Props> = ({ route, navigation }) => {
+const NotificationsListScreen: React.FC<Props> = () => {
   React.useEffect(() => {
     trackAction('view_notifications_list', 'NotificationsList');
   }, []);
 
   // TODO: Replace with real data from useParentDashboard hook
-  const notifications = [
+  const [notifications, setNotifications] = React.useState([
     {
       id: '1',
       title: 'Assignment Due Tomorrow',
@@ -45,9 +45,25 @@ const NotificationsListScreen: React.FC<Props> = ({ route, navigation }) => {
       read: true,
       timestamp: new Date(Date.now() - 172800000),
     },
-  ];
+  ]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
+
+  // Mark notification as read
+  const markAsRead = (notificationId: string) => {
+    setNotifications(prev =>
+      prev.map(n =>
+        n.id === notificationId ? { ...n, read: true } : n
+      )
+    );
+  };
+
+  // Mark all as read
+  const markAllAsRead = () => {
+    setNotifications(prev =>
+      prev.map(n => ({ ...n, read: true }))
+    );
+  };
 
   const getIconByType = (type: string) => {
     switch (type) {
@@ -87,8 +103,9 @@ const NotificationsListScreen: React.FC<Props> = ({ route, navigation }) => {
               key={notification.id}
               variant="elevated"
               onPress={() => {
+                console.log('🔔 Notification tapped:', notification.id);
+                markAsRead(notification.id);
                 trackAction('view_notification', 'NotificationsList', { notificationId: notification.id });
-                // TODO: Mark as read and navigate to relevant screen
               }}
             >
               <CardHeader
@@ -101,7 +118,7 @@ const NotificationsListScreen: React.FC<Props> = ({ route, navigation }) => {
                   hour: '2-digit',
                   minute: '2-digit',
                 })}
-                trailing={!notification.read ? <Badge variant="primary">New</Badge> : undefined}
+                trailing={!notification.read ? <Badge label="New" variant="info" /> : undefined}
               />
               <CardContent>
                 <T variant="body" color={notification.read ? 'textSecondary' : 'textPrimary'}>
@@ -109,14 +126,17 @@ const NotificationsListScreen: React.FC<Props> = ({ route, navigation }) => {
                 </T>
               </CardContent>
               {!notification.read && (
-                <View style={{
-                  position: 'absolute',
-                  left: 0,
-                  top: 0,
-                  bottom: 0,
-                  width: 4,
-                  backgroundColor: Colors.primary,
-                }} />
+                <View
+                  pointerEvents="none"
+                  style={{
+                    position: 'absolute',
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: 4,
+                    backgroundColor: Colors.primary,
+                  }}
+                />
               )}
             </Card>
           ))}
@@ -126,8 +146,9 @@ const NotificationsListScreen: React.FC<Props> = ({ route, navigation }) => {
         {unreadCount > 0 && (
           <Col sx={{ mt: 'lg' }}>
             <Card variant="outlined" onPress={() => {
+              console.log('📝 Mark all as read tapped');
+              markAllAsRead();
               trackAction('mark_all_read', 'NotificationsList');
-              // TODO: Mark all as read
             }}>
               <CardContent>
                 <T variant="body" align="center" color="primary" weight="semiBold">
