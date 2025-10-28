@@ -70,15 +70,14 @@ interface FinancialAnalytics {
   taxSavings: number;
 }
 
-interface PaymentProcessingScreenProps {
-  parentId: string;
-  onNavigate: (screen: string) => void;
-}
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { ParentStackParamList } from '../../types/navigation';
 
-export const PaymentProcessingScreen: React.FC<PaymentProcessingScreenProps> = ({
-  parentId,
-  onNavigate,
-}) => {
+type Props = NativeStackScreenProps<ParentStackParamList, 'PaymentProcessing'>;
+
+export const PaymentProcessingScreen: React.FC<Props> = ({ navigation, route }) => {
+  // Use hardcoded parentId for now (in production, get from auth context)
+  const parentId = 'parent-001';
   const [activeTab, setActiveTab] = useState<'payment' | 'history' | 'plans' | 'analytics'>('payment');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('card');
   const [selectedGateway, setSelectedGateway] = useState<string>('razorpay');
@@ -110,11 +109,11 @@ export const PaymentProcessingScreen: React.FC<PaymentProcessingScreenProps> = (
 
   const setupBackHandler = useCallback(() => {
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
-      onNavigate('back');
+      navigation.goBack();
       return true;
     });
     return backHandler;
-  }, [onNavigate]);
+  }, [navigation]);
 
   // Handle errors
   useEffect(() => {
@@ -674,7 +673,7 @@ export const PaymentProcessingScreen: React.FC<PaymentProcessingScreenProps> = (
 
   const renderAppBar = () => (
     <Appbar.Header elevated style={{ backgroundColor: '#7C3AED' }}>
-      <Appbar.BackAction onPress={() => onNavigate('back')} />
+      <Appbar.BackAction onPress={() => navigation.goBack()} />
       <Appbar.Content title="Payment Center" subtitle="Manage payments and installments" />
       <Appbar.Action icon="wallet" onPress={() => showSnackbar('Payment wallet')} />
     </Appbar.Header>
