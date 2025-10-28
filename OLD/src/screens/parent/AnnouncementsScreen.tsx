@@ -13,7 +13,7 @@
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, StyleSheet, TextInput, Pressable, Modal, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TextInput, Pressable } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
@@ -274,9 +274,7 @@ const AnnouncementsScreen: React.FC<Props> = () => {
             <T variant="caption" color="textSecondary" style={{ marginBottom: Spacing.sm }}>
               Filters
             </T>
-            <Row style={{ gap: Spacing.sm }}>
-        {/* Filters */}
-        <FilterDropdowns
+            <FilterDropdowns
           filters={[
               {
                 label: 'Category',
@@ -323,6 +321,8 @@ const AnnouncementsScreen: React.FC<Props> = () => {
               trackAction('clear_filters', 'Announcements');
           }}
         />
+          </CardContent>
+        </Card>
 
         {/* Announcements List */}
         <Col gap="sm">
@@ -419,90 +419,6 @@ const AnnouncementsScreen: React.FC<Props> = () => {
           </Card>
         )}
       </Col>
-
-      {/* Category Filter Modal */}
-      <Modal
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowCategoryModal(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setShowCategoryModal(false)}
-        >
-          <View style={styles.modalContent}>
-            <T variant="title" weight="bold" style={{ marginBottom: Spacing.md }}>
-              Select Category
-            </T>
-            <Col gap="xs">
-              {(['all', 'Academic', 'Events', 'Urgent', 'General', 'Holiday'] as CategoryType[]).map(category => (
-                <TouchableOpacity
-                  key={category}
-                  style={[
-                    styles.modalOption,
-                    categoryFilter === category && styles.modalOptionSelected
-                  ]}
-                  onPress={() => {
-                    setCategoryFilter(category);
-                    setShowCategoryModal(false);
-                    trackAction('filter_category', 'Announcements', { category });
-                  }}
-                >
-                  <T variant="body" weight={categoryFilter === category ? 'semiBold' : 'regular'}>
-                    {category === 'all' ? 'All Categories' : `${getCategoryIcon(category as Exclude<CategoryType, 'all'>)} ${category}`}
-                  </T>
-                  {categoryFilter === category && (
-                    <T variant="body" color="primary">✓</T>
-                  )}
-                </TouchableOpacity>
-              ))}
-            </Col>
-          </View>
-        </TouchableOpacity>
-      </Modal>
-
-      {/* Importance Filter Modal */}
-      <Modal
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowImportanceModal(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setShowImportanceModal(false)}
-        >
-          <View style={styles.modalContent}>
-            <T variant="title" weight="bold" style={{ marginBottom: Spacing.md }}>
-              Select Importance
-            </T>
-            <Col gap="xs">
-              {(['all', 'important'] as ImportanceFilter[]).map(filter => (
-                <TouchableOpacity
-                  key={filter}
-                  style={[
-                    styles.modalOption,
-                    importanceFilter === filter && styles.modalOptionSelected
-                  ]}
-                  onPress={() => {
-                    setImportanceFilter(filter);
-                    setShowImportanceModal(false);
-                    trackAction('filter_importance', 'Announcements', { filter });
-                  }}
-                >
-                  <T variant="body" weight={importanceFilter === filter ? 'semiBold' : 'regular'}>
-                    {filter === 'all' ? 'All Announcements' : '⭐ Important Only'}
-                  </T>
-                  {importanceFilter === filter && (
-                    <T variant="body" color="primary">✓</T>
-                  )}
-                </TouchableOpacity>
-              ))}
-            </Col>
-          </View>
-        </TouchableOpacity>
-      </Modal>
     </BaseScreen>
   );
 };
