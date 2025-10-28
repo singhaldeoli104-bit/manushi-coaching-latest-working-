@@ -21,6 +21,7 @@ import { supabase } from '../../lib/supabase';
 import { BaseScreen } from '../../shared/components/BaseScreen';
 import { Col, Row, T, Card, CardContent, Badge, Button } from '../../ui';
 import { Colors, Spacing } from '../../theme/designSystem';
+import { FilterDropdowns } from '../../components/common/FilterDropdowns';
 import type { ParentStackParamList } from '../../types/navigation';
 import { trackScreenView, trackAction } from '../../utils/navigationAnalytics';
 import { safeNavigate } from '../../utils/navigationService';
@@ -316,53 +317,69 @@ const ActionItemsScreen: React.FC<Props> = () => {
           </CardContent>
         </Card>
 
-        {/* Filter by Status */}
-        <Row style={{ gap: Spacing.xs }}>
-          {(['all', 'pending', 'completed'] as StatusFilter[]).map(filter => (
-            <Button
-              key={filter}
-              variant={statusFilter === filter ? 'primary' : 'outline'}
-              onPress={() => {
-                setStatusFilter(filter);
-                trackAction('filter_status', 'ActionItems', { filter });
-              }}
-            >
-              {filter.charAt(0).toUpperCase() + filter.slice(1)}
-            </Button>
-          ))}
-        </Row>
-
-        {/* Filter by Priority */}
-        <Row style={{ gap: Spacing.xs }}>
-          {(['all', 'urgent', 'high', 'medium', 'low'] as PriorityFilter[]).map(priority => (
-            <Button
-              key={priority}
-              variant={priorityFilter === priority ? 'primary' : 'outline'}
-              onPress={() => {
-                setPriorityFilter(priority);
-                trackAction('filter_priority', 'ActionItems', { priority });
-              }}
-            >
-              {priority === 'all' ? 'All' : priority.charAt(0).toUpperCase() + priority.slice(1)}
-            </Button>
-          ))}
-        </Row>
-
-        {/* Filter by Type */}
-        <Row style={{ flexWrap: 'wrap', gap: Spacing.xs }}>
-          {(['all', 'form_to_fill', 'permission_needed', 'fee_payment', 'meeting_rsvp', 'document_submission', 'consent_required', 'feedback_request', 'general'] as TypeFilter[]).map(type => (
-            <Button
-              key={type}
-              variant={typeFilter === type ? 'primary' : 'outline'}
-              onPress={() => {
-                setTypeFilter(type);
-                trackAction('filter_type', 'ActionItems', { type });
-              }}
-            >
-              {type === 'all' ? 'All Types' : getTypeLabel(type as ItemType).split(' ')[1] || type}
-            </Button>
-          ))}
-        </Row>
+        {/* Filters */}
+        <FilterDropdowns
+          filters={[
+            {
+              label: 'Status',
+              value: statusFilter,
+              options: [
+                { value: 'all', label: 'All' },
+                { value: 'pending', label: 'Pending' },
+                { value: 'completed', label: 'Completed' },
+              ],
+              onChange: (value) => {
+                setStatusFilter(value as StatusFilter);
+                trackAction('filter_status', 'ActionItems', { filter: value });
+              },
+            },
+            {
+              label: 'Priority',
+              value: priorityFilter,
+              options: [
+                { value: 'all', label: 'All' },
+                { value: 'urgent', label: 'Urgent' },
+                { value: 'high', label: 'High' },
+                { value: 'medium', label: 'Medium' },
+                { value: 'low', label: 'Low' },
+              ],
+              onChange: (value) => {
+                setPriorityFilter(value as PriorityFilter);
+                trackAction('filter_priority', 'ActionItems', { priority: value });
+              },
+            },
+            {
+              label: 'Type',
+              value: typeFilter,
+              options: [
+                { value: 'all', label: 'All Types' },
+                { value: 'form_to_fill', label: 'Form to Fill' },
+                { value: 'permission_needed', label: 'Permission Needed' },
+                { value: 'fee_payment', label: 'Fee Payment' },
+                { value: 'meeting_rsvp', label: 'Meeting RSVP' },
+                { value: 'document_submission', label: 'Document Submission' },
+                { value: 'consent_required', label: 'Consent Required' },
+                { value: 'feedback_request', label: 'Feedback Request' },
+                { value: 'general', label: 'General' },
+              ],
+              onChange: (value) => {
+                setTypeFilter(value as TypeFilter);
+                trackAction('filter_type', 'ActionItems', { type: value });
+              },
+            },
+          ]}
+          activeFilters={[
+            statusFilter !== 'all' && { label: statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1), variant: 'info' as const },
+            priorityFilter !== 'all' && { label: priorityFilter.charAt(0).toUpperCase() + priorityFilter.slice(1), variant: 'warning' as const },
+            typeFilter !== 'all' && { label: typeFilter.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()), variant: 'success' as const },
+          ].filter(Boolean) as any}
+          onClearAll={() => {
+            setStatusFilter('all');
+            setPriorityFilter('all');
+            setTypeFilter('all');
+            trackAction('clear_filters', 'ActionItems');
+          }}
+        />
 
         {/* Action Items List */}
         <Col gap="sm">

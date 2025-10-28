@@ -21,6 +21,7 @@ import { supabase } from '../../lib/supabase';
 import { BaseScreen } from '../../shared/components/BaseScreen';
 import { Col, Row, T, Card, CardContent, Badge, Button } from '../../ui';
 import { Colors, Spacing } from '../../theme/designSystem';
+import { FilterDropdowns } from '../../components/common/FilterDropdowns';
 import type { ParentStackParamList } from '../../types/navigation';
 import { trackScreenView, trackAction } from '../../utils/navigationAnalytics';
 
@@ -247,28 +248,33 @@ const StaffDirectoryScreen: React.FC<Props> = () => {
         </Card>
 
         {/* Filter by Department */}
-        <Row style={{ flexWrap: 'wrap', gap: Spacing.xs }}>
-          <Button
-            variant={departmentFilter === 'all' ? 'primary' : 'outline'}
-            onPress={() => {
-              setDepartmentFilter('all');
-              trackAction('filter_department', 'StaffDirectory', { department: 'all' });
-            }}
-          >
-            All Departments
-          </Button>
-          {departments.map(dept => (
-            <Button
-              key={dept}
-              variant={departmentFilter === dept ? 'primary' : 'outline'}
-              onPress={() => {
-                setDepartmentFilter(dept as DepartmentFilter);
-                trackAction('filter_department', 'StaffDirectory', { department: dept });
-              }}
-            >
-              {dept}
-            </Button>
-          ))}
+        {/* Filters */}
+        <FilterDropdowns
+          filters={[
+            {
+              label: 'Department',
+              value: departmentFilter,
+              options: [
+                { value: 'all', label: 'All' },
+                { value: 'academic', label: 'Academic' },
+                { value: 'administration', label: 'Administration' },
+                { value: 'support', label: 'Support' },
+              ],
+              onChange: (value) => {
+                setDepartmentFilter(value as DepartmentFilter);
+                trackAction('filter_department', 'StaffDirectory', { department: value });
+              },
+            },
+          ]}
+          activeFilters={[
+            departmentFilter !== 'all' && { label: departmentFilter.charAt(0).toUpperCase() + departmentFilter.slice(1), variant: 'info' as const },
+          ].filter(Boolean) as any}
+          onClearAll={() => {
+            setDepartmentFilter('all');
+            trackAction('clear_filters', 'StaffDirectory');
+          }}
+        />
+
         </Row>
 
         {/* Staff Members List */}

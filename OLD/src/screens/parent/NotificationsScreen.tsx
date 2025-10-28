@@ -13,13 +13,14 @@
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, StyleSheet, Alert, Modal, TouchableOpacity, Pressable } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { BaseScreen } from '../../shared/components/BaseScreen';
 import { Col, Row, T, Card, CardContent, Badge, Button } from '../../ui';
 import { Colors, Spacing } from '../../theme/designSystem';
+import { FilterDropdowns } from '../../components/common/FilterDropdowns';
 import type { ParentStackParamList } from '../../types/navigation';
 import { trackScreenView, trackAction } from '../../utils/navigationAnalytics';
 
@@ -46,6 +47,7 @@ interface Notification {
 const NotificationsScreen: React.FC<Props> = () => {
   const [typeFilter, setTypeFilter] = useState<NotificationType>('all');
   const [readFilter, setReadFilter] = useState<ReadFilter>('all');
+  const [showReadModal, setShowReadModal] = useState(false);
   const queryClient = useQueryClient();
 
   // Track screen view
@@ -329,51 +331,77 @@ const NotificationsScreen: React.FC<Props> = () => {
           </CardContent>
         </Card>
 
-        {/* Filter by Read Status */}
-        <Row style={{ gap: Spacing.xs }}>
-          {(['all', 'unread', 'read'] as ReadFilter[]).map(filter => (
-            <Button
-              key={filter}
-              variant={readFilter === filter ? 'primary' : 'outline'}
-              onPress={() => {
-                setReadFilter(filter);
-                trackAction('filter_read_status', 'Notifications', { filter });
-              }}
-            >
-              {filter.charAt(0).toUpperCase() + filter.slice(1)}
-            </Button>
-          ))}
-        </Row>
-
-        {/* Filter by Type */}
-        <Row style={{ flexWrap: 'wrap', gap: Spacing.xs }}>
-          {(['all', 'assignment', 'class', 'doubt', 'announcement', 'success', 'warning', 'error', 'info'] as NotificationType[]).map(type => (
-            <Button
-              key={type}
-              variant={typeFilter === type ? 'primary' : 'outline'}
-              onPress={() => {
-                setTypeFilter(type);
-                trackAction('filter_type', 'Notifications', { type });
-              }}
-            >
-              {type === 'all' ? 'All Types' : type.charAt(0).toUpperCase() + type.slice(1)}
-            </Button>
-          ))}
-        </Row>
+        {/* Filters Card */}
+        <Card variant="outlined">
+          <CardContent>
+            <T variant="caption" color="textSecondary" style={{ marginBottom: Spacing.sm }}>
+              Filters
+            </T>
+            <Row style={{ gap: Spacing.sm }}>
+        {/* Filters */}
+        <FilterDropdowns
+          filters={[
+              {
+                label: 'Type',
+                value: typeFilter,
+                options: [
+                { value: 'all', label: 'All' },
+                { value: 'academic', label: '📚 Academic' },
+                { value: 'attendance', label: '📅 Attendance' },
+                { value: 'homework', label: '📝 Homework' },
+                { value: 'exam', label: '📊 Exam' },
+                { value: 'fee', label: '💰 Fee' },
+                { value: 'event', label: '🎉 Event' },
+                { value: 'announcement', label: '📢 Announcement' },
+                { value: 'message', label: '💬 Message' },
+                { value: 'alert', label: '⚠️ Alert' },
+                ],
+                onChange: (value) => {
+                  trackAction('filter_type', 'Notifications', { type: value });
+                  setTypeFilter(value as TypeFilter);
+                },
+              },
+              {
+                label: 'Status',
+                value: statusFilter,
+                options: [
+                { value: 'all', label: 'All' },
+                { value: 'unread', label: 'Unread' },
+                { value: 'read', label: 'Read' },
+                ],
+                onChange: (value) => {
+                  trackAction('filter_status', 'Notifications', { status: value });
+                  setStatusFilter(value as StatusFilter);
+                },
+              }
+          ]}
+          activeFilters={[
+              typeFilter !== 'all' && {
+                label: typeFilter,
+                variant: 'info' as const
+              },
+              statusFilter !== 'all' && {
+                label: statusFilter,
+                variant: 'success' as const
+              },
+          ].filter(Boolean) as any}
+          onClearAll={() => {
+              setTypeFilter('all');
+              setStatusFilter('all');
+              trackAction('clear_filters', 'Notifications');
+          }}
+        />
 
         {/* Notifications List */}
         <Col gap="sm">
           {filteredNotifications.map(notification => (
-            <TouchableOpacity
+            <Card
               key={notification.id}
+              variant="elevated"
               onPress={() => handleNotificationTap(notification)}
-              activeOpacity={0.7}
+              style={!notification.is_read ? styles.unreadCard : {}}
             >
-              <Card
-                variant="elevated"
-                style={!notification.is_read ? styles.unreadCard : {}}
-              >
-                <CardContent>
+              <CardContent>
                   {/* Header Row */}
                   <Row spaceBetween centerV style={{ marginBottom: Spacing.xs }}>
                     <T variant="caption" color="textSecondary">
@@ -412,8 +440,7 @@ const NotificationsScreen: React.FC<Props> = () => {
                     </Row>
                   )}
                 </CardContent>
-              </Card>
-            </TouchableOpacity>
+            </Card>
           ))}
         </Col>
 
@@ -440,6 +467,91 @@ const NotificationsScreen: React.FC<Props> = () => {
           </Card>
         )}
       </Col>
+
+      {/* Type Filter Modal */}
+      <Modal
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowTypeModal(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowTypeModal(false)}
+        >
+          <View style={styles.modalContent}>
+            <T variant="title" weight="bold" style={{ marginBottom: Spacing.md }}>
+              Select Type
+            </T>
+            <Col gap="xs">
+              {(['all', 'assignment', 'class', 'doubt', 'announcement', 'success', 'warning', 'error', 'info'] as NotificationType[]).map(type => (
+                <TouchableOpacity
+                  key={type}
+                  style={[
+                    styles.modalOption,
+                    typeFilter === type && styles.modalOptionSelected
+                  ]}
+                  onPress={() => {
+                    setTypeFilter(type);
+                    setShowTypeModal(false);
+                    trackAction('filter_type', 'Notifications', { type });
+                  }}
+                >
+                  <T variant="body" weight={typeFilter === type ? 'semiBold' : 'regular'}>
+                    {type === 'all' ? 'All Types' : getTypeLabel(type)}
+                  </T>
+                  {typeFilter === type && (
+                    <T variant="body" color="primary">✓</T>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </Col>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Read Status Filter Modal */}
+      <Modal
+        visible={showReadModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowReadModal(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowReadModal(false)}
+        >
+          <View style={styles.modalContent}>
+            <T variant="title" weight="bold" style={{ marginBottom: Spacing.md }}>
+              Select Status
+            </T>
+            <Col gap="xs">
+              {(['all', 'unread', 'read'] as ReadFilter[]).map(filter => (
+                <TouchableOpacity
+                  key={filter}
+                  style={[
+                    styles.modalOption,
+                    readFilter === filter && styles.modalOptionSelected
+                  ]}
+                  onPress={() => {
+                    setReadFilter(filter);
+                    setShowReadModal(false);
+                    trackAction('filter_read_status', 'Notifications', { filter });
+                  }}
+                >
+                  <T variant="body" weight={readFilter === filter ? 'semiBold' : 'regular'}>
+                    {filter === 'all' ? 'All Notifications' : filter.charAt(0).toUpperCase() + filter.slice(1)}
+                  </T>
+                  {readFilter === filter && (
+                    <T variant="body" color="primary">✓</T>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </Col>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </BaseScreen>
   );
 };
@@ -464,6 +576,47 @@ const styles = StyleSheet.create({
     height: 6,
     borderRadius: 3,
     backgroundColor: Colors.primary,
+  },
+  filterDropdown: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: Spacing.sm,
+    backgroundColor: Colors.surface,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    minHeight: 60,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: Spacing.lg,
+  },
+  modalContent: {
+    backgroundColor: Colors.background,
+    borderRadius: 12,
+    padding: Spacing.lg,
+    width: '100%',
+    maxWidth: 400,
+    maxHeight: '80%',
+  },
+  modalOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: Spacing.md,
+    borderRadius: 8,
+    backgroundColor: Colors.surface,
+    marginBottom: Spacing.xs,
+  },
+  modalOptionSelected: {
+    backgroundColor: Colors.primaryLight || Colors.surface,
+    borderWidth: 2,
+    borderColor: Colors.primary,
   },
 });
 

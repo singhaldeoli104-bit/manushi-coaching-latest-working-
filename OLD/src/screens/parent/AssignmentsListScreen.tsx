@@ -23,6 +23,7 @@ import { supabase } from '../../lib/supabase';
 import { BaseScreen } from '../../shared/components/BaseScreen';
 import { Col, Row, T, Card, CardContent, Badge, Button } from '../../ui';
 import { Colors, Spacing } from '../../theme/designSystem';
+import { FilterDropdowns } from '../../components/common/FilterDropdowns';
 import type { ParentStackParamList } from '../../types/navigation';
 import { trackScreenView, trackAction } from '../../utils/navigationAnalytics';
 import { safeNavigate } from '../../utils/navigationService';
@@ -246,57 +247,53 @@ const AssignmentsListScreen: React.FC<Props> = ({ route }) => {
           </CardContent>
         </Card>
 
-        {/* Status Filter */}
-        <Col gap="xs">
-          <T variant="body" weight="semiBold">Filter by Status</T>
-          <Row style={{ flexWrap: 'wrap', gap: Spacing.xs }}>
-            {(['all', 'pending', 'submitted', 'graded', 'overdue'] as StatusFilter[]).map(status => (
-              <Button
-                key={status}
-                variant={statusFilter === status ? 'primary' : 'outline'}
-                onPress={() => {
-                  trackAction('filter_status', 'AssignmentsList', { status });
-                  setStatusFilter(status);
-                }}
-                style={{ marginBottom: Spacing.xs }}
-              >
-                {status === 'all' ? 'All' : status.charAt(0).toUpperCase() + status.slice(1)}
-              </Button>
-            ))}
-          </Row>
-        </Col>
-
-        {/* Subject Filter */}
-        {subjects.length > 1 && (
-          <Col gap="xs">
-            <T variant="body" weight="semiBold">Filter by Subject</T>
-            <Row style={{ flexWrap: 'wrap', gap: Spacing.xs }}>
-              <Button
-                variant={subjectFilter === 'all' ? 'primary' : 'outline'}
-                onPress={() => {
-                  trackAction('filter_subject', 'AssignmentsList', { subject: 'all' });
-                  setSubjectFilter('all');
-                }}
-                style={{ marginBottom: Spacing.xs }}
-              >
-                All
-              </Button>
-              {subjects.map(subject => (
-                <Button
-                  key={subject}
-                  variant={subjectFilter === subject ? 'primary' : 'outline'}
-                  onPress={() => {
-                    trackAction('filter_subject', 'AssignmentsList', { subject });
-                    setSubjectFilter(subject);
-                  }}
-                  style={{ marginBottom: Spacing.xs }}
-                >
-                  {subject}
-                </Button>
-              ))}
-            </Row>
-          </Col>
-        )}
+        {/* Filters */}
+        <FilterDropdowns
+          filters={[
+            {
+              label: 'Status',
+              value: statusFilter,
+              options: [
+                { value: 'all', label: 'All' },
+                { value: 'pending', label: 'Pending' },
+                { value: 'submitted', label: 'Submitted' },
+                { value: 'graded', label: 'Graded' },
+                { value: 'overdue', label: 'Overdue' },
+              ],
+              onChange: (value) => {
+                trackAction('filter_status', 'AssignmentsList', { status: value });
+                setStatusFilter(value as StatusFilter);
+              },
+            },
+            ...(subjects.length > 1 ? [{
+              label: 'Subject',
+              value: subjectFilter,
+              options: [
+                { value: 'all', label: 'All Subjects' },
+                ...subjects.map(s => ({ value: s, label: s })),
+              ],
+              onChange: (value) => {
+                trackAction('filter_subject', 'AssignmentsList', { subject: value });
+                setSubjectFilter(value);
+              },
+            }] : []),
+          ]}
+          activeFilters={[
+            statusFilter !== 'all' && {
+              label: statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1),
+              variant: 'info' as const
+            },
+            subjectFilter !== 'all' && {
+              label: subjectFilter,
+              variant: 'success' as const
+            },
+          ].filter(Boolean) as any}
+          onClearAll={() => {
+            setStatusFilter('all');
+            setSubjectFilter('all');
+            trackAction('clear_filters', 'AssignmentsList');
+          }}
+        />
 
         {/* Assignments List */}
         <Col gap="sm">

@@ -453,13 +453,6 @@ function HomeStack() {
         component={UpcomingExamsScreen as any}
         options={{ title: 'Upcoming Exams' }}
       />
-
-      {/* ✅ Academic Reports Screen (moved to HomeStack for navigation from AcademicsDetail) */}
-      <Stack.Screen
-        name="AcademicReports"
-        component={AcademicReportsScreen as any}
-        options={{ title: "Academic Reports" }}
-      />
     </Stack.Navigator>
 
       {/* ✨ MD3 Modal Navigation Drawer - Exact Ship-Ready Spec */}
@@ -522,17 +515,17 @@ function ChildrenStack() {
         )}
       </Stack.Screen>
 
-      {/* ✅ PHASE 3: Academic Tab Screens (SubjectDetail, AssignmentsList, TeacherList, AssignmentDetail, UpcomingExams, AcademicReports moved to HomeStack) */}
-      {/* <Stack.Screen */}
-      {/*   name="AcademicReports" */}
-      {/*   options={{ title: 'Academic Reports' }} */}
-      {/* > */}
-      {/*   {(props) => ( */}
-      {/*     <ErrorBoundary fallback={<ErrorFallback />}> */}
-      {/*       <AcademicReportsScreen {...props} /> */}
-      {/*     </ErrorBoundary> */}
-      {/*   )} */}
-      {/* </Stack.Screen> */}
+      {/* ✅ PHASE 3: Academic Tab Screens (SubjectDetail, AssignmentsList, TeacherList, AssignmentDetail, UpcomingExams moved to HomeStack) */}
+      <Stack.Screen
+        name="AcademicReports"
+        options={{ title: 'Academic Reports' }}
+      >
+        {(props) => (
+          <ErrorBoundary fallback={<ErrorFallback />}>
+            <AcademicReportsScreen {...props} />
+          </ErrorBoundary>
+        )}
+      </Stack.Screen>
       <Stack.Screen
         name="StudyRecommendations"
         options={{ title: 'Study Recommendations' }}
