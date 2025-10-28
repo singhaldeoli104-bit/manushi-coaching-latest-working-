@@ -317,8 +317,6 @@ const ChildrenListScreen: React.FC<Props> = ({ route, navigation }) => {
           }}
         />
 
-            </Row>
-
             {/* View Mode Toggle */}
             <IconButton
               icon={viewMode === 'grid' ? 'view-list' : 'view-grid'}

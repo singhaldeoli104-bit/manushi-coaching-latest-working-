@@ -217,8 +217,6 @@ const GoalsAndMilestonesScreen: React.FC<Props> = ({ route }) => {
           }}
         />
 
-        </Row>
-
         {/* Active Goals */}
         {activeMilestones.length > 0 && (
           <View>

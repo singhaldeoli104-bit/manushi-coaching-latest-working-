@@ -13,7 +13,7 @@
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, StyleSheet, Alert, Modal, TouchableOpacity, Pressable } from 'react-native';
+import { View, StyleSheet, Alert, Pressable } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
@@ -47,7 +47,6 @@ interface Notification {
 const NotificationsScreen: React.FC<Props> = () => {
   const [typeFilter, setTypeFilter] = useState<NotificationType>('all');
   const [readFilter, setReadFilter] = useState<ReadFilter>('all');
-  const [showReadModal, setShowReadModal] = useState(false);
   const queryClient = useQueryClient();
 
   // Track screen view
@@ -337,9 +336,7 @@ const NotificationsScreen: React.FC<Props> = () => {
             <T variant="caption" color="textSecondary" style={{ marginBottom: Spacing.sm }}>
               Filters
             </T>
-            <Row style={{ gap: Spacing.sm }}>
-        {/* Filters */}
-        <FilterDropdowns
+            <FilterDropdowns
           filters={[
               {
                 label: 'Type',
@@ -391,6 +388,8 @@ const NotificationsScreen: React.FC<Props> = () => {
               trackAction('clear_filters', 'Notifications');
           }}
         />
+          </CardContent>
+        </Card>
 
         {/* Notifications List */}
         <Col gap="sm">
@@ -467,91 +466,6 @@ const NotificationsScreen: React.FC<Props> = () => {
           </Card>
         )}
       </Col>
-
-      {/* Type Filter Modal */}
-      <Modal
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowTypeModal(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setShowTypeModal(false)}
-        >
-          <View style={styles.modalContent}>
-            <T variant="title" weight="bold" style={{ marginBottom: Spacing.md }}>
-              Select Type
-            </T>
-            <Col gap="xs">
-              {(['all', 'assignment', 'class', 'doubt', 'announcement', 'success', 'warning', 'error', 'info'] as NotificationType[]).map(type => (
-                <TouchableOpacity
-                  key={type}
-                  style={[
-                    styles.modalOption,
-                    typeFilter === type && styles.modalOptionSelected
-                  ]}
-                  onPress={() => {
-                    setTypeFilter(type);
-                    setShowTypeModal(false);
-                    trackAction('filter_type', 'Notifications', { type });
-                  }}
-                >
-                  <T variant="body" weight={typeFilter === type ? 'semiBold' : 'regular'}>
-                    {type === 'all' ? 'All Types' : getTypeLabel(type)}
-                  </T>
-                  {typeFilter === type && (
-                    <T variant="body" color="primary">✓</T>
-                  )}
-                </TouchableOpacity>
-              ))}
-            </Col>
-          </View>
-        </TouchableOpacity>
-      </Modal>
-
-      {/* Read Status Filter Modal */}
-      <Modal
-        visible={showReadModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowReadModal(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setShowReadModal(false)}
-        >
-          <View style={styles.modalContent}>
-            <T variant="title" weight="bold" style={{ marginBottom: Spacing.md }}>
-              Select Status
-            </T>
-            <Col gap="xs">
-              {(['all', 'unread', 'read'] as ReadFilter[]).map(filter => (
-                <TouchableOpacity
-                  key={filter}
-                  style={[
-                    styles.modalOption,
-                    readFilter === filter && styles.modalOptionSelected
-                  ]}
-                  onPress={() => {
-                    setReadFilter(filter);
-                    setShowReadModal(false);
-                    trackAction('filter_read_status', 'Notifications', { filter });
-                  }}
-                >
-                  <T variant="body" weight={readFilter === filter ? 'semiBold' : 'regular'}>
-                    {filter === 'all' ? 'All Notifications' : filter.charAt(0).toUpperCase() + filter.slice(1)}
-                  </T>
-                  {readFilter === filter && (
-                    <T variant="body" color="primary">✓</T>
-                  )}
-                </TouchableOpacity>
-              ))}
-            </Col>
-          </View>
-        </TouchableOpacity>
-      </Modal>
     </BaseScreen>
   );
 };
