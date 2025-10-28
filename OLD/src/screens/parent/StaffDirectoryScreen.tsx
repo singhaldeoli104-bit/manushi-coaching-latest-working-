@@ -275,8 +275,6 @@ const StaffDirectoryScreen: React.FC<Props> = () => {
           }}
         />
 
-        </Row>
-
         {/* Staff Members List */}
         <Col gap="sm">
           {filteredStaff.map(staff => (
