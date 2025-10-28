@@ -22,6 +22,7 @@ import { supabase } from '../../lib/supabase';
 import { BaseScreen } from '../../shared/components/BaseScreen';
 import { Col, Row, T, Card, CardContent, Badge, Button } from '../../ui';
 import { Colors, Spacing } from '../../theme/designSystem';
+import { FilterDropdowns } from '../../components/common/FilterDropdowns';
 import type { ParentStackParamList } from '../../types/navigation';
 import { trackScreenView, trackAction } from '../../utils/navigationAnalytics';
 import { safeNavigate } from '../../utils/navigationService';
@@ -354,19 +355,48 @@ const MessagesListScreen: React.FC<Props> = () => {
         </Row>
 
         {/* Filter by Priority */}
-        <Row style={{ gap: Spacing.xs }}>
-          {(['all', 'high', 'medium', 'low'] as PriorityFilter[]).map(priority => (
-            <Button
-              key={priority}
-              variant={priorityFilter === priority ? 'primary' : 'outline'}
-              onPress={() => {
-                setPriorityFilter(priority);
-                trackAction('filter_priority', 'MessagesList', { priority });
-              }}
-            >
-              {priority === 'all' ? 'All' : priority.charAt(0).toUpperCase() + priority.slice(1)}
-            </Button>
-          ))}
+        {/* Filters */}
+        <FilterDropdowns
+          filters={[
+            {
+              label: 'Priority',
+              value: priorityFilter,
+              options: [
+                { value: 'all', label: 'All' },
+                { value: 'high', label: 'High' },
+                { value: 'medium', label: 'Medium' },
+                { value: 'low', label: 'Low' },
+              ],
+              onChange: (value) => {
+                setPriorityFilter(value as PriorityFilter);
+                trackAction('filter_priority', 'MessagesList', { priority: value });
+              },
+            },
+            {
+              label: 'Status',
+              value: readFilter,
+              options: [
+                { value: 'all', label: 'All' },
+                { value: 'unread', label: 'Unread' },
+                { value: 'read', label: 'Read' },
+              ],
+              onChange: (value) => {
+                setReadFilter(value as ReadFilter);
+                trackAction('filter_status', 'MessagesList', { status: value });
+              },
+            },
+          ]}
+          activeFilters={[
+            priorityFilter !== 'all' && { label: priorityFilter.charAt(0).toUpperCase() + priorityFilter.slice(1), variant: 'warning' as const },
+            readFilter !== 'all' && { label: readFilter.charAt(0).toUpperCase() + readFilter.slice(1), variant: 'info' as const },
+          ].filter(Boolean) as any}
+          onClearAll={() => {
+            setPriorityFilter('all');
+            setReadFilter('all');
+            trackAction('clear_filters', 'MessagesList');
+          }}
+        />
+
         </Row>
 
         {/* Messages List */}

@@ -284,6 +284,11 @@ const NewParentDashboard = () => {
     safeNavigate('MessagesList');
   }, []);
 
+  const handleViewAnnouncements = useCallback(() => {
+    trackAction('view_announcements', 'ParentDashboard');
+    safeNavigate('Announcements');
+  }, []);
+
   // ============================================
   // Refetch all data
   // ============================================
@@ -610,6 +615,24 @@ const NewParentDashboard = () => {
           </Card>
         </Col>
       )}
+
+      {/* ============================================ */}
+      {/* QUICK ACCESS SECTION - Test Navigation */}
+      {/* ============================================ */}
+      <Col sx={{ m: 'md' }}>
+        <T variant="title" weight="semiBold" style={{ marginBottom: Spacing.base }}>
+          Quick Access
+        </T>
+        <Row style={{ gap: Spacing.sm, flexWrap: 'wrap' }}>
+          <UIButton
+            variant="primary"
+            onPress={handleViewAnnouncements}
+            style={{ flex: 1, minWidth: 150 }}
+          >
+            📢 Announcements
+          </UIButton>
+        </Row>
+      </Col>
 
       {/* ============================================ */}
       {/* SECTION 4: RECENT COMMUNICATIONS - Only show if there are messages */}

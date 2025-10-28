@@ -63,38 +63,10 @@ const AcademicsDetailScreen: React.FC<Props> = ({ route }) => {
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
-  // Group and aggregate grades by subject
-  const aggregatedSubjects = useMemo(() => {
-    if (!subjectGrades || subjectGrades.length === 0) return [];
-
-    const subjectMap = new Map<string, { totalGrade: number; totalMarks: number; count: number }>();
-
-    subjectGrades.forEach(sg => {
-      const existing = subjectMap.get(sg.subject) || { totalGrade: 0, totalMarks: 0, count: 0 };
-      subjectMap.set(sg.subject, {
-        totalGrade: existing.totalGrade + sg.grade,
-        totalMarks: existing.totalMarks + sg.total_marks,
-        count: existing.count + 1,
-      });
-    });
-
-    const aggregated: SubjectGrade[] = [];
-    subjectMap.forEach((value, subject) => {
-      aggregated.push({
-        subject,
-        grade: Math.round(value.totalGrade / value.count),
-        total_marks: Math.round(value.totalMarks / value.count),
-      });
-    });
-
-    console.log("📊 [AcademicsDetail] Aggregated", subjectGrades.length, "grades into", aggregated.length, "subjects");
-    return aggregated;
-  }, [subjectGrades]);
-
 
   // Calculate overall performance
   const overallStats = useMemo(() => {
-    if (!aggregatedSubjects || aggregatedSubjects.length === 0) {
+    if (!subjectGrades || subjectGrades.length === 0) {
       return {
         overallPercentage: 0,
         totalSubjects: 0,
@@ -105,37 +77,19 @@ const AcademicsDetailScreen: React.FC<Props> = ({ route }) => {
       };
     }
 
-    const percentages = aggregatedSubjects.map(sg => (sg.grade / sg.total_marks) * 100);
+    const percentages = subjectGrades.map(sg => (sg.grade / sg.total_marks) * 100);
     const overallPercentage = percentages.reduce((sum, p) => sum + p, 0) / percentages.length;
     const passingSubjects = percentages.filter(p => p >= 60).length;
 
     return {
       overallPercentage: Math.round(overallPercentage),
-      totalSubjects: aggregatedSubjects.length,
+      totalSubjects: subjectGrades.length,
       averageGrade: Math.round(overallPercentage),
       highestGrade: Math.max(...percentages),
       lowestGrade: Math.min(...percentages),
       passingSubjects,
     };
-  }, [aggregatedSubjects]);
-
-  // Map subject full names to codes for gradebook queries
-  const getSubjectCode = (subjectName: string): string => {
-    const mapping: { [key: string]: string } = {
-      'English': 'ENG',
-      'Mathematics': 'MATH',
-      'Math': 'MATH',
-      'Computer Science': 'CS',
-      'Physics': 'PHY',
-      'Chemistry': 'CHEM',
-      'Biology': 'BIO',
-      'History': 'HIST',
-      'Geography': 'GEO',
-      'Science': 'SCI',
-      'Social Studies': 'SS',
-    };
-    return mapping[subjectName] || subjectName.toUpperCase().slice(0, 4);
-  };
+  }, [subjectGrades]);
 
   // Get performance level and color
   const getPerformanceLevel = (percentage: number) => {
@@ -165,7 +119,7 @@ const AcademicsDetailScreen: React.FC<Props> = ({ route }) => {
       scrollable={true}
       loading={isLoading}
       error={error ? 'Failed to load academic data' : null}
-      empty={!isLoading && aggregatedSubjects.length === 0}
+      empty={!isLoading && subjectGrades.length === 0}
       emptyBody="No academic data available for this student"
       onRetry={refetch}
     >
@@ -221,7 +175,7 @@ const AcademicsDetailScreen: React.FC<Props> = ({ route }) => {
           Subject-wise Performance
         </T>
 
-        {aggregatedSubjects.map((subject, index) => {
+        {subjectGrades.map((subject, index) => {
           const percentage = Math.round((subject.grade / subject.total_marks) * 100);
           const level = getPerformanceLevel(percentage);
           const gradeLetter = getGradeLetter(percentage);
@@ -237,7 +191,7 @@ const AcademicsDetailScreen: React.FC<Props> = ({ route }) => {
                 });
                 safeNavigate('SubjectDetail', {
                   studentId: childId,
-                  subject: subject.subject,  // Pass full name - gradebook.subject_code stores full names
+                  subject: subject.subject,
                 });
               }}
             >
@@ -325,18 +279,6 @@ const AcademicsDetailScreen: React.FC<Props> = ({ route }) => {
           style={{ marginTop: Spacing.md }}
         >
           📅 View Upcoming Exams
-        </Button>
-
-        {/* Academic Reports Button */}
-        <Button
-          variant="secondary"
-          onPress={() => {
-            trackAction('view_academic_reports', 'AcademicsDetail', { childId });
-            safeNavigate('AcademicReports', { studentId: childId });
-          }}
-          style={{ marginTop: Spacing.md }}
-        >
-          📄 View Academic Reports
         </Button>
       </Col>
     </BaseScreen>

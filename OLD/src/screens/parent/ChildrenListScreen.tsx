@@ -20,6 +20,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BaseScreen } from '../../shared/components/BaseScreen';
 import { Col, Row, T, Card, CardHeader, CardContent, Badge, EmptyState } from '../../ui';
 import { Colors, Spacing, BorderRadius } from '../../theme/designSystem';
+import { FilterDropdowns } from '../../components/common/FilterDropdowns';
 import { useAuth } from '../../context/AuthContext';
 import type { ParentStackParamList } from '../../types/navigation';
 import { safeNavigate } from '../../utils/navigationService';
@@ -290,23 +291,32 @@ const ChildrenListScreen: React.FC<Props> = ({ route, navigation }) => {
           {/* Actions Row */}
           <Row spaceBetween centerV style={{ marginTop: Spacing.sm }}>
             {/* Filter Chips */}
-            <Row gap="xs" centerV>
-              <PaperChip
-                selected={filterStatus === 'all'}
-                onPress={() => handleFilterChange('all')}
-                style={styles.filterChip}
-                textStyle={styles.filterChipText}
-              >
-                All ({childrenData.length})
-              </PaperChip>
-              <PaperChip
-                selected={filterStatus === 'active'}
-                onPress={() => handleFilterChange('active')}
-                style={styles.filterChip}
-                textStyle={styles.filterChipText}
-              >
-                Active ({childrenData.filter(c => c.status === 'active').length})
-              </PaperChip>
+        {/* Filters */}
+        <FilterDropdowns
+          filters={[
+            {
+              label: 'Status',
+              value: filterStatus,
+              options: [
+                { value: 'all', label: 'All' },
+                { value: 'active', label: 'Active' },
+                { value: 'inactive', label: 'Inactive' },
+              ],
+              onChange: (value) => {
+                setFilterStatus(value as FilterStatus);
+                trackAction('filter_status', 'ChildrenList', { status: value });
+              },
+            },
+          ]}
+          activeFilters={[
+            filterStatus !== 'all' && { label: filterStatus.charAt(0).toUpperCase() + filterStatus.slice(1), variant: 'info' as const },
+          ].filter(Boolean) as any}
+          onClearAll={() => {
+            setFilterStatus('all');
+            trackAction('clear_filters', 'ChildrenList');
+          }}
+        />
+
             </Row>
 
             {/* View Mode Toggle */}

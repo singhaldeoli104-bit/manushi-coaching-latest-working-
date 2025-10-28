@@ -13,13 +13,14 @@
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
+import { View, StyleSheet, TextInput, Pressable, Modal, TouchableOpacity } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { BaseScreen } from '../../shared/components/BaseScreen';
 import { Col, Row, T, Card, CardContent, Badge, Button } from '../../ui';
 import { Colors, Spacing } from '../../theme/designSystem';
+import { FilterDropdowns } from '../../components/common/FilterDropdowns';
 import type { ParentStackParamList } from '../../types/navigation';
 import { trackScreenView, trackAction } from '../../utils/navigationAnalytics';
 
@@ -259,45 +260,69 @@ const AnnouncementsScreen: React.FC<Props> = () => {
                 placeholderTextColor={Colors.textTertiary}
               />
               {searchQuery && (
-                <TouchableOpacity onPress={() => setSearchQuery('')}>
+                <Pressable onPress={() => setSearchQuery('')}>
                   <T variant="body">✖️</T>
-                </TouchableOpacity>
+                </Pressable>
               )}
             </View>
           </CardContent>
         </Card>
 
-        {/* Filter by Importance */}
-        <Row style={{ gap: Spacing.xs }}>
-          {(['all', 'important'] as ImportanceFilter[]).map(filter => (
-            <Button
-              key={filter}
-              variant={importanceFilter === filter ? 'primary' : 'outline'}
-              onPress={() => {
-                setImportanceFilter(filter);
-                trackAction('filter_importance', 'Announcements', { filter });
-              }}
-            >
-              {filter === 'all' ? 'All' : 'Important Only'}
-            </Button>
-          ))}
-        </Row>
-
-        {/* Filter by Category */}
-        <Row style={{ flexWrap: 'wrap', gap: Spacing.xs }}>
-          {(['all', 'Academic', 'Events', 'Urgent', 'General', 'Holiday'] as CategoryType[]).map(category => (
-            <Button
-              key={category}
-              variant={categoryFilter === category ? 'primary' : 'outline'}
-              onPress={() => {
-                setCategoryFilter(category);
-                trackAction('filter_category', 'Announcements', { category });
-              }}
-            >
-              {category === 'all' ? 'All Categories' : `${getCategoryIcon(category as Exclude<CategoryType, 'all'>)} ${category}`}
-            </Button>
-          ))}
-        </Row>
+        {/* Filters Card */}
+        <Card variant="outlined">
+          <CardContent>
+            <T variant="caption" color="textSecondary" style={{ marginBottom: Spacing.sm }}>
+              Filters
+            </T>
+            <Row style={{ gap: Spacing.sm }}>
+        {/* Filters */}
+        <FilterDropdowns
+          filters={[
+              {
+                label: 'Category',
+                value: categoryFilter,
+                options: [
+                { value: 'all', label: 'All' },
+                { value: 'Academic', label: '📚 Academic' },
+                { value: 'Events', label: '🎉 Events' },
+                { value: 'Urgent', label: '⚠️ Urgent' },
+                { value: 'General', label: '📢 General' },
+                { value: 'Holiday', label: '🏖️ Holiday' },
+                ],
+                onChange: (value) => {
+                  trackAction('filter_category', 'Announcements', { category: value });
+                  setCategoryFilter(value as CategoryFilter);
+                },
+              },
+              {
+                label: 'Importance',
+                value: importanceFilter,
+                options: [
+                { value: 'all', label: 'All' },
+                { value: 'important', label: 'Important Only' },
+                ],
+                onChange: (value) => {
+                  trackAction('filter_importance', 'Announcements', { importance: value });
+                  setImportanceFilter(value as ImportanceFilter);
+                },
+              }
+          ]}
+          activeFilters={[
+              categoryFilter !== 'all' && {
+                label: categoryFilter,
+                variant: 'info' as const
+              },
+              importanceFilter !== 'all' && {
+                label: importanceFilter === 'important' ? 'Important' : '',
+                variant: 'error' as const
+              },
+          ].filter(Boolean) as any}
+          onClearAll={() => {
+              setCategoryFilter('all');
+              setImportanceFilter('all');
+              trackAction('clear_filters', 'Announcements');
+          }}
+        />
 
         {/* Announcements List */}
         <Col gap="sm">
@@ -309,15 +334,12 @@ const AnnouncementsScreen: React.FC<Props> = () => {
               ? styles.expiredCard
               : {};
             return (
-              <TouchableOpacity
+              <Card
                 key={announcement.id}
+                variant="elevated"
                 onPress={() => handleAnnouncementTap(announcement)}
-                activeOpacity={0.7}
+                style={cardStyle}
               >
-                <Card
-                  variant="elevated"
-                  style={cardStyle}
-                >
                   <CardContent>
                     {/* Header Row */}
                     <Row spaceBetween centerV style={{ marginBottom: Spacing.xs }}>
@@ -368,8 +390,7 @@ const AnnouncementsScreen: React.FC<Props> = () => {
                       )}
                     </Row>
                   </CardContent>
-                </Card>
-              </TouchableOpacity>
+              </Card>
             );
           })}
         </Col>
@@ -398,6 +419,90 @@ const AnnouncementsScreen: React.FC<Props> = () => {
           </Card>
         )}
       </Col>
+
+      {/* Category Filter Modal */}
+      <Modal
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowCategoryModal(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowCategoryModal(false)}
+        >
+          <View style={styles.modalContent}>
+            <T variant="title" weight="bold" style={{ marginBottom: Spacing.md }}>
+              Select Category
+            </T>
+            <Col gap="xs">
+              {(['all', 'Academic', 'Events', 'Urgent', 'General', 'Holiday'] as CategoryType[]).map(category => (
+                <TouchableOpacity
+                  key={category}
+                  style={[
+                    styles.modalOption,
+                    categoryFilter === category && styles.modalOptionSelected
+                  ]}
+                  onPress={() => {
+                    setCategoryFilter(category);
+                    setShowCategoryModal(false);
+                    trackAction('filter_category', 'Announcements', { category });
+                  }}
+                >
+                  <T variant="body" weight={categoryFilter === category ? 'semiBold' : 'regular'}>
+                    {category === 'all' ? 'All Categories' : `${getCategoryIcon(category as Exclude<CategoryType, 'all'>)} ${category}`}
+                  </T>
+                  {categoryFilter === category && (
+                    <T variant="body" color="primary">✓</T>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </Col>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Importance Filter Modal */}
+      <Modal
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowImportanceModal(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowImportanceModal(false)}
+        >
+          <View style={styles.modalContent}>
+            <T variant="title" weight="bold" style={{ marginBottom: Spacing.md }}>
+              Select Importance
+            </T>
+            <Col gap="xs">
+              {(['all', 'important'] as ImportanceFilter[]).map(filter => (
+                <TouchableOpacity
+                  key={filter}
+                  style={[
+                    styles.modalOption,
+                    importanceFilter === filter && styles.modalOptionSelected
+                  ]}
+                  onPress={() => {
+                    setImportanceFilter(filter);
+                    setShowImportanceModal(false);
+                    trackAction('filter_importance', 'Announcements', { filter });
+                  }}
+                >
+                  <T variant="body" weight={importanceFilter === filter ? 'semiBold' : 'regular'}>
+                    {filter === 'all' ? 'All Announcements' : '⭐ Important Only'}
+                  </T>
+                  {importanceFilter === filter && (
+                    <T variant="body" color="primary">✓</T>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </Col>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </BaseScreen>
   );
 };
@@ -435,6 +540,47 @@ const styles = StyleSheet.create({
     padding: Spacing.xs,
     fontSize: 14,
     color: Colors.textPrimary,
+  },
+  filterDropdown: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: Spacing.sm,
+    backgroundColor: Colors.surface,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    minHeight: 60,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: Spacing.lg,
+  },
+  modalContent: {
+    backgroundColor: Colors.background,
+    borderRadius: 12,
+    padding: Spacing.lg,
+    width: '100%',
+    maxWidth: 400,
+    maxHeight: '80%',
+  },
+  modalOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: Spacing.md,
+    borderRadius: 8,
+    backgroundColor: Colors.surface,
+    marginBottom: Spacing.xs,
+  },
+  modalOptionSelected: {
+    backgroundColor: Colors.primaryLight || Colors.surface,
+    borderWidth: 2,
+    borderColor: Colors.primary,
   },
 });
 
