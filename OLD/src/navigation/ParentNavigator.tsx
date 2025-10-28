@@ -39,6 +39,12 @@ import InformationHubScreen from '../screens/parent/InformationHubScreen';
 // NEW: Modern dashboard with real Supabase integration
 import NewParentDashboard from '../screens/parent/NewParentDashboard';
 
+// NEW: Modern Children Overview (replaces 4 old screens)
+import ChildrenOverviewScreen from '../screens/parent/ChildrenOverviewScreen';
+
+// NEW: Modern Messages Overview (replaces TeacherCommunication & CommunityEngagement screens)
+import MessagesOverviewScreen from '../screens/parent/MessagesOverviewScreen';
+
 // ✅ PHASE 1: Overview Tab Screens (6 screens)
 import ChildDetailScreen from '../screens/parent/ChildDetailScreen';
 import ChildrenListScreen from '../screens/parent/ChildrenListScreen';
@@ -490,17 +496,30 @@ function ChildrenStack() {
         headerTintColor: theme.OnSurface,
       }}
     >
-      {/* 📦 OLD SCREENS - Keep for now (will gradually replace) */}
+      {/* ✅ NEW: Modern Children Overview Screen */}
       <Stack.Screen
         name="ChildProgress"
-        options={{ title: 'Child Progress' }}
+        options={{ title: 'Children Overview' }}
       >
         {(props) => (
           <ErrorBoundary fallback={<ErrorFallback />}>
-            <ChildProgressMonitoringScreen {...props} />
+            <ChildrenOverviewScreen {...props} />
           </ErrorBoundary>
         )}
       </Stack.Screen>
+
+      {/* ✅ Child Detail Screen (navigated from Children Overview) */}
+      <Stack.Screen
+        name="ChildDetail"
+        options={{ title: 'Child Details' }}
+      >
+        {(props) => (
+          <ErrorBoundary fallback={<ErrorFallback />}>
+            <ChildDetailScreen {...props} />
+          </ErrorBoundary>
+        )}
+      </Stack.Screen>
+
       <Stack.Screen
         name="PerformanceAnalytics"
         options={{ title: 'Performance' }}
@@ -558,18 +577,20 @@ function CommunicationStack() {
         headerTintColor: theme.OnSurface,
       }}
     >
-      {/* 📦 OLD SCREENS - Keep for now (will gradually replace) */}
+      {/* ✅ NEW: Modern Messages Overview Screen */}
       <Stack.Screen
         name="TeacherCommunication"
-        options={{ title: 'Teachers' }}
+        options={{ title: 'Messages & Updates' }}
       >
         {(props) => (
           <ErrorBoundary fallback={<ErrorFallback />}>
-            <TeacherCommunicationScreen {...props} />
+            <MessagesOverviewScreen {...props} />
           </ErrorBoundary>
         )}
       </Stack.Screen>
-      <Stack.Screen
+
+      {/* 📦 OLD SCREENS - Kept for reference (replaced by MessagesOverviewScreen) */}
+      {/* <Stack.Screen
         name="CommunityEngagement"
         options={{ title: 'Community' }}
       >
@@ -578,12 +599,12 @@ function CommunicationStack() {
             <CommunityEngagementScreen {...props} />
           </ErrorBoundary>
         )}
-      </Stack.Screen>
+      </Stack.Screen> */}
 
       {/* ✅ PHASE 4: Communication Tab Screens */}
       <Stack.Screen
         name="ComposeMessage"
-        options={{ title: 'Compose Message' }}
+        options={{ title: 'Compose Message', headerShown: true }}
       >
         {(props) => (
           <ErrorBoundary fallback={<ErrorFallback />}>
@@ -593,7 +614,7 @@ function CommunicationStack() {
       </Stack.Screen>
       <Stack.Screen
         name="ScheduleMeeting"
-        options={{ title: 'Schedule Meeting' }}
+        options={{ title: 'Schedule Meeting', headerShown: true }}
       >
         {(props) => (
           <ErrorBoundary fallback={<ErrorFallback />}>
@@ -603,7 +624,7 @@ function CommunicationStack() {
       </Stack.Screen>
       <Stack.Screen
         name="MeetingsHistory"
-        options={{ title: 'Meetings History' }}
+        options={{ title: 'Meetings History', headerShown: true }}
       >
         {(props) => (
           <ErrorBoundary fallback={<ErrorFallback />}>
@@ -771,8 +792,8 @@ export default function ParentNavigator() {
         name="Children"
         component={ChildrenStack}
         options={{
-          tabBarLabel: 'Students',
-          tabBarAccessibilityLabel: 'Students tab',
+          tabBarLabel: 'Children',
+          tabBarAccessibilityLabel: 'Children tab',
           tabBarIcon: ({ color, focused }) => (
             <Icon name="school" size={BottomNavMD3.item.icon} color={color} />
           ),
