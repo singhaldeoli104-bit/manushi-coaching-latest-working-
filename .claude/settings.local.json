@@ -40,7 +40,15 @@
       "Skill(screen-analyzer)",
       "Skill(screen-recreator)",
       "Bash(echo:*)",
-      "Bash(awk:*)"
+      "Bash(awk:*)",
+      "Bash(taskkill:*)",
+      "Bash(powershell.exe -Command \"Stop-Process -Id 23504 -Force\")",
+      "Bash(timeout 3 adb logcat:*)",
+      "Bash(npm install:*)",
+      "Bash(node fix-nav.js:*)",
+      "Bash(timeout 10 adb logcat:*)",
+      "Bash(timeout 8 adb logcat:*)",
+      "Bash(timeout 15 adb logcat:*)"
     ],
     "deny": [],
     "ask": []
