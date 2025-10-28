@@ -76,15 +76,14 @@ interface TaxDocument {
   downloadUrl: string;
 }
 
-interface BillingInvoiceScreenProps {
-  parentId: string;
-  onNavigate: (screen: string) => void;
-}
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { ParentStackParamList } from '../../types/navigation';
 
-export const BillingInvoiceScreen: React.FC<BillingInvoiceScreenProps> = ({
-  parentId,
-  onNavigate,
-}) => {
+type Props = NativeStackScreenProps<ParentStackParamList, 'BillingInvoice'>;
+
+export const BillingInvoiceScreen: React.FC<Props> = ({ navigation, route }) => {
+  // Use hardcoded parentId for now (in production, get from auth context)
+  const parentId = 'parent-001';
   const [activeTab, setActiveTab] = useState<'invoices' | 'reminders' | 'refunds' | 'tax'>('invoices');
   const [selectedInvoice, setSelectedInvoice] = useState<string | null>(null);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
@@ -127,11 +126,11 @@ export const BillingInvoiceScreen: React.FC<BillingInvoiceScreenProps> = ({
         setSelectedInvoice(null);
         return true;
       }
-      onNavigate('back');
+      navigation.goBack();
       return true;
     });
     return backHandler;
-  }, [onNavigate, selectedInvoice]);
+  }, [navigation, selectedInvoice]);
 
   // Handle errors
   useEffect(() => {
@@ -573,9 +572,9 @@ export const BillingInvoiceScreen: React.FC<BillingInvoiceScreenProps> = ({
           <Text style={styles.actionButtonText}>📄 Download PDF</Text>
         </TouchableOpacity>
         {invoice.status !== 'paid' && (
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.actionButton, styles.payButton]}
-            onPress={() => onNavigate('make-payment')}
+            onPress={() => navigation.navigate('MakePayment', {})}
           >
             <Text style={styles.payButtonText}>💳 Pay Now</Text>
           </TouchableOpacity>
@@ -822,7 +821,7 @@ export const BillingInvoiceScreen: React.FC<BillingInvoiceScreenProps> = ({
 
   const renderAppBar = () => (
     <Appbar.Header elevated style={{ backgroundColor: '#7C3AED' }}>
-      <Appbar.BackAction onPress={() => selectedInvoice ? setSelectedInvoice(null) : onNavigate('back')} />
+      <Appbar.BackAction onPress={() => selectedInvoice ? setSelectedInvoice(null) : navigation.goBack()} />
       <Appbar.Content title="Billing & Invoices" subtitle="Manage payments and tax documents" />
       <Appbar.Action icon="file-document" onPress={() => showSnackbar('Download all invoices')} />
     </Appbar.Header>

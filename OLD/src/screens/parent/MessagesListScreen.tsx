@@ -397,8 +397,6 @@ const MessagesListScreen: React.FC<Props> = () => {
           }}
         />
 
-        </Row>
-
         {/* Messages List */}
         <Col gap="sm">
           {filteredMessages.map(message => (
