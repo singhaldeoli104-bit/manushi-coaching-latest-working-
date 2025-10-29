@@ -20,9 +20,16 @@
 
 import React from 'react';
 import { View, StyleSheet, StatusBar } from 'react-native';
-import { IconButton } from 'react-native-paper';
+import { IconButton, Menu } from 'react-native-paper';
 import { T } from '../../ui/typography/T';
 import { Colors, Layout, Spacing, Shadows } from '../../theme/designSystem';
+
+export interface OverflowMenuItem {
+  label: string;
+  icon?: string;
+  onPress: () => void;
+  destructive?: boolean;
+}
 
 interface TopAppBarProps {
   title: string;
@@ -31,7 +38,8 @@ interface TopAppBarProps {
   onLeadingPress?: () => void; // Menu or back action
   notificationCount?: number;
   onNotificationPress?: () => void;
-  onOverflowPress?: () => void; // ⋯ overflow menu
+  onOverflowPress?: () => void; // ⋯ overflow menu (deprecated - use overflowMenuItems)
+  overflowMenuItems?: OverflowMenuItem[]; // New: Menu items for overflow
 }
 
 export const TopAppBar: React.FC<TopAppBarProps> = ({
@@ -42,7 +50,14 @@ export const TopAppBar: React.FC<TopAppBarProps> = ({
   notificationCount = 0,
   onNotificationPress,
   onOverflowPress,
+  overflowMenuItems,
 }) => {
+  const [menuVisible, setMenuVisible] = React.useState(false);
+
+  // Use new menu items if provided, otherwise fall back to old callback
+  const hasOverflow = overflowMenuItems && overflowMenuItems.length > 0;
+  const hasLegacyOverflow = !hasOverflow && onOverflowPress;
+
   return (
     <View style={styles.container}>
       {/* Status Bar */}
@@ -111,8 +126,39 @@ export const TopAppBar: React.FC<TopAppBarProps> = ({
             </View>
           )}
 
-          {/* Overflow Menu Icon (⋯) */}
-          {onOverflowPress && (
+          {/* Overflow Menu - New menu items approach */}
+          {hasOverflow && (
+            <Menu
+              visible={menuVisible}
+              onDismiss={() => setMenuVisible(false)}
+              anchor={
+                <IconButton
+                  icon="dots-vertical"
+                  size={Layout.iconSize.default}
+                  iconColor={Colors.onPrimary}
+                  onPress={() => setMenuVisible(true)}
+                  accessibilityLabel="More options"
+                  style={styles.iconButton}
+                />
+              }
+            >
+              {overflowMenuItems.map((item, index) => (
+                <Menu.Item
+                  key={index}
+                  leadingIcon={item.icon}
+                  onPress={() => {
+                    setMenuVisible(false);
+                    item.onPress();
+                  }}
+                  title={item.label}
+                  titleStyle={item.destructive ? { color: Colors.error } : undefined}
+                />
+              ))}
+            </Menu>
+          )}
+
+          {/* Legacy Overflow Menu - Old callback approach */}
+          {hasLegacyOverflow && (
             <IconButton
               icon="dots-vertical"
               size={Layout.iconSize.default} // 24dp visual

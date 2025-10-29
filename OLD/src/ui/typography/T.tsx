@@ -10,6 +10,7 @@
 import React from 'react';
 import { Text, TextProps, TextStyle } from 'react-native';
 import { Colors, Typography } from '../../theme/designSystem';
+import { useTheme } from '../../context/ThemeContext';
 
 type TextVariant =
   | 'display'    // 22sp - Large displays
@@ -59,6 +60,8 @@ export const T: React.FC<TProps> = ({
   children,
   ...props
 }) => {
+  // Use theme colors
+  const { theme } = useTheme();
   const textStyle: TextStyle = {};
 
   // Variant styles
@@ -67,58 +70,60 @@ export const T: React.FC<TProps> = ({
     case 'h1':
       textStyle.fontSize = Typography.fontSize.display;
       textStyle.fontWeight = Typography.fontWeight.bold;
-      textStyle.color = Colors.textPrimary;
+      textStyle.color = theme.OnSurface;
       break;
 
     case 'headline':
       textStyle.fontSize = Typography.fontSize.headline;
       textStyle.fontWeight = Typography.fontWeight.bold;
-      textStyle.color = Colors.textPrimary;
+      textStyle.color = theme.OnSurface;
       break;
 
     case 'title':
     case 'h2':
       textStyle.fontSize = Typography.fontSize.title;
       textStyle.fontWeight = Typography.fontWeight.semiBold;
-      textStyle.color = Colors.textPrimary;
+      textStyle.color = theme.OnSurface;
       break;
 
     case 'subtitle':
     case 'h3':
       textStyle.fontSize = Typography.fontSize.subtitle;
       textStyle.fontWeight = Typography.fontWeight.medium;
-      textStyle.color = Colors.textPrimary;
+      textStyle.color = theme.OnSurface;
       break;
 
     case 'body':
       textStyle.fontSize = Typography.fontSize.body;
       textStyle.fontWeight = Typography.fontWeight.regular;
-      textStyle.color = Colors.textPrimary;
+      textStyle.color = theme.OnSurface;
       break;
 
     case 'label':
     case 'meta':
       textStyle.fontSize = Typography.fontSize.small;
       textStyle.fontWeight = Typography.fontWeight.regular;
-      textStyle.color = Colors.textSecondary;
+      textStyle.color = theme.OnSurfaceVariant;
       break;
 
     case 'caption':
       textStyle.fontSize = Typography.fontSize.caption;
       textStyle.fontWeight = Typography.fontWeight.regular;
-      textStyle.color = Colors.textTertiary;
+      textStyle.color = theme.OnSurfaceVariant;
       break;
 
     case 'tiny':
       textStyle.fontSize = Typography.fontSize.tiny;
       textStyle.fontWeight = Typography.fontWeight.medium;
-      textStyle.color = Colors.textSecondary;
+      textStyle.color = theme.OnSurfaceVariant;
       break;
   }
 
   // Override color if specified
   if (color) {
-    textStyle.color = Colors[color as keyof typeof Colors] || color;
+    // Try to get from theme first, then Colors, then use as-is
+    const themeColor = (theme as any)[color];
+    textStyle.color = themeColor || Colors[color as keyof typeof Colors] || color;
   }
 
   // Override weight if specified
