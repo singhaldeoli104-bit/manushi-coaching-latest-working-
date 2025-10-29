@@ -20,6 +20,7 @@ import { View, Pressable, StyleSheet, ViewStyle } from 'react-native';
 import { Icon } from 'react-native-paper';
 import { T } from '../typography/T';
 import { Colors, Spacing, BorderRadius, Shadows, Layout } from '../../theme/designSystem';
+import { useTheme } from '../../context/ThemeContext';
 
 interface CardProps {
   variant?: 'elevated' | 'outlined' | 'filled';
@@ -39,6 +40,7 @@ export const Card: React.FC<CardProps> = ({
   accessibilityLabel,
 }) => {
   const [pressed, setPressed] = React.useState(false);
+  const { theme } = useTheme();
 
   const getCardStyle = () => {
     const base = styles.card;
@@ -46,18 +48,23 @@ export const Card: React.FC<CardProps> = ({
     if (variant === 'elevated') {
       return [
         base,
-        styles.cardElevated,
-        pressed && !disabled && Shadows.hover, // Elevation 3 on press
+        { backgroundColor: theme.Surface },
+        Shadows.resting,
+        pressed && !disabled && Shadows.hover,
         style,
       ];
     }
 
     if (variant === 'outlined') {
-      return [base, styles.cardOutlined, style];
+      return [
+        base,
+        { backgroundColor: theme.Surface, borderWidth: 1, borderColor: theme.Outline },
+        style,
+      ];
     }
 
     if (variant === 'filled') {
-      return [base, styles.cardFilled, style];
+      return [base, { backgroundColor: theme.SurfaceVariant }, style];
     }
 
     return [base, style];
@@ -156,24 +163,6 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: BorderRadius.md, // 12dp (MD3 spec)
     overflow: 'hidden',
-  },
-
-  // Elevated card (default)
-  cardElevated: {
-    backgroundColor: Colors.surface,
-    ...Shadows.resting, // Elevation 1
-  },
-
-  // Outlined card
-  cardOutlined: {
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.outline,
-  },
-
-  // Filled card
-  cardFilled: {
-    backgroundColor: Colors.surfaceVariant,
   },
 
   // Header

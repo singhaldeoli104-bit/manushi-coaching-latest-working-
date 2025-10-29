@@ -27,8 +27,8 @@ const SHOW_NEW_DASHBOARD_DIRECTLY = true;
 import { devAutoLogin } from './src/utils/devAuth';
 
 // Import ALL contexts
-import {LightTheme} from './src/theme/colors';
-import {ThemeProvider} from './src/context/ThemeContext';
+import {LightTheme, DarkTheme} from './src/theme/colors';
+import {ThemeProvider, useTheme} from './src/context/ThemeContext';
 import {AuthProvider} from './src/context/AuthContext';
 import {RealtimeProvider} from './src/context/RealtimeContext';
 
@@ -51,18 +51,19 @@ import {
 } from './src/utils/navigationPersistence';
 import {deepLinkConfig} from './src/config/deepLinking';
 
-const paperTheme = {
+// Helper to create Paper theme from our theme colors
+const createPaperTheme = (colors: typeof LightTheme) => ({
   ...MD3LightTheme,
   colors: {
     ...MD3LightTheme.colors,
-    primary: LightTheme.Primary,
-    secondary: LightTheme.Secondary,
-    tertiary: LightTheme.Tertiary,
-    error: LightTheme.Error,
-    background: LightTheme.Background,
-    surface: LightTheme.Surface,
+    primary: colors.Primary,
+    secondary: colors.Secondary,
+    tertiary: colors.Tertiary,
+    error: colors.Error,
+    background: colors.Background,
+    surface: colors.Surface,
   },
-};
+});
 
 /**
  * Loading screen while restoring navigation state
@@ -73,6 +74,59 @@ const LoadingScreen = () => (
     <Text style={{marginTop: 16, color: LightTheme.OnSurface}}>Loading...</Text>
   </View>
 );
+
+/**
+ * Inner app component that uses theme context
+ * This allows PaperProvider to react to theme changes
+ */
+const AppContent = ({ initialState }: { initialState?: InitialState }) => {
+  const { theme, isDark } = useTheme();
+  const paperTheme = createPaperTheme(theme);
+
+  return (
+    <PaperProvider theme={paperTheme}>
+      <StatusBar
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+        backgroundColor={SHOW_NEW_DASHBOARD_DIRECTLY ? theme.Primary : theme.Background}
+      />
+      {SHOW_NEW_DASHBOARD_DIRECTLY ? (
+        /* DEV MODE: Show NEW dashboard directly */
+        <NavigationContainer
+          ref={navigationRef}
+          initialState={initialState}
+          linking={deepLinkConfig}
+          fallback={<LoadingScreen />}
+          onReady={() => {
+            console.log('✅ [Navigation] Container ready');
+            // Track initial screen view
+            const state = navigationRef.getRootState();
+            if (state) {
+              const getActiveRoute = (state: any): string => {
+                const route = state.routes[state.index];
+                if (route.state) {
+                  return getActiveRoute(route.state);
+                }
+                return route.name;
+              };
+              trackScreenView(getActiveRoute(state));
+            }
+          }}
+          onStateChange={(state) => {
+            // Save state on navigation
+            saveNavigationState(state);
+            // Track screen views
+            onNavigationStateChange(state);
+          }}
+        >
+          <ParentNavigator />
+        </NavigationContainer>
+      ) : (
+        /* PRODUCTION: Normal login flow */
+        <AppNavigator />
+      )}
+    </PaperProvider>
+  );
+};
 
 function App(): React.JSX.Element {
   const [isReady, setIsReady] = useState(false);
@@ -136,47 +190,7 @@ function App(): React.JSX.Element {
           <AuthProvider>
             <RealtimeProvider>
               <QueryClientProvider client={queryClient}>
-                <PaperProvider theme={paperTheme}>
-                  <StatusBar
-                    barStyle="light-content"
-                    backgroundColor={SHOW_NEW_DASHBOARD_DIRECTLY ? LightTheme.Primary : LightTheme.Background}
-                  />
-                  {SHOW_NEW_DASHBOARD_DIRECTLY ? (
-                    /* DEV MODE: Show NEW dashboard directly */
-                    <NavigationContainer
-                      ref={navigationRef}
-                      initialState={initialState}
-                      linking={deepLinkConfig}
-                      fallback={<LoadingScreen />}
-                      onReady={() => {
-                        console.log('✅ [Navigation] Container ready');
-                        // Track initial screen view
-                        const state = navigationRef.getRootState();
-                        if (state) {
-                          const getActiveRoute = (state: any): string => {
-                            const route = state.routes[state.index];
-                            if (route.state) {
-                              return getActiveRoute(route.state);
-                            }
-                            return route.name;
-                          };
-                          trackScreenView(getActiveRoute(state));
-                        }
-                      }}
-                      onStateChange={(state) => {
-                        // Save state on navigation
-                        saveNavigationState(state);
-                        // Track screen views
-                        onNavigationStateChange(state);
-                      }}
-                    >
-                      <ParentNavigator />
-                    </NavigationContainer>
-                  ) : (
-                    /* PRODUCTION: Normal login flow */
-                    <AppNavigator />
-                  )}
-                </PaperProvider>
+                <AppContent initialState={initialState} />
               </QueryClientProvider>
             </RealtimeProvider>
           </AuthProvider>

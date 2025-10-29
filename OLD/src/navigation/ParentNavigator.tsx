@@ -5,22 +5,26 @@
  */
 
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { Menu } from 'react-native-paper';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { useParentDashboard } from '../hooks/useParentDashboard';
 import ErrorBoundary from '../components/ErrorBoundary';
 import { BottomNavMD3 } from '../theme/bottomNav.md3';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { safeNavigate } from '../utils/navigationService';
+import { trackAction } from '../utils/navigationAnalytics';
 
 // ✨ NEW: Global Navigation Components
 import { TopAppBar } from '../components/navigation/TopAppBar';
 import { NavigationDrawer } from '../components/navigation/NavigationDrawer';
 import NotificationsListScreen from '../screens/common/NotificationsListScreen';
 import SettingsScreen from '../screens/common/SettingsScreen';
+import HelpFeedbackScreen from '../screens/common/HelpFeedbackScreen';
 import ProfileScreen from '../screens/common/ProfileScreen';
 import LanguageSelectionScreen from '../screens/common/LanguageSelectionScreen';
 
@@ -170,10 +174,55 @@ function HomeStack() {
                 }}
                 notificationCount={unreadCount}
                 onNotificationPress={() => props.navigation.navigate('NotificationsList' as any)}
-                onOverflowPress={() => {
-                  // TODO: Create overflow menu (bottom sheet or dropdown)
-                  console.log('Overflow menu pressed - TODO: Create overflow menu');
-                }}
+                overflowMenuItems={[
+                  {
+                    label: 'Profile',
+                    icon: 'account',
+                    onPress: () => {
+                      trackAction('view_profile', 'TopAppBar');
+                      safeNavigate('Profile');
+                    },
+                  },
+                  {
+                    label: 'Settings',
+                    icon: 'cog',
+                    onPress: () => {
+                      trackAction('view_settings', 'TopAppBar');
+                      safeNavigate('Settings');
+                    },
+                  },
+                  {
+                    label: 'Help & Feedback',
+                    icon: 'help-circle',
+                    onPress: () => {
+                      trackAction('view_help', 'TopAppBar');
+                      safeNavigate('HelpFeedback');
+                    },
+                  },
+                  {
+                    label: 'Logout',
+                    icon: 'logout',
+                    destructive: true,
+                    onPress: () => {
+                      trackAction('logout_attempt', 'TopAppBar');
+                      Alert.alert(
+                        'Logout',
+                        'Are you sure you want to logout?',
+                        [
+                          { text: 'Cancel', style: 'cancel' },
+                          {
+                            text: 'Logout',
+                            style: 'destructive',
+                            onPress: () => {
+                              // TODO: Implement actual logout logic
+                              Alert.alert('Logged Out', 'You have been logged out successfully.');
+                            },
+                          },
+                        ]
+                      );
+                    },
+                  },
+                ]}
               />
             );
           },
@@ -363,6 +412,17 @@ function HomeStack() {
         {(props) => (
           <ErrorBoundary fallback={<ErrorFallback />}>
             <SettingsScreen {...props} />
+          </ErrorBoundary>
+        )}
+      </Stack.Screen>
+
+      <Stack.Screen
+        name="HelpFeedback"
+        options={{ title: 'Help & Feedback', headerShown: true }}
+      >
+        {(props) => (
+          <ErrorBoundary fallback={<ErrorFallback />}>
+            <HelpFeedbackScreen {...props} />
           </ErrorBoundary>
         )}
       </Stack.Screen>
