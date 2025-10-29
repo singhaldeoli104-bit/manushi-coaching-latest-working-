@@ -8,7 +8,7 @@ import { View, StyleSheet } from 'react-native';
 import { Button } from 'react-native-paper';
 import { T } from '../../ui/typography/T';
 import { Colors, Spacing } from '../../theme/designSystem';
-import { safeNavigate } from '../../utils/navigationService';
+import { navigationRef } from '../../utils/navigationService';
 import { trackAction } from '../../utils/navigationAnalytics';
 
 interface AccessDeniedScreenProps {
@@ -26,7 +26,10 @@ const AccessDeniedScreen: React.FC<AccessDeniedScreenProps> = ({
 
   const handleGoBack = () => {
     trackAction('access_denied_go_back', 'AccessDenied');
-    safeNavigate('AdminDashboard');
+    // Go back in navigation stack
+    if (navigationRef.canGoBack()) {
+      navigationRef.goBack();
+    }
   };
 
   return (

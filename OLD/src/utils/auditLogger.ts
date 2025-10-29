@@ -40,7 +40,7 @@ export const logAuditEvent = async (
   try {
     console.log('📝 [AuditLogger] Logging event:', payload.action, payload.entityType, payload.entityId);
 
-    const { data, error } = await supabase.from('audit_logs').insert({
+    const { error } = await supabase.from('audit_logs').insert({
       action: payload.action,
       entity_type: payload.entityType,
       entity_id: payload.entityId,
