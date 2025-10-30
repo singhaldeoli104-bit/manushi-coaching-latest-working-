@@ -40,6 +40,10 @@ export const Colors = {
   errorLight: '#FEE2E2',
   errorContainer: '#FEF2F2',
 
+  info: '#3B82F6',           // Blue (for info alerts)
+  infoLight: '#DBEAFE',
+  infoContainer: '#EFF6FF',
+
   // Text Colors (MD3 - High contrast)
   textPrimary: '#0F172A',    // Near black
   textSecondary: '#475569',  // Medium gray

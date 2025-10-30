@@ -48,7 +48,8 @@
       "Bash(node fix-nav.js:*)",
       "Bash(timeout 10 adb logcat:*)",
       "Bash(timeout 8 adb logcat:*)",
-      "Bash(timeout 15 adb logcat:*)"
+      "Bash(timeout 15 adb logcat:*)",
+      "Read(//c/Users/dnyan/.claude/plugins/marketplaces/superpowers-dev/skills/writing-plans/**)"
     ],
     "deny": [],
     "ask": []
