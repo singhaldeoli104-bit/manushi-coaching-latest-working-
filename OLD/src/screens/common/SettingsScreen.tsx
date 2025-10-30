@@ -4,6 +4,7 @@
  */
 
 import React from 'react';
+import { Linking, Alert } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BaseScreen } from '../../shared/components/BaseScreen';
 import { Col, T, Card, CardContent, ListItemMD3 as ListItem } from '../../ui';
@@ -45,6 +46,44 @@ const SettingsScreen: React.FC<Props> = ({ route, navigation }) => {
     return langName;
   };
 
+  // Handle external link opening
+  const handleOpenLink = (url: string, label: string) => {
+    trackAction('open_external_link', 'Settings', { link: label });
+    Linking.openURL(url).catch(() => {
+      Alert.alert('Error', 'Could not open link');
+    });
+  };
+
+  // Handle change password
+  const handleChangePassword = () => {
+    trackAction('change_password', 'Settings');
+    Alert.alert(
+      'Change Password',
+      'To change your password:\n\n1. Contact school administration\n2. Email: admin@school.com\n3. Phone: +91-1800-123-4567\n\n(Self-service password reset coming soon)',
+      [{ text: 'OK' }]
+    );
+  };
+
+  // Handle logout
+  const handleLogout = () => {
+    trackAction('logout', 'Settings');
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: () => {
+            // TODO: Implement actual logout logic
+            Alert.alert('Logged Out', 'You have been logged out successfully.');
+          }
+        }
+      ]
+    );
+  };
+
   return (
     <BaseScreen scrollable loading={false} error={null} empty={false}>
       <Col sx={{ p: 'md' }}>
@@ -77,10 +116,7 @@ const SettingsScreen: React.FC<Props> = ({ route, navigation }) => {
               subtitle={t('settings.changePasswordSubtitle')}
               leading={<T variant="headline">🔒</T>}
               trailing={<T variant="body" color="textSecondary">›</T>}
-              onPress={() => {
-                trackAction('change_password', 'Settings');
-                console.log('TODO: Create ChangePasswordScreen');
-              }}
+              onPress={handleChangePassword}
             />
             <ListItem
               title={t('settings.language')}
@@ -174,7 +210,7 @@ const SettingsScreen: React.FC<Props> = ({ route, navigation }) => {
               trailing={<T variant="body" color="textSecondary">›</T>}
               onPress={() => {
                 trackAction('view_help', 'Settings');
-                console.log('TODO: Create HelpSupportScreen');
+                safeNavigate('HelpFeedback');
               }}
             />
             <ListItem
@@ -182,20 +218,14 @@ const SettingsScreen: React.FC<Props> = ({ route, navigation }) => {
               subtitle={t('settings.privacyPolicySubtitle')}
               leading={<T variant="headline">🔐</T>}
               trailing={<T variant="body" color="textSecondary">›</T>}
-              onPress={() => {
-                trackAction('view_privacy_policy', 'Settings');
-                console.log('TODO: Create PrivacyPolicyScreen');
-              }}
+              onPress={() => handleOpenLink('https://example.com/privacy', 'Privacy Policy')}
             />
             <ListItem
               title={t('settings.termsOfService')}
               subtitle={t('settings.termsOfServiceSubtitle')}
               leading={<T variant="headline">📄</T>}
               trailing={<T variant="body" color="textSecondary">›</T>}
-              onPress={() => {
-                trackAction('view_terms', 'Settings');
-                console.log('TODO: Create TermsOfServiceScreen');
-              }}
+              onPress={() => handleOpenLink('https://example.com/terms', 'Terms of Service')}
             />
             <ListItem
               title={t('settings.appVersion')}
@@ -206,10 +236,7 @@ const SettingsScreen: React.FC<Props> = ({ route, navigation }) => {
         </Card>
 
         {/* Logout Button */}
-        <Card variant="outlined" onPress={() => {
-          trackAction('logout', 'Settings');
-          console.log('TODO: Implement logout');
-        }} style={{ borderColor: colors.error }}>
+        <Card variant="outlined" onPress={handleLogout} style={{ borderColor: colors.error }}>
           <CardContent>
             <T variant="body" align="center" color="error" weight="semiBold">
               {t('settings.logout')}

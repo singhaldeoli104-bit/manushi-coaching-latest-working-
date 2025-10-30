@@ -27,6 +27,7 @@ import { SkeletonList } from '../../ui/feedback/Skeleton';
 import { EmptyState } from '../../ui/feedback/EmptyState';
 import { ErrorState } from '../../ui/feedback/ErrorState';
 import { Colors } from '../../theme/designSystem';
+import { useTheme } from '../../context/ThemeContext';
 
 interface BaseScreenProps {
   /** Optional header content */
@@ -84,10 +85,15 @@ export const BaseScreen: React.FC<BaseScreenProps> = ({
   refreshing = false,
   children,
   scrollable = true,
-  backgroundColor = Colors.background,
+  backgroundColor,
   contentContainerStyle,
   skeletonCount = 5,
 }) => {
+  // Use theme colors
+  const { theme } = useTheme();
+  const bgColor = backgroundColor || theme.Background;
+  const primaryColor = theme.Primary;
+
   // Determine error message
   const errorMessage =
     typeof error === 'string'
@@ -126,7 +132,7 @@ export const BaseScreen: React.FC<BaseScreenProps> = ({
   );
 
   return (
-    <Col flex={1} style={{ backgroundColor }}>
+    <Col flex={1} style={{ backgroundColor: bgColor }}>
       {/* Header */}
       {header && (
         <Row sx={{ p: 'base', bg: 'surface' }} style={elevation(2)}>
@@ -143,8 +149,8 @@ export const BaseScreen: React.FC<BaseScreenProps> = ({
               <RefreshControl
                 refreshing={refreshing}
                 onRefresh={onRefresh}
-                colors={[Colors.primary]}
-                tintColor={Colors.primary}
+                colors={[primaryColor]}
+                tintColor={primaryColor}
               />
             ) : undefined
           }

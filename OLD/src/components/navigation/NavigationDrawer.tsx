@@ -118,7 +118,7 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
     { id: 'fees', label: 'Fees', icon: 'currency-rupee', route: 'BillingInvoice' },
     { id: 'events', label: 'Events', icon: 'calendar', route: 'SchoolCalendar' },
     { id: 'settings', label: 'Settings', icon: 'cog', route: 'Settings' },
-    { id: 'help', label: 'Help & Feedback', icon: 'help-circle' },
+    { id: 'help', label: 'Help & Feedback', icon: 'help-circle', route: 'HelpFeedback' },
   ];
 
   const handleItemPress = (item: DrawerItem) => {

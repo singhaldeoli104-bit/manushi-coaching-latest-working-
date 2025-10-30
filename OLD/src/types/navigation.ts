@@ -176,6 +176,7 @@ export type ParentStackParamList = {
   // ✨ NEW: Global Screens (TopAppBar navigation)
   NotificationsList: undefined;
   Settings: undefined;
+  HelpFeedback: undefined;
   Profile: undefined;
   LanguageSelection: undefined;
 
