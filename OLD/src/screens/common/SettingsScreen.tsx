@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { Linking, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BaseScreen } from '../../shared/components/BaseScreen';
 import { Col, T, Card, CardContent, ListItemMD3 as ListItem } from '../../ui';
@@ -12,6 +13,7 @@ import { Colors, Spacing } from '../../theme/designSystem';
 import { Switch } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
 import { trackAction } from '../../utils/navigationAnalytics';
 import type { ParentStackParamList } from '../../types/navigation';
 import { safeNavigate } from '../../utils/navigationService';
@@ -21,6 +23,7 @@ type Props = NativeStackScreenProps<ParentStackParamList, 'Settings'>;
 const SettingsScreen: React.FC<Props> = ({ route, navigation }) => {
   const { t, i18n } = useTranslation();
   const { isDark, toggleTheme, theme } = useTheme();
+  const { logout } = useAuth();
   const [notificationsEnabled, setNotificationsEnabled] = React.useState(true);
   const [emailAlerts, setEmailAlerts] = React.useState(true);
 
@@ -75,9 +78,24 @@ const SettingsScreen: React.FC<Props> = ({ route, navigation }) => {
         {
           text: 'Logout',
           style: 'destructive',
-          onPress: () => {
-            // TODO: Implement actual logout logic
-            Alert.alert('Logged Out', 'You have been logged out successfully.');
+          onPress: async () => {
+            try {
+              console.log('🚪 [SettingsScreen] Logging out...');
+
+              // Clear navigation state to return to role selection
+              await AsyncStorage.removeItem('NAVIGATION_STATE');
+
+              // Perform logout
+              await logout();
+
+              console.log('✅ [SettingsScreen] Logged out successfully');
+
+              // The app will automatically show role selection screen
+              // because selectedRole will reset when AuthContext user becomes null
+            } catch (error) {
+              console.error('❌ [SettingsScreen] Logout error:', error);
+              Alert.alert('Error', 'Failed to logout. Please try again.');
+            }
           }
         }
       ]
