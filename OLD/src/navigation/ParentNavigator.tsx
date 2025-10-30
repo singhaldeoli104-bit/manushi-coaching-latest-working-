@@ -6,6 +6,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -125,7 +126,7 @@ const ErrorFallback = () => {
 // Home Stack (Dashboard)
 function HomeStack() {
   const { theme } = useTheme();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   // ✨ NEW: Drawer state (MD3 modal drawer)
   const [drawerVisible, setDrawerVisible] = React.useState(false);
@@ -213,9 +214,24 @@ function HomeStack() {
                           {
                             text: 'Logout',
                             style: 'destructive',
-                            onPress: () => {
-                              // TODO: Implement actual logout logic
-                              Alert.alert('Logged Out', 'You have been logged out successfully.');
+                            onPress: async () => {
+                              try {
+                                console.log('🚪 [TopAppBar] Logging out...');
+
+                                // Clear navigation state to return to role selection
+                                await AsyncStorage.removeItem('NAVIGATION_STATE');
+
+                                // Perform logout
+                                await logout();
+
+                                console.log('✅ [TopAppBar] Logged out successfully');
+
+                                // The app will automatically show role selection screen
+                                // because selectedRole will reset when AuthContext user becomes null
+                              } catch (error) {
+                                console.error('❌ [TopAppBar] Logout error:', error);
+                                Alert.alert('Error', 'Failed to logout. Please try again.');
+                              }
                             },
                           },
                         ]
@@ -535,10 +551,27 @@ function HomeStack() {
         userProfile={userProfile}
         navigation={navigationRef.current}
         currentRoute={navigationRef.current?.getCurrentRoute?.()?.name}
-        onLogout={() => {
-          // TODO: Implement logout functionality
-          console.log('Logout pressed - TODO: Implement logout');
-          // Future: Clear auth state and navigate to login
+        onLogout={async () => {
+          try {
+            console.log('🚪 [NavigationDrawer] Logging out...');
+
+            // Clear navigation state to return to role selection
+            await AsyncStorage.removeItem('NAVIGATION_STATE');
+
+            // Perform logout
+            await logout();
+
+            console.log('✅ [NavigationDrawer] Logged out successfully');
+
+            // Close drawer
+            setDrawerVisible(false);
+
+            // The app will automatically show role selection screen
+            // because selectedRole will reset when AuthContext user becomes null
+          } catch (error) {
+            console.error('❌ [NavigationDrawer] Logout error:', error);
+            Alert.alert('Error', 'Failed to logout. Please try again.');
+          }
         }}
       />
     </>

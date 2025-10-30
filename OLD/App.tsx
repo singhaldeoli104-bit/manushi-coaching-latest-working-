@@ -4,7 +4,7 @@
  * ✅ Enhanced with Navigation Persistence, Analytics, and Deep Linking
  */
 
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState, useRef} from 'react';
 import {StatusBar, View, Text, ActivityIndicator} from 'react-native';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
@@ -19,12 +19,24 @@ import {AppNavigator} from './src/navigation/AppNavigator';
 // Import NEW Parent Navigator for direct testing
 import ParentNavigator from './src/navigation/ParentNavigator';
 
-// ⚠️ DEV MODE: Set to true to see NEW dashboard directly on app open
-// Set to false to use normal login flow
+// Import Admin Navigator for testing
+import AdminNavigator from './src/navigation/AdminNavigator';
+
+// Import Role Selection Screen
+import { RoleSelectionScreen } from './src/screens/common/RoleSelectionScreen';
+
+// ⚠️ DEV MODE FLAGS
+// SHOW_ROLE_SELECTION: Set to true to show role selection screen on app open
+// SHOW_NEW_DASHBOARD_DIRECTLY: Set to true to see NEW parent dashboard directly (ignored if SHOW_ROLE_SELECTION is true)
+// Set both to false to use normal login flow
+const SHOW_ROLE_SELECTION = true;
 const SHOW_NEW_DASHBOARD_DIRECTLY = true;
 
 // Import dev auth helper for auto-login
 import { devAutoLogin } from './src/utils/devAuth';
+
+// Import Supabase for auth state changes
+import { supabase } from './src/lib/supabase';
 
 // Import ALL contexts
 import {LightTheme, DarkTheme} from './src/theme/colors';
@@ -82,15 +94,57 @@ const LoadingScreen = () => (
 const AppContent = ({ initialState }: { initialState?: InitialState }) => {
   const { theme, isDark } = useTheme();
   const paperTheme = createPaperTheme(theme);
+  const [selectedRole, setSelectedRole] = useState<'admin' | 'parent' | null>(null);
+  const hasInitialized = useRef(false);
+
+  // Initialize on first mount
+  useEffect(() => {
+    if (!hasInitialized.current) {
+      console.log('🎬 [App] First mount - Initializing selectedRole to null');
+      setSelectedRole(null);
+      hasInitialized.current = true;
+    }
+  }, []);
+
+  // Reset role selection when user logs out (for dev mode)
+  useEffect(() => {
+    if (SHOW_ROLE_SELECTION) {
+      // Listen to auth state changes
+      const subscription = supabase.auth.onAuthStateChange((event, session) => {
+        console.log('🔐 [App] Auth state changed:', event, 'hasSession:', !!session);
+        if (event === 'SIGNED_OUT' || !session) {
+          console.log('🚪 [App] User signed out, resetting role selection');
+          setSelectedRole(null);
+        }
+      });
+
+      return () => {
+        subscription.data.subscription.unsubscribe();
+      };
+    }
+  }, []);
+
+  // Determine what to show based on flags and selected role
+  const showRoleSelection = SHOW_ROLE_SELECTION && selectedRole === null;
+  const showDevDashboard = SHOW_ROLE_SELECTION ? selectedRole !== null : SHOW_NEW_DASHBOARD_DIRECTLY;
+
+  // Debug logs
+  console.log('🔍 [App] SHOW_ROLE_SELECTION:', SHOW_ROLE_SELECTION);
+  console.log('🔍 [App] selectedRole:', selectedRole);
+  console.log('🔍 [App] showRoleSelection:', showRoleSelection);
+  console.log('🔍 [App] showDevDashboard:', showDevDashboard);
 
   return (
     <PaperProvider theme={paperTheme}>
       <StatusBar
         barStyle={isDark ? 'light-content' : 'dark-content'}
-        backgroundColor={SHOW_NEW_DASHBOARD_DIRECTLY ? theme.Primary : theme.Background}
+        backgroundColor={showDevDashboard ? theme.Primary : theme.Background}
       />
-      {SHOW_NEW_DASHBOARD_DIRECTLY ? (
-        /* DEV MODE: Show NEW dashboard directly */
+      {showRoleSelection ? (
+        /* DEV MODE: Show role selection screen */
+        <RoleSelectionScreen onSelectRole={setSelectedRole} />
+      ) : showDevDashboard ? (
+        /* DEV MODE: Show selected dashboard */
         <NavigationContainer
           ref={navigationRef}
           initialState={initialState}
@@ -118,7 +172,7 @@ const AppContent = ({ initialState }: { initialState?: InitialState }) => {
             onNavigationStateChange(state);
           }}
         >
-          <ParentNavigator />
+          {selectedRole === 'admin' ? <AdminNavigator /> : <ParentNavigator />}
         </NavigationContainer>
       ) : (
         /* PRODUCTION: Normal login flow */

@@ -18,7 +18,6 @@ import {
   Alert,
   Modal,
   Switch,
-  Animated,
 } from 'react-native';
 import Animated, { FadeIn, FadeInUp, FadeInDown, FadeOut, SlideInUp, SlideInDown, ZoomIn, BounceIn } from 'react-native-reanimated';
 import { useTheme } from '../../context/ThemeContext';

@@ -161,6 +161,9 @@ import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
 // Import Parent Navigator with NEW dashboard
 import ParentNavigator from './ParentNavigator';
 
+// Import Admin Navigator with NEW AdminDashboardScreen
+import AdminNavigator from './AdminNavigator';
+
 // Import theme and styling
 import { LightTheme } from '../theme/colors';
 import { Typography } from '../theme/typography';
@@ -905,58 +908,9 @@ export const AppNavigator: React.FC<AppNavigatorProps> = ({
         return <ParentNavigator />;
 
       case 'admin-dashboard':
-        return (
-          <AdminDashboard
-            adminName={navState.currentUser ? `${navState.currentUser.firstName} ${navState.currentUser.lastName}` : 'Dr. Michael Rodriguez'}
-            onNavigate={(screen) => {
-              if (screen === 'back' || screen === 'back-to-demo') {
-                navigate(navState.previousRoute || 'welcome');
-              } else if (screen === 'user-management') {
-                navigate('user-management');
-              } else if (screen === 'organization-management') {
-                navigate('organization-management');
-              } else if (screen === 'system-settings') {
-                navigate('system-settings');
-              } else if (screen === 'content-management') {
-                navigate('content-management');
-              } else if (screen === 'business-configuration') {
-                navigate('business-configuration');
-              } else if (screen === 'advanced-analytics') {
-                navigate('advanced-analytics');
-              } else if (screen === 'kpi-detail') {
-                navigate('kpi-detail');
-              } else if (screen === 'alert-detail') {
-                navigate('alert-detail');
-              } else if (screen === 'financial-reports') {
-                navigate('financial-reports');
-              } else if (screen === 'payment-settings') {
-                navigate('payment-settings');
-              } else if (screen === 'support-center') {
-                navigate('support-center');
-              } else if (screen === 'operations-management') {
-                navigate('operations-management');
-              } else if (screen === 'compliance-audit') {
-                navigate('compliance-audit');
-              } else if (screen === 'strategic-planning') {
-                navigate('strategic-planning');
-              } else if (screen === 'enterprise-intelligence-suite') {
-                navigate('enterprise-intelligence-suite');
-              } else if (screen === 'platform-scalability-dashboard') {
-                navigate('platform-scalability-dashboard');
-              } else if (screen === 'ai-agent-ecosystem') {
-                navigate('ai-agent-ecosystem');
-              } else if (screen === 'real-time-monitoring') {
-                navigate('real-time-monitoring');
-              } else if (screen === 'phase-79-validation') {
-                navigate('phase-79-validation');
-              } else if (screen === 'phase-80-validation') {
-                navigate('phase-80-validation');
-              } else {
-                Alert.alert('Feature Coming Soon', `${screen} will be available in upcoming updates.`);
-              }
-            }}
-          />
-        );
+        // NEW: Use AdminNavigator with React Navigation stack
+        // This includes the NEW AdminDashboardScreen with enhanced dashboard
+        return <AdminNavigator />;
 
       case 'user-management':
         return (
