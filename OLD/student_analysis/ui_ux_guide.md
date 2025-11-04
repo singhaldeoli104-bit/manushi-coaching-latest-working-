@@ -1612,37 +1612,1150 @@ const EventColors = {
 
 ---
 
-## 6️⃣-23 REMAINING SCREENS - Summary
+## 6️⃣ AI STUDY SCREEN - Premium Minimal Design
 
-Due to space constraints, here's a summary of the remaining screens with key metrics:
+### 📊 Current State Analysis
 
-### Screen 6: AI Study Screen
-- **Frozen:** 56dp | **Content:** 91% | **Features:** 40+
-- **Pattern:** Focus timer + AI prompts + task list
+**File:** `AIStudyScreen.tsx`
+**Lines:** 1,278
+**Features:** 80+ AI-powered study features
 
-### Screen 7: AI Tutor Chat
-- **Frozen:** 48dp | **Content:** 93% | **Features:** 25+
-- **Pattern:** Minimal chat interface
+**Current Issues:**
+- ❌ ~160dp frozen UI (timer section + controls)
+- ❌ Complex nested modals
+- ❌ No accessibility labels
+- ❌ Mixed mock/real data
+- ⚠️ 1,278 lines (needs splitting)
 
-### Screen 8: Progress Detail
-- **Frozen:** 56dp | **Content:** 91% | **Features:** 35+
-- **Pattern:** Charts + subject breakdown
+**Current Features (80+):**
+1. Focus timer (Pomodoro)
+2. AI study prompts
+3. Task management
+4. Break reminders
+5. Ambient sounds
+6. Progress tracking
+7. Session history
+8. AI recommendations
+9. Study goals
+10. Performance analytics
+...and 70 more features
 
-### Screen 9: Study Library
-- **Frozen:** 96dp | **Content:** 86% | **Features:** 30+
-- **Pattern:** Grid + filters in bottom sheet
+### 🎨 Premium Minimal Redesign
 
-### Screen 10: Doubt Submission
-- **Frozen:** 48dp | **Content:** 93% | **Features:** 15+
-- **Pattern:** Ultra-compact form
+**Target Metrics:**
+- **Frozen UI:** 56dp (header only)
+- **Content Area:** 91%
+- **Features:** All 80+ retained
+- **Code:** ~600 lines (53% reduction)
 
-### Screen 11-21: Others
-All following same Premium Minimal principles:
-- Maximum 128dp frozen UI
-- Minimum 80% content area
-- All features preserved
-- WCAG 2.1 AAA compliant
-- Student-first design
+### 📱 Premium Layout
+
+```
+┌──────────────────────────────────────────────────────┐
+│ Study Session                           Pause ⏸      │ 56dp
+├──────────────────────────────────────────────────────┤
+│                                                      │
+│              ⏱️ 23:45                                │
+│         Focus: Quadratic Equations                   │
+│         Target: 25:00 · Session 3/4                  │
+│                                                      │
+│ 💡 AI Tip: "Break down into smaller steps"           │
+│                                                      │
+│ Current Task ─────────────────────────────────────   │
+│ ☑️ Review notes (completed)                          │
+│ ⏳ Solve 5 practice problems (3/5)                   │
+│ ☐ Check answers                                      │
+│                                                      │
+│ [Get Hint] [Skip] [Take Break]                       │
+│                                                      │
+│ Focus Score: 87% · Problems solved: 12               │ 91%
+│                                                      │ CONTENT
+│ Session Stats ────────────────────────────────────   │
+│ 🔥 3 day streak · 🎯 92% completion rate             │
+│                                                      │
+└──────────────────────────────────────────────────────┘
+```
+
+### 🎯 Key Design Decisions
+
+**1. Prominent Timer Display**
+- ✅ Large, easy to see at a glance
+- ✅ Shows focus topic
+- ✅ Progress indicator
+- ❌ Rejected: Small corner timer (hard to see)
+
+**2. AI Tips Inline**
+- ✅ Contextual study advice
+- ✅ Non-intrusive placement
+- ✅ Actionable suggestions
+- ❌ Rejected: Popup tips (disruptive)
+
+**3. Task Checklist Format**
+- ✅ Clear progress tracking
+- ✅ Visual completion (checkmarks)
+- ✅ Current task highlighted
+- ❌ Rejected: Separate task screen (fragmented)
+
+**4. Action Buttons Below Task**
+- ✅ Quick access to help
+- ✅ Skip option (no pressure)
+- ✅ Break reminder
+- ❌ Rejected: Menu-based actions (extra tap)
+
+### ♿ Accessibility Features
+
+```typescript
+// Timer display
+<View
+  accessibilityRole="timer"
+  accessibilityLabel="Study timer: 23 minutes 45 seconds remaining"
+  accessibilityValue={{ now: 1425, min: 0, max: 1500, text: "23 minutes 45 seconds" }}
+>
+
+// Task checklist
+<TouchableOpacity
+  accessibilityRole="checkbox"
+  accessibilityLabel="Solve 5 practice problems, 3 of 5 completed, in progress"
+  accessibilityState={{ checked: false, busy: true }}
+  accessibilityHint="Double tap to mark as complete"
+>
+
+// Action buttons
+<TouchableOpacity
+  accessibilityRole="button"
+  accessibilityLabel="Get hint for current problem"
+  accessibilityHint="Double tap to receive AI-powered hint"
+>
+```
+
+### 🚀 Student Benefits
+
+- ✅ Clear focus on one task at a time
+- ✅ Timer always visible (no distractions)
+- ✅ AI help available immediately
+- ✅ Progress tracked automatically
+- ✅ Break reminders prevent burnout
+- ✅ No overwhelming features visible
+
+---
+
+## 7️⃣ DOUBT SUBMISSION SCREEN - Premium Minimal Design
+
+### 📊 Current State Analysis
+
+**File:** `DoubtSubmissionScreen.tsx`
+**Lines:** 802
+**Features:** 35+ doubt submission features
+
+**Current Issues:**
+- ❌ ~140dp frozen UI (header + category chips)
+- ❌ Long form (overwhelming)
+- ❌ No inline validation
+- ❌ Complex file upload UI
+
+**Current Features (35+):**
+1. Subject selection
+2. Title input
+3. Description textarea
+4. Image upload (multiple)
+5. File attachments
+6. Priority selection
+7. Tags/categories
+8. Teacher targeting
+9. Draft saving
+10. Template suggestions
+...and 25 more features
+
+### 🎨 Premium Minimal Redesign
+
+**Target Metrics:**
+- **Frozen UI:** 48dp (ultra-compact)
+- **Content Area:** 93%
+- **Features:** All 35+ retained
+- **Code:** ~400 lines (50% reduction)
+
+### 📱 Premium Layout
+
+```
+┌──────────────────────────────────────────────────────┐
+│ ← Ask a Doubt                              Submit    │ 48dp
+├──────────────────────────────────────────────────────┤
+│                                                      │
+│ Subject ──────────────────────────────────────────   │
+│ [Math] [Physics] [Chemistry] [Biology] [More...]     │
+│                                                      │
+│ Your Question ────────────────────────────────────   │
+│ Type your question here...                           │
+│ (Can't solve quadratic equation...)                  │
+│                                                      │
+│ Attachments ──────────────────────────────────────   │
+│ [📷 Camera] [📎 File] [🖼️ Gallery]                    │
+│                                                      │
+│ Priority ─────────────────────────────────────────   │
+│ ○ Low    ● Medium    ○ High                         │ 93%
+│                                                      │ CONTENT
+│ [Save Draft]                                         │
+│                                                      │
+│ 💬 Avg response time: 2 hours                        │
+│ 👨‍🏫 24 teachers online now                           │
+│                                                      │
+└──────────────────────────────────────────────────────┘
+```
+
+### 🎯 Key Design Decisions
+
+**1. Ultra-Compact Header (48dp)**
+- ✅ Submit in header (always visible)
+- ✅ One-tap back
+- ✅ More screen space for form
+- ❌ Rejected: Standard header + bottom button (wastes space)
+
+**2. Horizontal Subject Chips**
+- ✅ Quick tap selection
+- ✅ Scrollable for more subjects
+- ✅ Visual selection state
+- ❌ Rejected: Dropdown menu (extra tap)
+
+**3. Inline Attachments**
+- ✅ Three quick options visible
+- ✅ Large touch targets (48dp)
+- ✅ Clear icons
+- ❌ Rejected: Hidden in menu (hard to find)
+
+**4. Inline Priority**
+- ✅ Radio buttons (clear choice)
+- ✅ One line (compact)
+- ✅ Default to Medium
+- ❌ Rejected: Separate priority screen
+
+**5. Confidence Footer**
+- ✅ Response time shown
+- ✅ Teachers online (social proof)
+- ✅ Encourages submission
+- ❌ Rejected: Hidden info (students worry)
+
+### 🚀 Student Benefits
+
+- ✅ Fast submission (minimal fields)
+- ✅ No overwhelming form
+- ✅ Quick photo/file attach
+- ✅ See response time upfront
+- ✅ Draft auto-save (no data loss)
+- ✅ One-handed operation
+
+---
+
+## 8️⃣ PROGRESS DETAIL SCREEN - Premium Minimal Design
+
+### 📊 Current State Analysis
+
+**File:** `ProgressDetailScreen.tsx`
+**Lines:** 1,901 (Second largest!)
+**Features:** 90+ progress tracking features
+
+**Current Issues:**
+- ❌ **MASSIVE**: 1,901 lines
+- ❌ ~200dp frozen UI (stats cards + filters)
+- ❌ Multiple chart libraries
+- ❌ Complex calculations inline
+- ❌ Performance issues with large datasets
+
+**Current Features (90+):**
+1. GPA calculation
+2. Subject-wise performance
+3. Trend graphs (line/bar/pie)
+4. Attendance tracking
+5. Assignment completion
+6. Test scores analysis
+7. Comparison with class
+8. Improvement suggestions
+9. Goal tracking
+10. Export to PDF
+...and 80 more features
+
+### 🎨 Premium Minimal Redesign
+
+**Target Metrics:**
+- **Frozen UI:** 56dp (header only)
+- **Content Area:** 91%
+- **Features:** All 90+ retained
+- **Code:** ~800 lines (58% reduction)
+
+### 📱 Premium Layout
+
+```
+┌──────────────────────────────────────────────────────┐
+│ ← Academic Progress                       Export 📊   │ 56dp
+├──────────────────────────────────────────────────────┤
+│                                                      │
+│ Overall Performance ──────────────────────────────   │
+│ GPA: 3.8  ↑ +0.2 this term                          │
+│ Rank: 12/280 · Top 5%                                │
+│                                                      │
+│ 📈 Trend (Last 6 months) ────────────────────────    │
+│ [Performance chart - line graph]                     │
+│ 3.6 → 3.7 → 3.7 → 3.8 → 3.8 → 3.8                  │
+│                                                      │
+│ Subject Breakdown ────────────────────────────────   │
+│ Math        ████████████░░ 92% A                    │
+│ Physics     ███████████░░░ 88% B+                   │ 91%
+│ Chemistry   ██████████░░░░ 85% B+                   │ CONTENT
+│ Biology     ████████████░░ 90% A-                   │
+│ [View Details →]                                     │
+│                                                      │
+│ Achievements ─────────────────────────────────────   │
+│ 🏆 Perfect attendance this month                     │
+│ 🎯 Top 5% in Math Olympiad                          │
+│ ⭐ Improved Chemistry by 15%                         │
+│                                                      │
+│ Goals ────────────────────────────────────────────   │
+│ ⏳ Maintain 3.8+ GPA (In progress)                   │
+│ ✓ Complete all assignments on time (Achieved)       │
+│                                                      │
+└──────────────────────────────────────────────────────┘
+```
+
+### 🎯 Key Design Decisions
+
+**1. Summary Card First**
+- ✅ Most important info at top
+- ✅ GPA + trend arrow
+- ✅ Rank context
+- ❌ Rejected: Charts first (data overwhelming)
+
+**2. Simple Line Chart**
+- ✅ 6-month trend visible
+- ✅ Minimal, clean design
+- ✅ Easy to understand
+- ❌ Rejected: Complex multi-line chart (confusing)
+
+**3. Horizontal Progress Bars**
+- ✅ Quick comparison
+- ✅ Grade shown inline
+- ✅ Color-coded (green = good)
+- ❌ Rejected: Pie charts (hard to compare)
+
+**4. Achievements Inline**
+- ✅ Positive reinforcement
+- ✅ Icon + short text
+- ✅ Motivating
+- ❌ Rejected: Separate achievements screen
+
+### 🚀 Student Benefits
+
+- ✅ Understand performance instantly
+- ✅ See trends, not just numbers
+- ✅ Know where to improve
+- ✅ Celebrate achievements
+- ✅ Track goals effectively
+- ✅ Export for parents easily
+
+---
+
+## 9️⃣ STUDY LIBRARY SCREEN - Premium Minimal Design
+
+### 📊 Current State Analysis
+
+**File:** `StudyLibraryScreen.tsx`
+**Lines:** 1,400
+**Features:** 75+ library management features
+
+**Current Issues:**
+- ❌ ~180dp frozen UI (header + filters + search)
+- ❌ Heavy image loading
+- ❌ No offline access indicator
+- ❌ Complex download manager
+
+**Current Features (75+):**
+1. Resource grid/list view
+2. Category filters (7+)
+3. Search functionality
+4. PDF viewer
+5. Video player
+6. Download manager
+7. Offline access
+8. Bookmarking
+9. Recent history
+10. Recommendations
+...and 65 more features
+
+### 🎨 Premium Minimal Redesign
+
+**Target Metrics:**
+- **Frozen UI:** 96dp (56dp header + 40dp filter)
+- **Content Area:** 86%
+- **Features:** All 75+ retained
+- **Code:** ~650 lines (54% reduction)
+
+### 📱 Premium Layout
+
+```
+┌──────────────────────────────────────────────────────┐
+│ ← Study Library                         Search 🔍    │ 56dp
+├──────────────────────────────────────────────────────┤
+│ [Type ▾ All]  [More Filters •2]                      │ 40dp
+├──────────────────────────────────────────────────────┤
+│                                                      │
+│ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐  │
+│ │ 📄           │ │ 🎥           │ │ 📄           │  │
+│ │ Chapter 6    │ │ Lab Demo     │ │ Formulas     │  │
+│ │ PDF · 2.4MB  │ │ Video · 15m  │ │ PDF · 850KB  │  │
+│ │ [Download]   │ │ [Watch]      │ │ ✓ Downloaded │  │
+│ └──────────────┘ └──────────────┘ └──────────────┘  │
+│                                                      │
+│ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐  │ 86%
+│ │ 📄 Calculus  │ │ 📄 Vectors   │ │ 🎥 Practice  │  │ CONTENT
+│ │ [Download]   │ │ ✓ Downloaded │ │ [Watch]      │  │
+│ └──────────────┘ └──────────────┘ └──────────────┘  │
+│                                                      │
+│ ↓ Downloading: Physics_Lab_3.pdf (45%)               │
+│                                          [Pause]     │
+│                                                      │
+└──────────────────────────────────────────────────────┘
+```
+
+### 🎯 Key Design Decisions
+
+**1. Bottom Sheet Filters**
+- ✅ Max 1-2 inline filters
+- ✅ Advanced in bottom sheet
+- ✅ Active filter count badge
+- ❌ Rejected: 5+ inline filters (clutters UI)
+
+**2. Grid View (2 columns)**
+- ✅ See more resources at once
+- ✅ Clear type indicators
+- ✅ Download status visible
+- ❌ Rejected: List view (wastes space)
+
+**3. Inline Download Progress**
+- ✅ See what's downloading
+- ✅ Pause/resume option
+- ✅ Doesn't block browsing
+- ❌ Rejected: Separate download screen
+
+**4. Clear Downloaded State**
+- ✅ Checkmark indicator
+- ✅ Offline available
+- ✅ Quick access
+- ❌ Rejected: Hidden downloaded items
+
+### 🚀 Student Benefits
+
+- ✅ Find materials quickly
+- ✅ See what's available offline
+- ✅ Download in background
+- ✅ No confusion about file types
+- ✅ Filter by subject easily
+- ✅ Grid shows more options
+
+---
+
+## 🔟 AI TUTOR CHAT SCREEN - Premium Minimal Design
+
+### 📊 Current State Analysis
+
+**File:** `AITutorChatInterface.tsx`
+**Lines:** 724
+**Features:** 45+ chat features
+
+**Current Issues:**
+- ❌ ~104dp frozen UI (header + context banner)
+- ❌ No message persistence
+- ❌ Limited equation support
+- ❌ No conversation history
+
+**Current Features (45+):**
+1. Real-time chat
+2. AI responses
+3. Code highlighting
+4. Math equation rendering
+5. Image attachments
+6. Voice input
+7. Suggested prompts
+8. Context awareness
+9. Session summary
+10. Export conversation
+...and 35 more features
+
+### 🎨 Premium Minimal Redesign
+
+**Target Metrics:**
+- **Frozen UI:** 48dp (ultra-compact)
+- **Content Area:** 93%
+- **Features:** All 45+ retained
+- **Code:** ~400 lines (45% reduction)
+
+### 📱 Premium Layout
+
+```
+┌──────────────────────────────────────────────────────┐
+│ AI Tutor                                      ⋮      │ 48dp
+├──────────────────────────────────────────────────────┤
+│                                                      │
+│ You: Hi! I need help with calculus integration      │
+│                                                      │
+│ AI: I'd be happy to help with integration!          │
+│     What specific topic are you working on?          │
+│                                                      │
+│ You: Integration by parts                            │
+│                                                      │
+│ AI: Great! Let me show you step-by-step:            │
+│     Formula: ∫u dv = uv - ∫v du                      │ 93%
+│     [Show detailed example]                          │ CONTENT
+│     [Practice problem]                               │
+│                                                      │
+│ Suggestions: ───────────────────────────────────     │
+│ [Practice more] [Related topics] [Video tutorial]    │
+│                                                      │
+├──────────────────────────────────────────────────────┤
+│ Type a message...                          [Send]    │ 48dp
+└──────────────────────────────────────────────────────┘
+```
+
+### 🎯 Key Design Decisions
+
+**1. Ultra-Compact Header (48dp)**
+- ✅ Maximize chat area
+- ✅ Simple title only
+- ✅ More menu for options
+- ❌ Rejected: Context banner (wastes 56dp)
+
+**2. Clean Message Bubbles**
+- ✅ Clear distinction (You vs AI)
+- ✅ Readable font size
+- ✅ Proper spacing
+- ❌ Rejected: Same color for both (confusing)
+
+**3. Inline Suggestions**
+- ✅ Contextual next steps
+- ✅ Horizontal scroll
+- ✅ Quick actions
+- ❌ Rejected: Popup suggestions (disruptive)
+
+**4. Fixed Input Bar**
+- ✅ Always accessible
+- ✅ Large touch target
+- ✅ Send button visible
+- ❌ Rejected: Auto-hide keyboard (friction)
+
+### 🚀 Student Benefits
+
+- ✅ Maximum space for conversation
+- ✅ Equation rendering built-in
+- ✅ Suggested follow-ups
+- ✅ Fast, responsive chat
+- ✅ Image support (show problem)
+- ✅ Export for later review
+
+---
+
+## 1️⃣1️⃣ AI LEARNING DASHBOARD - Premium Minimal Design
+
+### 📊 Current State Analysis
+
+**File:** `StudentAILearningDashboard.tsx`
+**Lines:** 1,057
+**Features:** 90+ AI learning features
+
+**Current Issues:**
+- ❌ ~140dp frozen UI (header + tabs)
+- ❌ Heavy data visualization
+- ❌ Mock recommendations
+- ❌ Complex adaptive algorithms shown
+
+**Current Features (90+):**
+1. Adaptive learning paths
+2. Performance predictions
+3. Strength/weakness analysis
+4. Personalized study plans
+5. AI coach recommendations
+6. Skill mastery tracking
+7. Learning style detection
+8. Progress comparisons
+9. Time management insights
+10. Goal suggestions
+...and 80 more features
+
+### 🎨 Premium Minimal Redesign
+
+**Target Metrics:**
+- **Frozen UI:** 56dp (header only)
+- **Content Area:** 91%
+- **Features:** All 90+ retained
+- **Code:** ~550 lines (48% reduction)
+
+### 📱 Premium Layout
+
+```
+┌──────────────────────────────────────────────────────┐
+│ AI Dashboard                          Settings ⚙️    │ 56dp
+├──────────────────────────────────────────────────────┤
+│                                                      │
+│ 🎯 Today's Focus                                     │
+│ Quadratic Equations · Math                           │
+│ Progress: ████████████░░░░ 78% ↑3%                  │
+│                                                      │
+│ 💡 AI Coach Says:                                    │
+│ "You're struggling with factoring. Try 10 practice   │
+│  problems today. Predicted improvement: +15%"        │
+│ [Start Practice]                                     │
+│                                                      │
+│ Learning Path ────────────────────────────────────   │
+│ ✓ Basics → ⏳ Factoring → Graphing → Word Problems  │ 91%
+│                                                      │ CONTENT
+│ Performance Prediction ───────────────────────────   │
+│ Next Test: 85% (±5%)                                 │
+│ Confidence: High based on 120 data points            │
+│                                                      │
+│ Strengths ────────────────────────────────────────   │
+│ 🟢 Limits (95%) · 🟢 Derivatives (92%)               │
+│                                                      │
+│ Needs Work ───────────────────────────────────────   │
+│ 🔴 Factoring (68%) · 🟡 Integration (75%)            │
+│                                                      │
+│ [View Full Analysis] [Adjust Goals]                  │
+│                                                      │
+└──────────────────────────────────────────────────────┘
+```
+
+### 🎯 Key Design Decisions
+
+**1. Single Focus Area**
+- ✅ One clear goal for today
+- ✅ Prevents overwhelm
+- ✅ AI-selected priority
+- ❌ Rejected: Multiple paths (confusing)
+
+**2. AI Coach Personality**
+- ✅ Conversational tone
+- ✅ Actionable advice
+- ✅ Encouragement included
+- ❌ Rejected: Dry data presentation
+
+**3. Visual Learning Path**
+- ✅ See progress journey
+- ✅ Know what's next
+- ✅ Milestone checkpoints
+- ❌ Rejected: Tree diagram (too complex)
+
+### 🚀 Student Benefits
+
+- ✅ Clear daily direction
+- ✅ Personalized recommendations
+- ✅ Know weak areas
+- ✅ Confidence in predictions
+- ✅ Motivated by progress
+- ✅ Not overwhelmed by data
+
+---
+
+## 1️⃣2️⃣ LIVE CLASS PARTICIPATION - Premium Minimal Design
+
+### 📊 Current State Analysis
+
+**File:** `LiveClassParticipationScreen.tsx`
+**Lines:** 1,187
+**Features:** 70+ participation features
+
+**Current Features (70+):**
+1. Live chat
+2. Polls/quizzes
+3. Hand raise
+4. Reactions
+5. Q&A panel
+6. Notes taking
+7. Screen annotation
+8. Breakout rooms
+9. Participation score
+10. Engagement tracking
+...and 60 more features
+
+### 🎨 Premium Minimal Redesign
+
+**Target Metrics:**
+- **Frozen UI:** 88dp (48dp header + 40dp stats)
+- **Content Area:** 87%
+- **Features:** All 70+ retained
+
+### 📱 Premium Layout
+
+```
+┌──────────────────────────────────────────────────────┐
+│ Live: Physics Lab                         Leave ✕    │ 48dp
+├──────────────────────────────────────────────────────┤
+│ 📊 Engagement: 85% · 💬 Active · 📝 Notes: 3          │ 40dp
+├──────────────────────────────────────────────────────┤
+│                                                      │
+│ Poll: What causes tides?                             │
+│ ● Moon's gravity 76% ████████                       │
+│ ○ Sun's gravity  15% ██                             │
+│ ○ Earth rotation  9% █                              │
+│ [Submit] · 28/32 students voted                      │
+│                                                      │
+│ Chat ─────────────────────────────────────────────   │
+│ Teacher: Great participation everyone!               │ 87%
+│ You: Thank you!                                      │ CONTENT
+│ Alex: Can you explain the answer?                    │
+│                                                      │
+│ Quick Reactions ──────────────────────────────────   │
+│ [👍] [👏] [🤔] [✋] [❓]                              │
+│                                                      │
+│ [Type message...]                         [Send]     │
+│                                                      │
+└──────────────────────────────────────────────────────┘
+```
+
+### 🚀 Student Benefits
+
+- ✅ See engagement score
+- ✅ Participate in polls easily
+- ✅ Quick reactions visible
+- ✅ Chat integrated
+- ✅ Notes accessible
+- ✅ One-screen experience
+
+---
+
+## 1️⃣3️⃣ ENHANCED SCHEDULE SCREEN - Premium Minimal Design
+
+### 📊 Current State Analysis
+
+**File:** `EnhancedScheduleScreen.tsx`
+**Lines:** ~800
+**Features:** 55+ enhanced scheduling features
+
+### 🎨 Premium Minimal Redesign
+
+**Target Metrics:**
+- **Frozen UI:** 128dp (same as Schedule)
+- **Content Area:** 85%
+- **Features:** All 55+ retained
+
+### 📱 Premium Layout
+
+```
+┌──────────────────────────────────────────────────────┐
+│ ← Schedule+                         Sync 🔄  ⋮       │ 56dp
+├──────────────────────────────────────────────────────┤
+│ Mon  Tue  Wed  Thu  Fri  Sat  Sun  [Animate]         │ 72dp
+│  23   24   25   26   27   28   29                    │
+├──────────────────────────────────────────────────────┤
+│                                                      │
+│ 🔔 Reminder: Math class in 15 minutes                │
+│                                                      │
+│ 08:30  Math · Mr. Anderson           [Join]          │
+│        Reminder set  · Calendar synced               │
+│                                                      │ 85%
+│ 10:00  Physics Lab                                   │ CONTENT
+│        📱 Added to device calendar                    │
+│                                                      │
+│ [+ Add Study Block] [Export Calendar]                │
+│                                                      │
+└──────────────────────────────────────────────────────┘
+```
+
+### 🚀 Student Benefits
+
+- ✅ Animated transitions
+- ✅ Device calendar sync
+- ✅ Smart reminders
+- ✅ Export options
+- ✅ Study block scheduling
+- ✅ All basic features +enhanced
+
+---
+
+## 1️⃣4️⃣ COLLABORATIVE ASSIGNMENT - Premium Minimal Design
+
+### 📊 Current State Analysis
+
+**File:** `CollaborativeAssignmentWorkspace.tsx`
+**Lines:** ~900
+**Features:** 65+ collaboration features
+
+### 🎨 Premium Minimal Redesign
+
+**Target Metrics:**
+- **Frozen UI:** 104dp (56dp header + 48dp tabs)
+- **Content Area:** 85%
+
+### 📱 Premium Layout
+
+```
+┌──────────────────────────────────────────────────────┐
+│ ← Group Project                               ⋮      │ 56dp
+├──────────────────────────────────────────────────────┤
+│ Board     Chat     Files     Timeline                │ 48dp
+├──────────────────────────────────────────────────────┤
+│                                                      │
+│ To Do          In Progress        Done               │
+│ ┌────────┐     ┌────────┐         ┌────────┐        │
+│ │Jupiter │     │Mars🔥  │         │Earth✓ │        │
+│ │        │     │Alex*   │         │       │        │ 85%
+│ └────────┘     └────────┘         └────────┘        │ CONTENT
+│ ┌────────┐                                           │
+│ │Venus   │                                           │
+│ │You*    │                                           │
+│ └────────┘                                           │
+│                              [+ Add Task]            │
+│                                                      │
+└──────────────────────────────────────────────────────┘
+```
+
+### 🚀 Student Benefits
+
+- ✅ Kanban board (visual)
+- ✅ Real-time updates
+- ✅ See who's working
+- ✅ Integrated chat
+- ✅ File sharing
+- ✅ Timeline tracking
+
+---
+
+## 1️⃣5️⃣ VIRTUAL CLASSROOM - Premium Minimal Design
+
+### 📊 Current State Analysis
+
+**File:** `VirtualClassroomInterface.tsx`
+**Lines:** 1,040
+**Features:** 65+ virtual features (3D/AR/VR capable)
+
+### 🎨 Premium Minimal Redesign
+
+**Target Metrics:**
+- **Frozen UI:** 56dp
+- **Content Area:** 91%
+
+### 📱 Premium Layout
+
+```
+┌──────────────────────────────────────────────────────┐
+│ Virtual Classroom · Room 204              Grid 📱    │ 56dp
+├──────────────────────────────────────────────────────┤
+│                                                      │
+│     [Teacher: Mr. Anderson 🎤]                       │
+│                                                      │
+│   [👤 Alex]    [👤 Sam]     [👤 Jordan]             │
+│   [👤 You*]    [👤 Pat]     [👤 Chris]              │
+│   [👤 Kim]     [👤 Lee]     [👤 Taylor]             │
+│                                                      │ 91%
+│ Status: Discussion Mode · Queue: 2                   │ CONTENT
+│                                                      │
+│ [✋ Raise Hand] [💬 Chat] [🔇 Mute]                  │
+│                                                      │
+└──────────────────────────────────────────────────────┘
+```
+
+### 🚀 Student Benefits
+
+- ✅ See all classmates
+- ✅ Visual seating
+- ✅ Quick status icons
+- ✅ Immersive feeling
+- ✅ Easy interaction
+- ✅ AR/VR ready
+
+---
+
+## 1️⃣6️⃣ INTERACTIVE CLASSROOM - Premium Minimal Design
+
+### 📊 Current State Analysis
+
+**File:** `EnhancedInteractiveClassroomScreen.tsx`
+**Lines:** 986
+**Features:** 60+ interactive features
+
+### 🎨 Premium Minimal Redesign
+
+**Target Metrics:**
+- **Frozen UI:** 96dp (48dp header + 48dp tools)
+- **Content Area:** 86%
+
+### 📱 Premium Layout
+
+```
+┌──────────────────────────────────────────────────────┐
+│ Interactive · 15 students                    Exit    │ 48dp
+├──────────────────────────────────────────────────────┤
+│ [✏️ Draw] [📝 Text] [🔷 Shape] [🎨 Color] [↩️ Undo]   │ 48dp
+├──────────────────────────────────────────────────────┤
+│                                                      │
+│         Shared Whiteboard: y = mx + b                │
+│                                                      │
+│         [Student drawings/annotations]               │
+│                                                      │ 86%
+│                                                      │ CONTENT
+│ Active: 👤 Teacher  👤 You  👤 Alex  👤 Sam           │
+│                                                      │
+│ [Request Control] [Screenshot] [Clear]               │
+│                                                      │
+└──────────────────────────────────────────────────────┘
+```
+
+### 🚀 Student Benefits
+
+- ✅ Draw together
+- ✅ Visual collaboration
+- ✅ Math equation support
+- ✅ Request to annotate
+- ✅ Save whiteboard
+- ✅ Real-time sync
+
+---
+
+## 1️⃣7️⃣ COLLABORATION STUDIO - Premium Minimal Design
+
+### 📊 Current State Analysis
+
+**File:** `LiveCollaborationStudio.tsx`
+**Lines:** 1,173
+**Features:** 70+ studio features
+
+### 🎨 Premium Minimal Redesign
+
+**Target Metrics:**
+- **Frozen UI:** 56dp
+- **Content Area:** 91%
+
+### 📱 Premium Layout
+
+```
+┌──────────────────────────────────────────────────────┐
+│ Essay Draft                              Save 💾      │ 56dp
+├──────────────────────────────────────────────────────┤
+│                                                      │
+│ Active: 👤 You  👤 Alex*  👤 Sam                      │
+│                                                      │
+│ Climate Change Impact on Oceans                      │
+│ ─────────────────────────────────────────────────    │
+│ Introduction: Climate change has significantly       │
+│ affected ocean temperatures... [Alex typing...]      │
+│                                                      │ 91%
+│                                                      │ CONTENT
+│ Comments(3)  Version History  Chat                   │
+│                                                      │
+│ [+ Section] [📷 Image] [🔗 Link] [Export PDF]        │
+│                                                      │
+└──────────────────────────────────────────────────────┘
+```
+
+### 🚀 Student Benefits
+
+- ✅ Real-time co-editing
+- ✅ See who's typing
+- ✅ Comments inline
+- ✅ Version history
+- ✅ Chat integrated
+- ✅ Export to PDF
+
+---
+
+## 1️⃣8️⃣ ENHANCED LIVE PARTICIPATION - Premium Minimal Design
+
+### 📊 Current State Analysis
+
+**File:** `EnhancedLiveClassParticipationScreen.tsx`
+**Lines:** 1,137
+**Features:** 56+ enhanced features
+
+### 🎨 Premium Minimal Redesign
+
+**Target Metrics:**
+- **Frozen UI:** 48dp
+- **Content Area:** 93%
+
+### 📱 Premium Layout
+
+```
+┌──────────────────────────────────────────────────────┐
+│ Breakout Room 3 · 4 students                    ✕    │ 48dp
+├──────────────────────────────────────────────────────┤
+│                                                      │
+│ Topic: Solve Problem Set 3                           │
+│ Team: 👤 You* 👤 Pat 👤 Alex 👤 Sam                   │
+│                                                      │
+│ Transcript ──────────────────────────────────────    │
+│ You: "Let's start with problem 1..."                 │
+│ Pat: "I think we should..."                          │
+│                                                      │
+│ Notes ───────────────────────────────────────────    │ 93%
+│ • x² + 2x + 1 = 0                                    │ CONTENT
+│ • x = -1                                             │
+│                                                      │
+│ Time: 8:32  [Share Screen] [Call Teacher]            │
+│                                                      │
+└──────────────────────────────────────────────────────┘
+```
+
+### 🚀 Student Benefits
+
+- ✅ Focused breakout space
+- ✅ Transcript of discussion
+- ✅ Shared notes
+- ✅ Call teacher if stuck
+- ✅ Timer visible
+- ✅ Team collaboration
+
+---
+
+## 1️⃣9️⃣ PEER LEARNING NETWORK - Premium Minimal Design
+
+### 📊 Current State Analysis
+
+**File:** `PeerLearningNetwork.tsx`
+**Lines:** 1,526
+**Features:** 85+ networking features
+
+### 🎨 Premium Minimal Redesign
+
+**Target Metrics:**
+- **Frozen UI:** 96dp (56dp header + 40dp tabs)
+- **Content Area:** 86%
+
+### 📱 Premium Layout
+
+```
+┌──────────────────────────────────────────────────────┐
+│ ← Peer Groups                          Create +      │ 56dp
+├──────────────────────────────────────────────────────┤
+│ [Trending] [My Groups] [Recommended] [Nearby]        │ 40dp
+├──────────────────────────────────────────────────────┤
+│                                                      │
+│ 📚 Calculus Study Group                              │
+│ 👥 12 members online · Meeting now                   │
+│ Topics: Integration, Derivatives, Limits             │
+│ [Join Session]                                       │
+│                                                      │
+│ 🧪 Physics Solvers                                   │ 86%
+│ 👥 8 members · Tomorrow 4PM · 3 new messages         │ CONTENT
+│ Topics: Mechanics, Thermodynamics                    │
+│ [Open Chat]                                          │
+│                                                      │
+│ 🌍 Biology Research Team                             │
+│ 👥 15 members · Project: Cell Biology                │
+│ Next: Presentation on Friday                         │
+│ [View Details]                                       │
+│                                                      │
+└──────────────────────────────────────────────────────┘
+```
+
+### 🚀 Student Benefits
+
+- ✅ Find study groups
+- ✅ See who's online
+- ✅ Topic-based matching
+- ✅ Join live sessions
+- ✅ Group chat
+- ✅ Nearby students
+
+---
+
+## 2️⃣0️⃣ GAMIFIED LEARNING HUB - Premium Minimal Design
+
+### 📊 Current State Analysis
+
+**File:** `GamifiedLearningHub.tsx`
+**Lines:** 1,445
+**Features:** 75+ gamification features
+
+### 🎨 Premium Minimal Redesign
+
+**Target Metrics:**
+- **Frozen UI:** 56dp
+- **Content Area:** 91%
+
+### 📱 Premium Layout
+
+```
+┌──────────────────────────────────────────────────────┐
+│ Learning Hub                           Rewards 🎁    │ 56dp
+├──────────────────────────────────────────────────────┤
+│                                                      │
+│ Level 12 · ████████████░░ 2,340/3,000 XP            │
+│                                                      │
+│ Daily Goals ──────────────────────────────────────   │
+│ ✓ Complete 5 problems (+50 XP)                       │
+│ ⏳ Attend all classes (+100 XP)                      │
+│ ○ Study 1 hour (+75 XP)                             │
+│                                                      │
+│ Leaderboard ──────────────────────────────────────   │ 91%
+│ 🥇 Sarah    5,420 XP                                 │ CONTENT
+│ 🥈 You      2,340 XP                                 │
+│ 🥉 Alex     2,100 XP                                 │
+│ [View All Rankings]                                  │
+│                                                      │
+│ Badges Earned ────────────────────────────────────   │
+│ 🏆 Perfect Week  🎯 Quiz Master  📚 Bookworm         │
+│ [View Gallery]                                       │
+│                                                      │
+│ [Challenge Friend]                                   │
+│                                                      │
+└──────────────────────────────────────────────────────┘
+```
+
+### 🚀 Student Benefits
+
+- ✅ Visual progress
+- ✅ Daily goals
+- ✅ Friendly competition
+- ✅ Badge collection
+- ✅ Motivating
+- ✅ Challenge friends
+
+---
+
+## 2️⃣1️⃣ ACTIVITY DETAIL SCREEN - Premium Minimal Design
+
+### 📊 Current State Analysis
+
+**File:** `ActivityDetailScreen.tsx`
+**Lines:** 1,155
+**Features:** 55+ activity tracking features
+
+### 🎨 Premium Minimal Redesign
+
+**Target Metrics:**
+- **Frozen UI:** 56dp
+- **Content Area:** 91%
+
+### 📱 Premium Layout
+
+```
+┌──────────────────────────────────────────────────────┐
+│ ← Science Fair Project                    Share 📤   │ 56dp
+├──────────────────────────────────────────────────────┤
+│                                                      │
+│ Group Activity · Due in 5 days                       │
+│ Team: 👤 You (Lead) 👤 Alex 👤 Sam 👤 Jordan         │
+│                                                      │
+│ Progress ─────────────────────────────────────────   │
+│ ✓ Research    ⏳ Building    ○ Testing    ○ Present │
+│                                                      │
+│ Current Phase: Building ──────────────────────────   │
+│ Materials needed:                                    │ 91%
+│ ☐ Cardboard (Get by tomorrow)                       │ CONTENT
+│ ☐ Batteries (Alex bringing)                         │
+│ ✓ Wires (Completed)                                  │
+│                                                      │
+│ Recent Updates ───────────────────────────────────   │
+│ 2h ago: Sam uploaded design sketch                   │
+│ 5h ago: You completed research                       │
+│                                                      │
+│ [View Resources] [Team Chat] [Add Update]            │
+│                                                      │
+└──────────────────────────────────────────────────────┘
+```
+
+### 🚀 Student Benefits
+
+- ✅ Track group projects
+- ✅ See team progress
+- ✅ Assign tasks
+- ✅ Update timeline
+- ✅ Team communication
+- ✅ Resource sharing
 
 ---
 
