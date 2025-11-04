@@ -49,7 +49,15 @@
       "Bash(timeout 10 adb logcat:*)",
       "Bash(timeout 8 adb logcat:*)",
       "Bash(timeout 15 adb logcat:*)",
-      "Read(//c/Users/dnyan/.claude/plugins/marketplaces/superpowers-dev/skills/writing-plans/**)"
+      "Read(//c/Users/dnyan/.claude/plugins/marketplaces/superpowers-dev/skills/writing-plans/**)",
+      "Skill(superpowers:using-superpowers)",
+      "Skill(superpowers:brainstorming)",
+      "Skill(superpowers:subagent-driven-development)",
+      "Bash(npx supabase --version)",
+      "Bash(npx jest:*)",
+      "Bash(timeout 5 adb logcat:*)",
+      "mcp__supabase__get_project_url",
+      "Bash(./gradlew:*)"
     ],
     "deny": [],
     "ask": []

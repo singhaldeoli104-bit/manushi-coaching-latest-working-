@@ -7,12 +7,13 @@
 import { supabase } from '../lib/supabase';
 
 /**
- * Auto-login as test parent for development
+ * Auto-login as test user for development
  * This bypasses login screen and sets up proper auth session
+ * @param role - 'admin' or 'parent' (defaults to 'admin' for testing)
  */
-export const devAutoLogin = async (): Promise<boolean> => {
+export const devAutoLogin = async (role: 'admin' | 'parent' = 'admin'): Promise<boolean> => {
   try {
-    console.log('🔐 [DevAuth] Attempting auto-login...');
+    console.log(`🔐 [DevAuth] Attempting auto-login as ${role}...`);
 
     // Check if already logged in
     const { data: { session } } = await supabase.auth.getSession();
@@ -22,20 +23,28 @@ export const devAutoLogin = async (): Promise<boolean> => {
       return true;
     }
 
-    // Try to sign in with test parent credentials
-    // You'll need to create this user in Supabase if it doesn't exist
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: 'test.parent@example.com',
-      password: 'TestParent123!', // Change this to your actual test password
-    });
+    // Determine credentials based on role
+    const credentials = role === 'admin'
+      ? {
+          email: 'admin@manushi.com',
+          password: 'Admin123!', // Change this to your actual admin password
+        }
+      : {
+          email: 'test.parent@example.com',
+          password: 'TestParent123!', // Change this to your actual test password
+        };
+
+    // Try to sign in with credentials
+    const { data, error } = await supabase.auth.signInWithPassword(credentials);
 
     if (error) {
-      console.error('❌ [DevAuth] Auto-login failed:', error.message);
-      console.log('💡 [DevAuth] Please create test user: test.parent@example.com');
+      console.error(`❌ [DevAuth] Auto-login failed:`, error.message);
+      console.log(`💡 [DevAuth] Please create test ${role}: ${credentials.email}`);
+      console.log(`💡 [DevAuth] Or update credentials in src/utils/devAuth.ts`);
       return false;
     }
 
-    console.log('✅ [DevAuth] Auto-login successful:', data.user.email);
+    console.log(`✅ [DevAuth] Auto-login successful as ${role}:`, data.user.email);
     console.log('👤 [DevAuth] User ID:', data.user.id);
 
     return true;
