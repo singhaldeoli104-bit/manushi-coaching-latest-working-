@@ -44,6 +44,10 @@ import {ThemeProvider, useTheme} from './src/context/ThemeContext';
 import {AuthProvider} from './src/context/AuthContext';
 import {RealtimeProvider} from './src/context/RealtimeContext';
 
+// Import Sprint 1 providers for confirmations and toasts
+import {ConfirmDialogProvider} from './src/shared/components/ConfirmDialog';
+import {SnackbarProvider} from './src/shared/components/SnackbarProvider';
+
 // Import i18n initialization
 import {initI18n} from './src/i18n';
 
@@ -93,7 +97,6 @@ const LoadingScreen = () => (
  */
 const AppContent = ({ initialState }: { initialState?: InitialState }) => {
   const { theme, isDark } = useTheme();
-  const paperTheme = createPaperTheme(theme);
   const [selectedRole, setSelectedRole] = useState<'admin' | 'parent' | null>(null);
   const hasInitialized = useRef(false);
 
@@ -135,7 +138,7 @@ const AppContent = ({ initialState }: { initialState?: InitialState }) => {
   console.log('🔍 [App] showDevDashboard:', showDevDashboard);
 
   return (
-    <PaperProvider theme={paperTheme}>
+    <>
       <StatusBar
         barStyle={isDark ? 'light-content' : 'dark-content'}
         backgroundColor={showDevDashboard ? theme.Primary : theme.Background}
@@ -178,7 +181,7 @@ const AppContent = ({ initialState }: { initialState?: InitialState }) => {
         /* PRODUCTION: Normal login flow */
         <AppNavigator />
       )}
-    </PaperProvider>
+    </>
   );
 };
 
@@ -225,30 +228,47 @@ function App(): React.JSX.Element {
     setTimeout(restore, 100);
   }, []);
 
-  // Auto-login DISABLED - RLS is disabled for testing
-  // React.useEffect(() => {
-  //   if (SHOW_NEW_DASHBOARD_DIRECTLY) {
-  //     devAutoLogin();
-  //   }
-  // }, []);
+  // Auto-login ENABLED - Login as admin for testing
+  useEffect(() => {
+    if (SHOW_ROLE_SELECTION) {
+      // Auto-login as admin when app starts
+      devAutoLogin('admin').then(success => {
+        if (success) {
+          console.log('✅ [App] Auto-login successful');
+        } else {
+          console.log('⚠️ [App] Auto-login failed - please check Supabase credentials');
+        }
+      });
+    }
+  }, []);
 
   // Show loading screen while restoring state
   if (!isReady) {
-    return <LoadingScreen />;
+    return (
+      <PaperProvider theme={MD3LightTheme}>
+        <LoadingScreen />
+      </PaperProvider>
+    );
   }
 
   return (
     <GestureHandlerRootView style={{flex: 1}}>
       <SafeAreaProvider>
-        <ThemeProvider>
-          <AuthProvider>
-            <RealtimeProvider>
-              <QueryClientProvider client={queryClient}>
-                <AppContent initialState={initialState} />
-              </QueryClientProvider>
-            </RealtimeProvider>
-          </AuthProvider>
-        </ThemeProvider>
+        <PaperProvider theme={MD3LightTheme}>
+          <ThemeProvider>
+            <AuthProvider>
+              <RealtimeProvider>
+                <QueryClientProvider client={queryClient}>
+                  <SnackbarProvider>
+                    <ConfirmDialogProvider>
+                      <AppContent initialState={initialState} />
+                    </ConfirmDialogProvider>
+                  </SnackbarProvider>
+                </QueryClientProvider>
+              </RealtimeProvider>
+            </AuthProvider>
+          </ThemeProvider>
+        </PaperProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
