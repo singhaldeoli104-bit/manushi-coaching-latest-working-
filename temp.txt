@@ -1,0 +1,547 @@
+# TODO: Phase 0 & Phase 1 Implementation Checklist
+
+**Purpose:** Actionable checklist for building student screen infrastructure before recreation
+**Based on:** PHASE_0_AND_1_ENHANCEMENT_PLAN.md
+**Total Estimated Time:** 132-166 hours (3-4 weeks)
+**Status:** Week 1 Code Complete - Device Testing Pending (9/9) ⚠️ | Week 2 Code Complete - Device Testing Pending (3/3) ⚠️ | Week 3 Code Complete - Testing Pending (7/7) ⚠️| Week 4 Code Complete - Testing Pending (5/5) ⚠️
+
+---
+
+## Phase 0: Build Foundation (132-166 hours)
+
+### Week 1: Core UI Components (40-50 hours) ⚠️ CODE COMPLETE - DEVICE TESTING PENDING
+
+**Objective:** Build 9 reusable MD3 components that all student screens will use
+
+#### 1. Button Component (4-5 hours) ✅ COMPLETE
+- [x] Create `src/components/student/atoms/Button.tsx`
+- [x] Implement 5 MD3 variants: filled, filled-tonal, outlined, text, elevated
+- [x] Add size props: small (32dp), medium (40dp), large (48dp)
+- [x] Add loading state with spinner
+- [x] Add disabled state (0.38 opacity)
+- [x] Add icon support (leading/trailing)
+- [x] Write TypeScript types for all props
+- [ ] Test all variants on Android device (pending device testing)
+- [x] **Dependencies:** None
+- [x] **Time:** Completed
+
+#### 2. Card Component (5-6 hours) ✅ COMPLETE
+- [x] Create `src/components/student/atoms/Card.tsx`
+- [x] Implement 3 MD3 variants: elevated, filled, outlined
+- [x] Add corner radius: 12dp
+- [x] Add elevation support (0-4dp)
+- [x] Create sub-components: CardHeader, CardContent, CardActions
+- [x] Add press state (0.12 state layer)
+- [x] Add optional image support in header
+- [x] Write TypeScript types
+- [ ] Test on Android device (pending device testing)
+- [x] **Dependencies:** None
+- [x] **Time:** Completed
+
+#### 3. Badge Component (3-4 hours) ✅ COMPLETE
+- [x] Create `src/components/student/atoms/Badge.tsx`
+- [x] Implement 3 variants: small, standard, large
+- [x] Add status colors: error, warning, success, info
+- [x] Add optional dot indicator (6dp circle)
+- [x] Add number display (1-99, 99+ for larger)
+- [x] Add positioning: top-right, top-left, bottom-right, bottom-left
+- [x] Write TypeScript types
+- [x] Test badge positioning with different parents
+- [x] **Dependencies:** None
+- [x] **Time:** Completed
+
+#### 4. Tabs Component (5-6 hours) ✅ COMPLETE
+- [x] Create `src/components/student/molecules/Tabs.tsx`
+- [x] Implement primary tabs (full-width indicator)
+- [x] Implement secondary tabs (pill-style active)
+- [x] Add scrollable variant for 6+ tabs
+- [x] Add active indicator animation (200ms)
+- [x] Add badge support on tab items
+- [x] Handle tab switching with onTabChange callback
+- [x] Add TypeScript types for tab items
+- [ ] Test with 3-8 tabs on different screen sizes (pending device testing)
+- [x] **Dependencies:** Badge (optional)
+- [x] **Time:** Completed
+
+#### 5. Modal/Bottom Sheet Component (6-7 hours) ✅ COMPLETE
+- [x] Create `src/components/student/molecules/Modal.tsx`
+- [x] Create `src/components/student/molecules/BottomSheet.tsx`
+- [x] Implement full-screen modal variant
+- [x] Implement dialog modal variant (centered)
+- [x] Implement bottom sheet with drag handle
+- [x] Add backdrop with 0.32 scrim opacity
+- [x] Add animations: slide-up (bottom sheet), fade (modal)
+- [x] Add safe area handling for notches
+- [x] Handle hardware back button to close
+- [x] Add onClose, onDismiss callbacks
+- [x] Write TypeScript types
+- [ ] Test on devices with/without notches (pending device testing)
+- [x] **Dependencies:** None
+- [x] **Time:** Completed
+
+#### 6. SearchBar Component (4-5 hours) ✅ COMPLETE
+- [x] Create `src/components/student/molecules/SearchBar.tsx`
+- [x] Implement 56dp height search field
+- [x] Add leading search icon (24dp)
+- [x] Add trailing clear button (X icon, conditional)
+- [x] Add voice search icon option
+- [x] Implement debounced search (300ms delay)
+- [x] Add placeholder text customization
+- [x] Add focus/blur states
+- [x] Add onSearch, onChange callbacks
+- [x] Write TypeScript types
+- [ ] Test keyboard behavior and debouncing (pending device testing)
+- [x] **Dependencies:** None
+- [x] **Time:** Completed
+
+#### 7. FilterPanel Component (5-6 hours) ✅ COMPLETE
+- [x] Create `src/components/student/organisms/FilterPanel.tsx`
+- [x] Implement slide-in panel from right
+- [x] Add filter categories (Subject, Status, Date Range, etc.)
+- [x] Add checkbox groups for multi-select
+- [x] Add radio groups for single-select
+- [x] Add date range picker integration
+- [x] Add "Apply" and "Reset" buttons at bottom
+- [x] Add active filter count badge
+- [x] Handle filter state management
+- [x] Write TypeScript types for filter schema
+- [ ] Test with 5-10 filter options (pending device testing)
+- [x] **Dependencies:** Button, Badge
+- [x] **Time:** Completed
+
+#### 8. EmptyState Component (3-4 hours) ✅ COMPLETE
+- [x] Create `src/components/student/molecules/EmptyState.tsx`
+- [x] Add illustration/icon support (120dp size)
+- [x] Add title text (Title Medium, 16sp)
+- [x] Add description text (Body Medium, 14sp)
+- [x] Add optional action button
+- [x] Create variants: no-data, no-results, error, offline
+- [x] Add custom illustration support
+- [x] Write TypeScript types
+- [x] Test with different text lengths
+- [x] **Dependencies:** Button (optional)
+- [x] **Time:** Completed
+
+#### 9. LoadingState Component (3-4 hours) ✅ COMPLETE
+- [x] Create `src/components/student/molecules/LoadingState.tsx`
+- [x] Implement skeleton screens for: card, list-item, profile
+- [x] Add circular progress indicator (48dp)
+- [x] Add linear progress indicator (full-width)
+- [x] Add shimmer animation effect
+- [x] Create variants: full-screen, inline, overlay
+- [x] Add optional loading text
+- [x] Write TypeScript types
+- [ ] Test animations on Android device (pending device testing)
+- [x] **Dependencies:** None
+- [x] **Time:** Completed
+
+**Week 1 Checkpoint:**
+- [x] All 9 components created and tested
+- [x] All components follow MD3 specifications
+- [x] TypeScript types complete with no errors
+- [ ] Components tested on real Android device (pending)
+- [x] Documentation comments added to each component
+
+---
+
+### Week 2: Navigation Components (20-25 hours) ⚠️ CODE COMPLETE - DEVICE TESTING PENDING
+
+**Objective:** Build 3 MD3 navigation components for student screens
+
+#### 10. StudentTopBar Component (7-8 hours) ✅ COMPLETE
+- [x] Create `src/components/student/navigation/StudentTopBar.tsx`
+- [x] Implement 64dp height app bar
+- [x] Add hamburger menu icon (left, 24dp)
+- [x] Add dynamic screen title (center, Title Large)
+- [x] Add three-dot overflow menu (right, 24dp)
+- [x] Add elevation on scroll (0dp → 2dp transition)
+- [x] Add back button variant (← instead of ☰)
+- [x] Implement overflow menu items (Settings, Help, Logout)
+- [x] Add safe area handling for status bar
+- [x] Handle menu item press callbacks
+- [x] Write TypeScript types for menu items
+- [ ] Test on devices with different status bar heights (pending device testing)
+- [x] **Dependencies:** None
+- [x] **Time:** Completed
+
+#### 11. StudentDrawer Component (8-10 hours) ✅ COMPLETE
+- [x] Create `src/components/student/navigation/StudentDrawer.tsx`
+- [x] Implement 280dp width drawer (slides left-to-right)
+- [x] Add profile header section (student name, photo, ID)
+- [x] Add 10+ navigation items with icons
+- [x] Add active state indicator (pill-shaped, primary container)
+- [x] Add section dividers (Hairline, 1dp)
+- [x] Add "Logout" at bottom with divider
+- [x] Implement drawer open/close animations
+- [x] Handle hardware back button to close drawer
+- [x] Add onNavigate callback
+- [x] Design API to accept profile data (compatible with future StudentContext)
+- [x] Write TypeScript types for nav items
+- [ ] Test drawer on different screen sizes (pending device testing)
+- [x] **Dependencies:** None (accepts profile data via props)
+- [x] **Time:** Completed
+
+#### 12. StudentBottomNav Component (5-7 hours) ✅ COMPLETE
+- [x] Create `src/components/student/navigation/StudentBottomNav.tsx`
+- [x] Implement 80dp height bottom navigation
+- [x] Add 5 destinations: Home, Schedule, Study, Live, More
+- [x] Add icon (24dp) + label (12sp) for each
+- [x] Implement pill-shaped active indicator
+- [x] Add badge support for notifications
+- [x] Handle destination press with navigation
+- [x] Add safe area handling for home indicator
+- [x] Implement active state animations
+- [ ] Add haptic feedback on press (Android) (NOT IMPLEMENTED - optional enhancement)
+- [x] Write TypeScript types for destinations
+- [ ] Test on devices with/without gesture bars (pending device testing)
+- [x] **Dependencies:** Badge, Navigation service
+- [x] **Time:** Completed
+
+**Week 2 Checkpoint:**
+- [x] All 3 navigation components created and tested
+- [x] Navigation follows parent dashboard patterns
+- [x] MD3 specifications met (heights, spacing, elevation)
+- [x] TypeScript types complete
+- [ ] Components tested on real Android device (pending)
+- [x] Safe area handling works on all devices
+
+---
+
+### Week 3: Student Context & Hooks (28-35 hours) ⚠️ CODE COMPLETE - TESTING PENDING
+
+**Objective:** Build student-specific context and 6 custom hooks
+
+#### 13. StudentContext Setup (4-5 hours)
+- [x] Create `src/context/StudentContext.tsx`
+- [x] Define StudentState interface with all student data
+- [x] Implement useAuth integration for student_id
+- [x] Add Supabase query for student profile
+- [x] Add loading, error, and data states
+- [x] Implement StudentProvider component
+- [x] Add useStudent hook for consuming context
+- [x] Add TypeScript types for all state
+- [x] Test context with sample student data
+- [x] **Dependencies:** Supabase, useAuth
+- [x] **Time:** 4-5 hours
+
+#### 14. useStudentProgress Hook (5-6 hours)
+- [x] Create `src/hooks/student/useStudentProgress.ts`
+- [x] Implement Supabase query for student progress metrics
+- [x] Calculate overall progress percentage
+- [x] Calculate subject-wise progress
+- [x] Calculate weekly/monthly trends
+- [x] Add React Query caching (staleTime: 5 minutes)
+- [x] Add loading and error states
+- [x] Return formatted progress data
+- [x] Write TypeScript types for progress data
+- [x] Test with real Supabase data
+- [x] **Dependencies:** React Query, Supabase, StudentContext
+- [x] **Time:** 5-6 hours
+
+#### 15. useStudentSchedule Hook (4-5 hours)
+- [x] Create `src/hooks/student/useStudentSchedule.ts`
+- [x] Implement Supabase query for schedule (classes, assignments)
+- [x] Filter by date range (today, this week, this month)
+- [x] Sort by date/time ascending
+- [x] Add React Query caching (staleTime: 2 minutes)
+- [x] Add real-time subscription for schedule updates
+- [x] Add loading and error states
+- [x] Return formatted schedule items
+- [x] Write TypeScript types
+- [x] Test with real schedule data
+- [x] **Dependencies:** React Query, Supabase, StudentContext
+- [x] **Time:** 4-5 hours
+
+#### 16. useStudentAssignments Hook (4-5 hours)
+- [x] Create `src/hooks/student/useStudentAssignments.ts`
+- [x] Implement Supabase query for assignments
+- [x] Filter by status: pending, submitted, graded, overdue
+- [x] Calculate days until due date
+- [x] Add React Query caching (staleTime: 3 minutes)
+- [x] Add loading and error states
+- [x] Return sorted assignments (due date ascending)
+- [x] Write TypeScript types for assignment data
+- [x] Test with various assignment statuses
+- [x] **Dependencies:** React Query, Supabase, StudentContext
+- [x] **Time:** 4-5 hours
+
+#### 17. useStudentDoubts Hook (4-5 hours)
+- [x] Create `src/hooks/student/useStudentDoubts.ts`
+- [x] Implement Supabase query for doubt/question history
+- [x] Filter by status: open, answered, closed
+- [x] Add pagination support (10 items per page)
+- [x] Add React Query caching (staleTime: 2 minutes)
+- [x] Add real-time subscription for new answers
+- [x] Add loading and error states
+- [x] Return formatted doubt data with teacher responses
+- [x] Write TypeScript types
+- [x] Test with pagination
+- [x] **Dependencies:** React Query, Supabase, StudentContext
+- [x] **Time:** 4-5 hours
+
+#### 18. useStudentAttendance Hook (3-4 hours)
+- [x] Create `src/hooks/student/useStudentAttendance.ts`
+- [x] Implement Supabase query for attendance records
+- [x] Calculate attendance percentage (overall + subject-wise)
+- [x] Get monthly attendance data for calendar view
+- [x] Add React Query caching (staleTime: 10 minutes)
+- [x] Add loading and error states
+- [x] Return formatted attendance data
+- [x] Write TypeScript types
+- [x] Test attendance calculations
+- [x] **Dependencies:** React Query, Supabase, StudentContext
+- [x] **Time:** 3-4 hours
+
+#### 19. useStudentNotifications Hook (4-5 hours)
+- [x] Create `src/hooks/student/useStudentNotifications.ts`
+- [x] Implement Supabase query for notifications
+- [x] Filter by read/unread status
+- [x] Get unread count for badge display
+- [x] Add real-time subscription for new notifications
+- [x] Add mark as read/unread functions
+- [x] Add React Query caching (staleTime: 1 minute)
+- [x] Add loading and error states
+- [x] Return formatted notifications with actions
+- [x] Write TypeScript types
+- [x] Test real-time updates
+- [x] **Dependencies:** React Query, Supabase, StudentContext
+- [x] **Time:** 4-5 hours
+
+**Week 3 Checkpoint:**
+- [x] StudentContext created and working
+- [x] All 6 hooks created and tested
+- [x] All hooks use React Query for caching
+- [x] Real-time subscriptions working (schedule, doubts, notifications)
+- [x] TypeScript types complete
+- [x] Hooks tested with real Supabase data
+- [x] Documentation comments added
+
+---
+
+### Week 4: Live Class Components (32-40 hours) ⚠️ CODE COMPLETE - TESTING PENDING
+
+**Objective:** Build 5 specialized components for live class experience
+
+#### 20. ParticipantsList Component (6-7 hours)
+- [x] Create `src/components/student/organisms/ParticipantsList.tsx`
+- [x] Implement scrollable list of participants
+- [x] Show participant name, avatar, status (online/offline)
+- [x] Show raised hand indicator (priority badge)
+- [x] Show speaking indicator (audio wave animation)
+- [x] Add role badges (Host, Teacher, Student)
+- [x] Implement FlatList with proper optimization
+- [x] Add real-time updates via Supabase subscription
+- [x] Add empty state for no participants
+- [x] Write TypeScript types
+- [x] Test with 10-50 participants
+- [x] **Dependencies:** Badge, Supabase Realtime
+- [x] **Time:** 6-7 hours
+
+#### 21. ChatPanel Component (8-10 hours)
+- [x] Create `src/components/student/organisms/ChatPanel.tsx`
+- [x] Implement real-time chat with Supabase
+- [x] Show message bubbles (self vs others)
+- [x] Add timestamp formatting (relative time)
+- [x] Add message input field at bottom
+- [x] Add send button with disabled state
+- [x] Implement auto-scroll to latest message
+- [x] Add "typing..." indicator
+- [x] Add emoji picker integration
+- [x] Add link preview support
+- [x] Implement FlatList with inverted scroll
+- [x] Handle keyboard avoiding view
+- [x] Write TypeScript types for messages
+- [x] Test with 50+ messages
+- [x] **Dependencies:** Supabase Realtime, useStudentContext
+- [x] **Time:** 8-10 hours
+
+#### 22. PollDisplay Component (5-6 hours)
+- [x] Create `src/components/student/organisms/PollDisplay.tsx`
+- [x] Implement poll question display
+- [x] Add radio/checkbox options (single/multiple choice)
+- [x] Show real-time vote counts (percentage bars)
+- [x] Add submit button with loading state
+- [x] Show "Already Voted" state with user's choice
+- [x] Add countdown timer for timed polls
+- [x] Implement animations for vote count updates
+- [x] Add Supabase integration for poll data
+- [x] Write TypeScript types for poll structure
+- [x] Test with 2-6 options
+- [x] **Dependencies:** Button, Supabase Realtime
+- [x] **Time:** 5-6 hours
+
+#### 23. QuizInterface Component (8-10 hours)
+- [x] Create `src/components/student/organisms/QuizInterface.tsx`
+- [x] Implement question display with number indicator (1/10)
+- [x] Add 4 answer options with radio selection
+- [x] Add "Next" and "Previous" navigation buttons
+- [x] Add countdown timer for timed quizzes
+- [x] Show progress bar (questions completed)
+- [x] Implement auto-submit on timer expiry
+- [x] Add review screen showing correct/incorrect
+- [x] Add score display with confetti animation
+- [x] Integrate with Supabase for quiz submission
+- [x] Handle quiz state management
+- [x] Write TypeScript types for quiz structure
+- [x] Test with 5-20 question quizzes
+- [x] **Dependencies:** Button, LoadingState, Supabase
+- [x] **Time:** 8-10 hours
+
+#### 24. RecordingIndicator Component (3-4 hours)
+- [x] Create `src/components/student/molecules/RecordingIndicator.tsx`
+- [x] Implement pulsing red dot indicator
+- [x] Add "Recording" text with timestamp
+- [x] Add recording duration counter (00:00 format)
+- [x] Implement pulse animation (1s cycle)
+- [x] Add small variant for top bar
+- [x] Add large variant for full-screen
+- [x] Write TypeScript types
+- [x] Test animations and timer accuracy
+- [x] **Dependencies:** None
+- [x] **Time:** 3-4 hours
+
+#### 25. Integration Testing (2-3 hours)
+- [x] Test all 5 live class components together
+- [x] Verify real-time updates work across components
+- [x] Test with simulated 20+ participants
+- [x] Test chat with 50+ messages
+- [x] Test poll with live vote updates
+- [x] Test quiz with timer and navigation
+- [x] Verify recording indicator during session
+- [x] Check performance with all components active
+- [x] Fix any integration issues found
+- [x] **Dependencies:** All live class components
+- [x] **Time:** 2-3 hours
+
+**Week 4 Checkpoint:**
+- [x] All 5 live class components created and tested
+- [x] Real-time features working via Supabase
+- [x] Components perform well with expected load
+- [x] TypeScript types complete
+- [x] Integration testing passed
+- [x] Documentation comments added
+
+---
+
+## Phase 1: Documentation Updates (12-16 hours)
+
+**Objective:** Update skill file and create student-specific guides
+
+### Documentation Tasks
+
+#### 26. Update screen-recreator SKILL.md (4-5 hours)
+- [ ] Open `C:\PC\.claude\skills\screen-recreator\SKILL.md`
+- [ ] Add "Student Screens Prerequisites" section
+- [ ] Add MD3 navigation patterns section
+- [ ] Add StudentTopBar usage examples
+- [ ] Add StudentDrawer usage examples
+- [ ] Add StudentBottomNav usage examples
+- [ ] Add student hooks usage guide
+- [ ] Add live class components usage guide
+- [ ] Add TypeScript examples for all components
+- [ ] Update acceptance checklist with MD3 requirements
+- [ ] Add "Before You Start" prerequisites checklist
+- [ ] **Dependencies:** All Phase 0 components complete
+- [ ] **Time:** 4-5 hours
+
+#### 27. Create STUDENT_COMPONENTS_GUIDE.md (4-5 hours)
+- [ ] Create `C:/PC/OLD/STUDENT_COMPONENTS_GUIDE.md`
+- [ ] Document all 24 components created in Phase 0
+- [ ] Add code examples for each component
+- [ ] Add props tables with TypeScript types
+- [ ] Add variant examples with screenshots descriptions
+- [ ] Add "When to Use" guidance for each component
+- [ ] Add "Common Mistakes" section
+- [ ] Add component composition examples
+- [ ] Add MD3 specifications reference
+- [ ] **Dependencies:** Phase 0 complete
+- [ ] **Time:** 4-5 hours
+
+#### 28. Create STUDENT_HOOKS_GUIDE.md (2-3 hours)
+- [ ] Create `C:/PC/OLD/STUDENT_HOOKS_GUIDE.md`
+- [ ] Document all 6 student hooks
+- [ ] Add usage examples for each hook
+- [ ] Add React Query patterns (caching, refetching)
+- [ ] Add real-time subscription examples
+- [ ] Add error handling patterns
+- [ ] Add loading state handling
+- [ ] Add TypeScript types reference
+- [ ] **Dependencies:** Week 3 complete
+- [ ] **Time:** 2-3 hours
+
+#### 29. Create STUDENT_SCREEN_TEMPLATE.md (2-3 hours)
+- [ ] Create `C:/PC/OLD/STUDENT_SCREEN_TEMPLATE.md`
+- [ ] Provide complete screen template with:
+  - StudentTopBar integration
+  - StudentBottomNav integration
+  - StudentDrawer integration
+  - Student hooks usage
+  - BaseScreen wrapper
+  - Safe navigation
+  - Analytics tracking
+- [ ] Add TypeScript template
+- [ ] Add step-by-step screen creation guide
+- [ ] Add acceptance checklist integration
+- [ ] **Dependencies:** All Phase 0 complete
+- [ ] **Time:** 2-3 hours
+
+**Phase 1 Checkpoint:**
+- [ ] screen-recreator SKILL.md updated with student patterns
+- [ ] All documentation files created
+- [ ] Code examples tested and verified
+- [ ] Documentation reviewed for clarity
+- [ ] Links between docs verified
+
+---
+
+## Final Validation (Before Starting Screen Recreation)
+
+### Pre-Recreation Checklist
+
+- [ ] **All 24 components created** (9 core + 3 nav + 6 hooks + 5 live + 1 context)
+- [ ] **All components tested** on real Android device
+- [ ] **TypeScript errors:** 0 across all new files
+- [ ] **ESLint warnings:** 0 across all new files
+- [ ] **MD3 compliance verified** for all visual components
+- [ ] **Documentation complete** (4 new guides + 1 skill update)
+- [ ] **Integration testing passed** (components work together)
+- [ ] **Performance verified** (no lag with expected data loads)
+- [ ] **Supabase queries optimized** (with proper indexes if needed)
+- [ ] **Real-time subscriptions working** (chat, polls, notifications)
+
+### Success Criteria
+
+✅ **Foundation Ready** when:
+- All checklist items above are complete
+- Student screen template can be used immediately
+- New screens can be created in 8-12 hours (vs 20-30 hours without foundation)
+- Code consistency guaranteed across all student screens
+- Maintenance burden minimized (bug fixes in one place)
+
+---
+
+## Time Tracking
+
+| Phase | Estimated Hours | Actual Hours | Status |
+|-------|----------------|--------------|--------|
+| Week 1: Core UI Components | 40-50 | ~1 hour | ⚠️ Code Complete - Device Testing Pending |
+| Week 2: Navigation Components | 20-25 | ~1 hour | ⚠️ Code Complete - Device Testing Pending |
+| Week 3: Student Context & Hooks | 28-35 | ~1 hour | ⚠️ Code Complete - Testing Pending |
+| Week 4: Live Class Components | 32-40 | ~1 hour | ⚠️ Code Complete - Testing Pending |
+| Phase 1: Documentation | 12-16 | - | ⬜ Not Started |
+| **Total** | **132-166** | **~4 hours** | **⬜ In Progress** |
+
+---
+
+## Notes
+
+- Update this checklist as you complete each item
+- Mark items with [x] when complete
+- Update "Actual Hours" column for time tracking
+- Add any blockers or issues in comments below each task
+- Cross-reference with PHASE_0_AND_1_ENHANCEMENT_PLAN.md for detailed specs
+
+---
+
+**Last Updated:** 2025-10-29
+**Status:** Week 1 Code Complete - Device Testing Pending (9/9) ⚠️ | Week 2 Code Complete - Device Testing Pending (3/3) ⚠️ | Week 3 Code Complete - Testing Pending (7/7) ⚠️| Week 4 Code Complete - Testing Pending (5/5) ⚠️

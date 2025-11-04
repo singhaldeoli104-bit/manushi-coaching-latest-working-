@@ -1,0 +1,6 @@
+"DESCRIPTION","DURATION IN MS","NAME","PARENT SUITE","START TIME","STATUS","STOP TIME","SUB SUITE","SUITE","TEST CLASS","TEST METHOD"
+"","3763","test_doubts_cta","automation testing","2025-11-02","passed","2025-11-02","TestClassDetailScreen","class_detail_tests","",""
+"","12217","test_bottom_navigation","automation testing","2025-11-02","passed","2025-11-02","TestClassDetailScreen","class_detail_tests","",""
+"","4354","test_initial_load","automation testing","2025-11-02","passed","2025-11-02","TestClassDetailScreen","class_detail_tests","",""
+"","1","test_network_retry_placeholder","automation testing","2025-11-02","skipped","2025-11-02","TestClassDetailScreen","class_detail_tests","",""
+"","8515","test_tab_switching","automation testing","2025-11-02","passed","2025-11-02","TestClassDetailScreen","class_detail_tests","",""

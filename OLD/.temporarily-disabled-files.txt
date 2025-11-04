@@ -1,0 +1,21 @@
+# Temporarily Disabled Files - Animation Issues
+# Will be re-enabled after Reanimated migration
+
+# Files with react-native-animatable imports (14 files):
+src/screens/SplashScreen.tsx
+src/screens/admin/UIUXEnhancementPolishScreen.tsx
+src/screens/admin/QualityAssuranceTestingScreen.tsx
+src/screens/admin/ProductionDeploymentLaunchScreen.tsx
+src/screens/admin/MobileOptimizationPWAScreen.tsx
+src/screens/teacher/QuestionBankManagementScreen.tsx
+src/screens/teacher/EnhancedAssignmentGradingScreen.tsx
+src/screens/student/StudyLibraryScreen.tsx
+src/screens/student/StudentDashboard.tsx
+src/screens/student/EnhancedScheduleScreen.tsx
+src/screens/student/EnhancedLiveClassParticipationScreen.tsx
+src/screens/student/EnhancedAIStudyAssistantScreen.tsx
+src/screens/auth/RoleSelectionScreen.tsx
+src/screens/auth/ForgotPasswordScreen.tsx
+
+# Files with audio library imports (1 file):
+src/components/media/AudioRecorder.tsx

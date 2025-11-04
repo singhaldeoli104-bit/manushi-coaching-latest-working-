@@ -1,0 +1,25 @@
+{
+  "extends": "@react-native/typescript-config",
+  "compilerOptions": {
+    /* Strict Type Checking - Catches 50% of runtime errors at compile time */
+    "strict": true,                                      // Enable all strict type checks
+    "noUncheckedIndexedAccess": true,                   // array[i] returns T | undefined (prevents crashes)
+    "exactOptionalPropertyTypes": true,                 // undefined !== missing property
+    "noImplicitReturns": true,                          // All code paths must return
+    "noFallthroughCasesInSwitch": true,                // Switch cases must break/return
+    "noUnusedLocals": true,                            // Catch unused variables
+    "noUnusedParameters": true,                        // Catch unused function params
+    "noImplicitOverride": true,                        // Must use 'override' keyword
+
+    /* Prevents "any" leaking into your code */
+    "noImplicitAny": true,                             // No implicit any types
+
+    /* Module Resolution */
+    "baseUrl": "./src",                                // Import from 'components/...' instead of '../../../'
+    "paths": {
+      "@/*": ["./*"],                                  // Import from '@/components/...'
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "babel.config.js", "metro.config.js", "jest.config.js"]
+}

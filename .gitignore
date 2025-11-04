@@ -1,0 +1,83 @@
+# Dependencies
+node_modules/
+
+# Environment files
+.env
+.env.local
+.env.test
+.env.production
+
+# Build outputs
+dist/
+build/
+coverage/
+
+# Test outputs
+*.log
+*.tsbuildinfo
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+coverage/
+.nyc_output/
+junit.xml
+
+# React Native
+.expo/
+.expo-shared/
+npm-debug.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
+
+# Android
+android/app/build/
+android/build/
+android/.gradle/
+android/app/release/
+*.apk
+*.aab
+
+# iOS
+ios/Pods/
+ios/build/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata
+*.xccheckout
+*.moved-aside
+DerivedData
+*.hmap
+*.ipa
+*.xcuserstate
+ios/.xcode.env.local
+
+# Metro
+.metro-health-check*
+
+# Debugging
+npm-debug.log
+yarn-error.log
+
+# Temporary files
+*.tmp
+*.temp

@@ -1,0 +1,216 @@
+{
+  "common": {
+    "save": "सहेजें",
+    "cancel": "रद्द करें",
+    "delete": "हटाएं",
+    "edit": "संपादित करें",
+    "done": "पूर्ण",
+    "back": "वापस",
+    "next": "आगे",
+    "loading": "लोड हो रहा है...",
+    "error": "त्रुटि",
+    "success": "सफलता",
+    "confirm": "पुष्टि करें"
+  },
+  "settings": {
+    "title": "सेटिंग्स",
+    "subtitle": "अपनी ऐप वरीयताएं प्रबंधित करें",
+    "account": "खाता",
+    "notifications": "सूचनाएं",
+    "appearance": "दिखावट",
+    "about": "के बारे में",
+    "profile": "प्रोफ़ाइल",
+    "profileSubtitle": "अपनी प्रोफ़ाइल देखें और संपादित करें",
+    "changePassword": "पासवर्ड बदलें",
+    "changePasswordSubtitle": "अपना पासवर्ड अपडेट करें",
+    "language": "भाषा",
+    "languageSubtitle": "अपनी पसंदीदा भाषा चुनें",
+    "pushNotifications": "पुश सूचनाएं",
+    "pushNotificationsSubtitle": "पुश सूचनाएं प्राप्त करें",
+    "emailAlerts": "ईमेल अलर्ट",
+    "emailAlertsSubtitle": "ईमेल सूचनाएं प्राप्त करें",
+    "darkMode": "डार्क मोड",
+    "darkModeSubtitle": "डार्क थीम का उपयोग करें",
+    "helpSupport": "सहायता और समर्थन",
+    "helpSupportSubtitle": "सहायता प्राप्त करें और समर्थन से संपर्क करें",
+    "privacyPolicy": "गोपनीयता नीति",
+    "privacyPolicySubtitle": "हमारी गोपनीयता नीति पढ़ें",
+    "termsOfService": "सेवा की शर्तें",
+    "termsOfServiceSubtitle": "हमारी सेवा की शर्तें पढ़ें",
+    "appVersion": "ऐप संस्करण",
+    "logout": "लॉगआउट",
+    "logoutConfirm": "क्या आप वाकई लॉगआउट करना चाहते हैं?"
+  },
+  "language": {
+    "title": "भाषा चुनें",
+    "subtitle": "अपनी पसंदीदा भाषा चुनें",
+    "english": "English",
+    "hindi": "हिंदी (Hindi)",
+    "changeLanguageConfirm": "भाषा सफलतापूर्वक बदल गई"
+  },
+  "dashboard": {
+    "title": "डैशबोर्ड",
+    "welcome": "वापसी पर स्वागत है",
+    "children": "बच्चे",
+    "tasks": "कार्य",
+    "messages": "संदेश",
+    "dueAmount": "देय राशि",
+    "childrenProgress": "बच्चों की प्रगति",
+    "actionItems": "कार्य आइटम",
+    "recentCommunications": "हाल की संचार",
+    "allCaughtUp": "सब पूरा हो गया!",
+    "allCaughtUpMessage": "कोई लंबित कार्य या अपठित संदेश नहीं। बढ़िया काम!"
+  },
+  "navigation": {
+    "home": "होम",
+    "students": "छात्र",
+    "messages": "संदेश",
+    "fees": "शुल्क",
+    "events": "कार्यक्रम"
+  },
+  "classDetail": {
+    "title": "कक्षा विवरण",
+    "tabs": {
+      "overview": "अवलोकन",
+      "doubts": "संदेह",
+      "resources": "संसाधन"
+    },
+    "classInformation": "कक्षा की जानकारी",
+    "subject": "विषय",
+    "teacher": "शिक्षक",
+    "schedule": "समय सारणी",
+    "duration": "अवधि",
+    "status": "स्थिति",
+    "yourAttendance": "आपकी उपस्थिति",
+    "markedAt": "चिह्नित किया गया",
+    "doubts": {
+      "title": "आपके संदेह",
+      "emptyTitle": "अभी तक कोई संदेह नहीं",
+      "emptyDescription": "जब आप प्रश्न सबमिट करेंगे तो संदेह यहां दिखाई देंगे",
+      "askQuestion": "प्रश्न पूछें",
+      "answer": "उत्तर",
+      "asked": "पूछा गया"
+    },
+    "resources": {
+      "title": "कक्षा संसाधन",
+      "emptyTitle": "अभी तक कोई संसाधन नहीं",
+      "emptyDescription": "जब आपके शिक्षक उन्हें अपलोड करेंगे तो संसाधन यहां दिखाई देंगे",
+      "added": "जोड़ा गया"
+    },
+    "min": "मिनट"
+  },
+  "schedule": {
+    "title": "मेरा समय सारणी",
+    "viewModes": {
+      "week": "सप्ताह",
+      "day": "दिन",
+      "month": "महीना"
+    },
+    "navigation": {
+      "previous": "पिछला",
+      "next": "अगला",
+      "today": "आज"
+    },
+    "empty": {
+      "noClasses": "कोई कक्षा निर्धारित नहीं",
+      "noClassesDay": "इस दिन कोई कक्षा निर्धारित नहीं",
+      "noData": "कोई समय सारणी डेटा उपलब्ध नहीं"
+    },
+    "classCard": {
+      "time": "समय",
+      "duration": "अवधि",
+      "location": "स्थान",
+      "teacher": "शिक्षक"
+    },
+    "status": {
+      "upcoming": "आगामी",
+      "live": "लाइव",
+      "completed": "पूर्ण",
+      "cancelled": "रद्द",
+      "deadline": "समय सीमा"
+    },
+    "priority": {
+      "high": "उच्च",
+      "medium": "मध्यम",
+      "low": "कम"
+    },
+    "settings": {
+      "title": "कैलेंडर सेटिंग्स",
+      "syncCalendar": "डिवाइस कैलेंडर के साथ सिंक करें",
+      "showDeadlines": "असाइनमेंट समय सीमा दिखाएं",
+      "showWeekends": "सप्ताहांत दिखाएं",
+      "reminderTime": "डिफ़ॉल्ट रिमाइंडर समय",
+      "save": "सहेजें",
+      "minutesBefore": "मिनट पहले"
+    },
+    "assignments": {
+      "title": "आगामी असाइनमेंट",
+      "dueDate": "देय तिथि",
+      "workOn": "असाइनमेंट पर काम करें"
+    },
+    "filters": {
+      "allEvents": "सभी इवेंट",
+      "deadlinesOnly": "केवल समय सीमा",
+      "subject": "विषय",
+      "status": "स्थिति",
+      "type": "प्रकार",
+      "all": "सभी"
+    },
+    "summary": {
+      "classesToday": "आज की कक्षाएं",
+      "studyHours": "अध्ययन समय",
+      "dueSoon": "जल्द समाप्त",
+      "attendance": "उपस्थिति"
+    },
+    "quickActions": {
+      "addStudyBlock": "अध्ययन समय जोड़ें",
+      "requestLeave": "छुट्टी अनुरोध",
+      "exportSchedule": "समय सारणी निर्यात",
+      "addEvent": "इवेंट जोड़ें",
+      "downloadPDF": "दिन PDF डाउनलोड",
+      "help": "मदद? अभी चैट करें"
+    },
+    "reminders": {
+      "title": "समय सीमा और अनुस्मारक",
+      "dueToday": "आज देय",
+      "dueTomorrow": "कल देय",
+      "dueAt": "देय",
+      "start": "शुरू करें",
+      "upload": "अपलोड",
+      "addReminder": "अनुस्मारक जोड़ें"
+    },
+    "agenda": {
+      "title": "आज का एजेंडा",
+      "join": "शामिल हों",
+      "details": "विवरण",
+      "focusTime": "ध्यान समय"
+    },
+    "messages": {
+      "loadingSchedule": "समय सारणी लोड हो रहा है...",
+      "failedToLoad": "समय सारणी लोड करने में विफल",
+      "retry": "पुनः प्रयास करें",
+      "settingsSaved": "सेटिंग्स सहेजी गईं",
+      "eventExported": "इवेंट कैलेंडर में निर्यात किया गया",
+      "noWeekData": "कोई समय सारणी डेटा उपलब्ध नहीं"
+    },
+    "weekRange": "सप्ताह",
+    "dayNames": {
+      "sunday": "रविवार",
+      "monday": "सोमवार",
+      "tuesday": "मंगलवार",
+      "wednesday": "बुधवार",
+      "thursday": "गुरुवार",
+      "friday": "शुक्रवार",
+      "saturday": "शनिवार"
+    },
+    "dayNamesShort": {
+      "sun": "रवि",
+      "mon": "सोम",
+      "tue": "मंगल",
+      "wed": "बुध",
+      "thu": "गुरु",
+      "fri": "शुक्र",
+      "sat": "शनि"
+    }
+  }
+}

@@ -1,0 +1,333 @@
+{
+  "timestamp": "2025-10-26T13:42:08.237Z",
+  "total": 54,
+  "passed": 54,
+  "failed": 0,
+  "warnings": 0,
+  "details": [
+    {
+      "screen": "NewTeacherDashboard",
+      "tab": "Home",
+      "tests": [
+        {
+          "name": "File Exists",
+          "pass": true,
+          "message": "File exists"
+        },
+        {
+          "name": "Import Statements",
+          "pass": true,
+          "message": "All imports correct"
+        },
+        {
+          "name": "Auth Handling",
+          "pass": true,
+          "message": "Auth handled properly"
+        },
+        {
+          "name": "Component Export",
+          "pass": true,
+          "message": "Default export found"
+        },
+        {
+          "name": "Navigator Reference",
+          "pass": true,
+          "message": "Referenced in navigator"
+        },
+        {
+          "name": "TypeScript Syntax",
+          "pass": true,
+          "message": "Syntax looks good"
+        }
+      ]
+    },
+    {
+      "screen": "NewAdvancedClassControlScreen",
+      "tab": "Classes",
+      "tests": [
+        {
+          "name": "File Exists",
+          "pass": true,
+          "message": "File exists"
+        },
+        {
+          "name": "Import Statements",
+          "pass": true,
+          "message": "All imports correct"
+        },
+        {
+          "name": "Auth Handling",
+          "pass": true,
+          "message": "Auth handled properly"
+        },
+        {
+          "name": "Component Export",
+          "pass": true,
+          "message": "Default export found"
+        },
+        {
+          "name": "Navigator Reference",
+          "pass": true,
+          "message": "Referenced in navigator"
+        },
+        {
+          "name": "TypeScript Syntax",
+          "pass": true,
+          "message": "Syntax looks good"
+        }
+      ]
+    },
+    {
+      "screen": "NewClassPreparationScreen",
+      "tab": "Classes",
+      "tests": [
+        {
+          "name": "File Exists",
+          "pass": true,
+          "message": "File exists"
+        },
+        {
+          "name": "Import Statements",
+          "pass": true,
+          "message": "All imports correct"
+        },
+        {
+          "name": "Auth Handling",
+          "pass": true,
+          "message": "Auth handled properly"
+        },
+        {
+          "name": "Component Export",
+          "pass": true,
+          "message": "Default export found"
+        },
+        {
+          "name": "Navigator Reference",
+          "pass": true,
+          "message": "Referenced in navigator"
+        },
+        {
+          "name": "TypeScript Syntax",
+          "pass": true,
+          "message": "Syntax looks good"
+        }
+      ]
+    },
+    {
+      "screen": "NewAssignmentCreatorScreen",
+      "tab": "Classes",
+      "tests": [
+        {
+          "name": "File Exists",
+          "pass": true,
+          "message": "File exists"
+        },
+        {
+          "name": "Import Statements",
+          "pass": true,
+          "message": "All imports correct"
+        },
+        {
+          "name": "Auth Handling",
+          "pass": true,
+          "message": "Auth handled properly"
+        },
+        {
+          "name": "Component Export",
+          "pass": true,
+          "message": "Default export found"
+        },
+        {
+          "name": "Navigator Reference",
+          "pass": true,
+          "message": "Referenced in navigator"
+        },
+        {
+          "name": "TypeScript Syntax",
+          "pass": true,
+          "message": "Syntax looks good"
+        }
+      ]
+    },
+    {
+      "screen": "AssignmentGradingScreen",
+      "tab": "Classes",
+      "tests": [
+        {
+          "name": "File Exists",
+          "pass": true,
+          "message": "File exists"
+        },
+        {
+          "name": "Import Statements",
+          "pass": true,
+          "message": "All imports correct"
+        },
+        {
+          "name": "Auth Handling",
+          "pass": true,
+          "message": "Auth handled properly"
+        },
+        {
+          "name": "Component Export",
+          "pass": true,
+          "message": "Default export found"
+        },
+        {
+          "name": "Navigator Reference",
+          "pass": true,
+          "message": "Referenced in navigator"
+        },
+        {
+          "name": "TypeScript Syntax",
+          "pass": true,
+          "message": "Syntax looks good"
+        }
+      ]
+    },
+    {
+      "screen": "NewStudentDetailScreen",
+      "tab": "Students",
+      "tests": [
+        {
+          "name": "File Exists",
+          "pass": true,
+          "message": "File exists"
+        },
+        {
+          "name": "Import Statements",
+          "pass": true,
+          "message": "All imports correct"
+        },
+        {
+          "name": "Auth Handling",
+          "pass": true,
+          "message": "Auth handled properly"
+        },
+        {
+          "name": "Component Export",
+          "pass": true,
+          "message": "Default export found"
+        },
+        {
+          "name": "Navigator Reference",
+          "pass": true,
+          "message": "Referenced in navigator"
+        },
+        {
+          "name": "TypeScript Syntax",
+          "pass": true,
+          "message": "Syntax looks good"
+        }
+      ]
+    },
+    {
+      "screen": "NewAssessmentAnalyticsScreen",
+      "tab": "Analytics",
+      "tests": [
+        {
+          "name": "File Exists",
+          "pass": true,
+          "message": "File exists"
+        },
+        {
+          "name": "Import Statements",
+          "pass": true,
+          "message": "All imports correct"
+        },
+        {
+          "name": "Auth Handling",
+          "pass": true,
+          "message": "Auth handled properly"
+        },
+        {
+          "name": "Component Export",
+          "pass": true,
+          "message": "Default export found"
+        },
+        {
+          "name": "Navigator Reference",
+          "pass": true,
+          "message": "Referenced in navigator"
+        },
+        {
+          "name": "TypeScript Syntax",
+          "pass": true,
+          "message": "Syntax looks good"
+        }
+      ]
+    },
+    {
+      "screen": "NewAttendanceTrackingScreen",
+      "tab": "Classes",
+      "tests": [
+        {
+          "name": "File Exists",
+          "pass": true,
+          "message": "File exists"
+        },
+        {
+          "name": "Import Statements",
+          "pass": true,
+          "message": "All imports correct"
+        },
+        {
+          "name": "Auth Handling",
+          "pass": true,
+          "message": "Auth handled properly"
+        },
+        {
+          "name": "Component Export",
+          "pass": true,
+          "message": "Default export found"
+        },
+        {
+          "name": "Navigator Reference",
+          "pass": true,
+          "message": "Referenced in navigator"
+        },
+        {
+          "name": "TypeScript Syntax",
+          "pass": true,
+          "message": "Syntax looks good"
+        }
+      ]
+    },
+    {
+      "screen": "NewCommunicationHubScreen",
+      "tab": "Students",
+      "tests": [
+        {
+          "name": "File Exists",
+          "pass": true,
+          "message": "File exists"
+        },
+        {
+          "name": "Import Statements",
+          "pass": true,
+          "message": "All imports correct"
+        },
+        {
+          "name": "Auth Handling",
+          "pass": true,
+          "message": "Auth handled properly"
+        },
+        {
+          "name": "Component Export",
+          "pass": true,
+          "message": "Default export found"
+        },
+        {
+          "name": "Navigator Reference",
+          "pass": true,
+          "message": "Referenced in navigator"
+        },
+        {
+          "name": "TypeScript Syntax",
+          "pass": true,
+          "message": "Syntax looks good"
+        }
+      ]
+    }
+  ]
+}

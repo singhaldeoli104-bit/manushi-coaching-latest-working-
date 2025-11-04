@@ -1,0 +1,216 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "done": "Done",
+    "back": "Back",
+    "next": "Next",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "confirm": "Confirm"
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Manage your app preferences",
+    "account": "Account",
+    "notifications": "Notifications",
+    "appearance": "Appearance",
+    "about": "About",
+    "profile": "Profile",
+    "profileSubtitle": "View and edit your profile",
+    "changePassword": "Change Password",
+    "changePasswordSubtitle": "Update your password",
+    "language": "Language",
+    "languageSubtitle": "Select your preferred language",
+    "pushNotifications": "Push Notifications",
+    "pushNotificationsSubtitle": "Receive push notifications",
+    "emailAlerts": "Email Alerts",
+    "emailAlertsSubtitle": "Receive email notifications",
+    "darkMode": "Dark Mode",
+    "darkModeSubtitle": "Use dark theme",
+    "helpSupport": "Help & Support",
+    "helpSupportSubtitle": "Get help and contact support",
+    "privacyPolicy": "Privacy Policy",
+    "privacyPolicySubtitle": "Read our privacy policy",
+    "termsOfService": "Terms of Service",
+    "termsOfServiceSubtitle": "Read our terms of service",
+    "appVersion": "App Version",
+    "logout": "Logout",
+    "logoutConfirm": "Are you sure you want to logout?"
+  },
+  "language": {
+    "title": "Select Language",
+    "subtitle": "Choose your preferred language",
+    "english": "English",
+    "hindi": "हिंदी (Hindi)",
+    "changeLanguageConfirm": "Language changed successfully"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome back",
+    "children": "Children",
+    "tasks": "Tasks",
+    "messages": "Messages",
+    "dueAmount": "Due Amount",
+    "childrenProgress": "Children Progress",
+    "actionItems": "Action Items",
+    "recentCommunications": "Recent Communications",
+    "allCaughtUp": "All Caught Up!",
+    "allCaughtUpMessage": "No pending tasks or unread messages. Great job!"
+  },
+  "navigation": {
+    "home": "Home",
+    "students": "Students",
+    "messages": "Messages",
+    "fees": "Fees",
+    "events": "Events"
+  },
+  "classDetail": {
+    "title": "Class Details",
+    "tabs": {
+      "overview": "Overview",
+      "doubts": "Doubts",
+      "resources": "Resources"
+    },
+    "classInformation": "Class Information",
+    "subject": "Subject",
+    "teacher": "Teacher",
+    "schedule": "Schedule",
+    "duration": "Duration",
+    "status": "Status",
+    "yourAttendance": "Your Attendance",
+    "markedAt": "Marked at",
+    "doubts": {
+      "title": "Your Doubts",
+      "emptyTitle": "No doubts yet",
+      "emptyDescription": "Doubts will appear here when you submit questions",
+      "askQuestion": "Ask a Question",
+      "answer": "Answer",
+      "asked": "Asked"
+    },
+    "resources": {
+      "title": "Class Resources",
+      "emptyTitle": "No resources yet",
+      "emptyDescription": "Resources will appear here when your teacher uploads them",
+      "added": "Added"
+    },
+    "min": "min"
+  },
+  "schedule": {
+    "title": "My Schedule",
+    "viewModes": {
+      "week": "Week",
+      "day": "Day",
+      "month": "Month"
+    },
+    "navigation": {
+      "previous": "Previous",
+      "next": "Next",
+      "today": "Today"
+    },
+    "empty": {
+      "noClasses": "No classes scheduled",
+      "noClassesDay": "No classes scheduled for this day",
+      "noData": "No schedule data available"
+    },
+    "classCard": {
+      "time": "Time",
+      "duration": "Duration",
+      "location": "Location",
+      "teacher": "Teacher"
+    },
+    "status": {
+      "upcoming": "Upcoming",
+      "live": "Live",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "deadline": "Deadline"
+    },
+    "priority": {
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "settings": {
+      "title": "Calendar Settings",
+      "syncCalendar": "Sync with Device Calendar",
+      "showDeadlines": "Show Assignment Deadlines",
+      "showWeekends": "Show Weekends",
+      "reminderTime": "Default Reminder Time",
+      "save": "Save Settings",
+      "minutesBefore": "minutes before"
+    },
+    "assignments": {
+      "title": "Upcoming Assignments",
+      "dueDate": "Due",
+      "workOn": "Work on Assignment"
+    },
+    "filters": {
+      "allEvents": "All Events",
+      "deadlinesOnly": "Deadlines Only",
+      "subject": "Subject",
+      "status": "Status",
+      "type": "Type",
+      "all": "All"
+    },
+    "summary": {
+      "classesToday": "Classes Today",
+      "studyHours": "Study Hours",
+      "dueSoon": "Due Soon",
+      "attendance": "Attendance"
+    },
+    "quickActions": {
+      "addStudyBlock": "Add Study Block",
+      "requestLeave": "Request Leave",
+      "exportSchedule": "Export Schedule",
+      "addEvent": "Add Event",
+      "downloadPDF": "Download Day PDF",
+      "help": "Help? Chat now"
+    },
+    "reminders": {
+      "title": "Deadlines & Reminders",
+      "dueToday": "due today",
+      "dueTomorrow": "due tomorrow",
+      "dueAt": "due",
+      "start": "Start",
+      "upload": "Upload",
+      "addReminder": "Add Reminder"
+    },
+    "agenda": {
+      "title": "Today's Agenda",
+      "join": "Join",
+      "details": "Details",
+      "focusTime": "Focus Time"
+    },
+    "messages": {
+      "loadingSchedule": "Loading schedule...",
+      "failedToLoad": "Failed to load schedule",
+      "retry": "Retry",
+      "settingsSaved": "Settings saved",
+      "eventExported": "Event exported to calendar",
+      "noWeekData": "No schedule data available"
+    },
+    "weekRange": "Week of",
+    "dayNames": {
+      "sunday": "Sunday",
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "saturday": "Saturday"
+    },
+    "dayNamesShort": {
+      "sun": "Sun",
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat"
+    }
+  }
+}

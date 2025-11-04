@@ -1,0 +1,30 @@
+
+  // MD3 Complete Typography Styles (for components expecting full style objects)
+  titleLarge: {
+    fontSize: 22,
+    lineHeight: 28,
+    fontWeight: '500' as const,
+    fontFamily: 'System',
+    letterSpacing: 0,
+  },
+  titleMedium: {
+    fontSize: 16,
+    lineHeight: 24,
+    fontWeight: '500' as const,
+    fontFamily: 'System',
+    letterSpacing: 0.15,
+  },
+  bodyLarge: {
+    fontSize: 16,
+    lineHeight: 24,
+    fontWeight: '400' as const,
+    fontFamily: 'System',
+    letterSpacing: 0.5,
+  },
+  bodyMedium: {
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '400' as const,
+    fontFamily: 'System',
+    letterSpacing: 0.25,
+  },

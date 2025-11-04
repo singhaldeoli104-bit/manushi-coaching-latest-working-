@@ -1,0 +1,47 @@
+
+  // Class Selector Modal
+  const renderClassSelectorModal = () => (
+    <Modal
+      visible={showClassSelector}
+      transparent={true}
+      animationType="fade"
+      onRequestClose={() => setShowClassSelector(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Select Class for Attendance</Text>
+            <TouchableOpacity onPress={() => setShowClassSelector(false)}>
+              <Text style={styles.modalCloseButton}>✕</Text>
+            </TouchableOpacity>
+          </View>
+          
+          <ScrollView style={styles.modalContent}>
+            {todayClasses.map((classSession) => (
+              <TouchableOpacity
+                key={classSession.id}
+                style={styles.classSelectItem}
+                onPress={() => {
+                  setShowClassSelector(false);
+                  onNavigate('take-attendance');
+                }}
+              >
+                <View style={styles.classSelectInfo}>
+                  <Text style={styles.classSelectSubject}>{classSession.subject}</Text>
+                  <Text style={styles.classSelectGrade}>
+                    {classSession.grade} • {classSession.studentsCount} students
+                  </Text>
+                  <Text style={styles.classSelectTime}>
+                    {classSession.time} • {classSession.duration}
+                  </Text>
+                </View>
+                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(classSession.status) }]}>
+                  <Text style={styles.statusText}>{classSession.status.toUpperCase()}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );

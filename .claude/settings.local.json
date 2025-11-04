@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(screen-enhancer)",
+      "Bash(adb shell:*)",
+      "mcp__supabase__list_tables",
+      "mcp__supabase__execute_sql",
+      "mcp__ide__getDiagnostics",
+      "Bash(git init:*)",
+      "Bash(test:*)",
+      "Bash(git remote add:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
