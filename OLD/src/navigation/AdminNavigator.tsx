@@ -14,6 +14,8 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { useAdminDashboard } from '../hooks/useAdminDashboard';
+import { useAdminRole } from '../hooks/useAdminRole';
+import { hasPermission, ADMIN_PERMISSIONS } from '../utils/adminPermissions';
 import ErrorBoundary from '../components/ErrorBoundary';
 import { BottomNavMD3 } from '../theme/bottomNav.md3';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -28,6 +30,7 @@ import SettingsScreen from '../screens/common/SettingsScreen';
 import HelpFeedbackScreen from '../screens/common/HelpFeedbackScreen';
 import ProfileScreen from '../screens/common/ProfileScreen';
 import LanguageSelectionScreen from '../screens/common/LanguageSelectionScreen';
+import AccessDeniedScreen from '../screens/common/AccessDeniedScreen';
 
 // Admin Dashboard Screens
 import AdminDashboardScreen from '../screens/admin/AdminDashboardScreen';
@@ -36,22 +39,28 @@ import AdminDashboard from '../screens/admin/AdminDashboard';
 
 // Management Screens
 import UserManagementScreen from '../screens/admin/UserManagementScreen';
+import UserManagementScreenV3 from '../screens/admin/UserManagementScreenV3'; // Modern UI version
 import OrganizationManagementScreen from '../screens/admin/OrganizationManagementScreen';
+import OrganizationManagementScreenV3 from '../screens/admin/OrganizationManagementScreenV3'; // Modern UI version
 import OperationsManagementScreen from '../screens/admin/OperationsManagementScreen';
 
 // Analytics & Monitoring Screens
 import AdvancedAnalyticsScreen from '../screens/admin/AdvancedAnalyticsScreen';
+import AdvancedAnalyticsScreenV2 from '../screens/admin/AdvancedAnalyticsScreenV2'; // Modern UI version
 import RealTimeMonitoringDashboard from '../screens/admin/RealTimeMonitoringDashboard';
+import RealTimeMonitoringDashboardV2 from '../screens/admin/RealTimeMonitoringDashboardV2'; // Modern UI version
 import EnterpriseIntelligenceSuite from '../screens/admin/EnterpriseIntelligenceSuite';
 import KPIDetailScreen from '../screens/admin/KPIDetailScreen';
 import FinancialReportsScreen from '../screens/admin/FinancialReportsScreen';
 
 // System Configuration Screens
 import SystemSettingsScreen from '../screens/admin/SystemSettingsScreen';
+import SystemSettingsScreenV2 from '../screens/admin/SystemSettingsScreenV2'; // Modern UI version
 import BusinessConfigurationScreen from '../screens/admin/BusinessConfigurationScreen';
 import SystemOptimizationScreen from '../screens/admin/SystemOptimizationScreen';
 import PaymentSettingsScreen from '../screens/admin/PaymentSettingsScreen';
 import ContentManagementScreen from '../screens/admin/ContentManagementScreen';
+import ContentManagementScreenV2 from '../screens/admin/ContentManagementScreenV2'; // Modern UI version
 
 // Security & Compliance Screens
 import SecurityComplianceScreen from '../screens/admin/SecurityComplianceScreen';
@@ -300,6 +309,17 @@ function DashboardStack() {
             </ErrorBoundary>
           )}
         </Stack.Screen>
+
+        <Stack.Screen
+          name="AccessDenied"
+          options={{ title: 'Access Denied' }}
+        >
+          {(props: any) => (
+            <ErrorBoundary fallback={<ErrorFallback />}>
+              <AccessDeniedScreen {...props} />
+            </ErrorBoundary>
+          )}
+        </Stack.Screen>
       </Stack.Navigator>
 
       {/* ✨ MD3 Modal Navigation Drawer - Exact Ship-Ready Spec */}
@@ -360,9 +380,9 @@ function ManagementStack() {
         name="UserManagement"
         options={{ title: 'User Management' }}
       >
-        {(props) => (
+        {(props: any) => (
           <ErrorBoundary fallback={<ErrorFallback />}>
-            <UserManagementScreen {...props} adminId={adminId} onNavigate={handleNavigate} />
+            <UserManagementScreenV3 {...props} />
           </ErrorBoundary>
         )}
       </Stack.Screen>
@@ -371,9 +391,9 @@ function ManagementStack() {
         name="OrganizationManagement"
         options={{ title: 'Organization' }}
       >
-        {(props) => (
+        {(props: any) => (
           <ErrorBoundary fallback={<ErrorFallback />}>
-            <OrganizationManagementScreen {...props} adminId={adminId} onNavigate={handleNavigate} />
+            <OrganizationManagementScreenV3 {...props} />
           </ErrorBoundary>
         )}
       </Stack.Screen>
@@ -391,11 +411,11 @@ function ManagementStack() {
 
       <Stack.Screen
         name="ContentManagement"
-        options={{ title: 'Content Management' }}
+        options={{ title: 'Announcements' }}
       >
         {(props) => (
           <ErrorBoundary fallback={<ErrorFallback />}>
-            <ContentManagementScreen {...props} adminId={adminId} onNavigate={handleNavigate} />
+            <ContentManagementScreenV2 {...props} />
           </ErrorBoundary>
         )}
       </Stack.Screen>
@@ -451,7 +471,7 @@ function AnalyticsStack() {
       >
         {(props: any) => (
           <ErrorBoundary fallback={<ErrorFallback />}>
-            <AdvancedAnalyticsScreen {...props} adminId={adminId} onNavigate={handleNavigate} />
+            <AdvancedAnalyticsScreenV2 {...props} />
           </ErrorBoundary>
         )}
       </Stack.Screen>
@@ -462,7 +482,7 @@ function AnalyticsStack() {
       >
         {(props: any) => (
           <ErrorBoundary fallback={<ErrorFallback />}>
-            <RealTimeMonitoringDashboard {...props} adminId={adminId} onNavigate={handleNavigate} />
+            <RealTimeMonitoringDashboardV2 {...props} />
           </ErrorBoundary>
         )}
       </Stack.Screen>
@@ -540,7 +560,7 @@ function SystemStack() {
       >
         {(props: any) => (
           <ErrorBoundary fallback={<ErrorFallback />}>
-            <SystemSettingsScreen {...props} adminId={adminId} onNavigate={handleNavigate} />
+            <SystemSettingsScreenV2 {...props} />
           </ErrorBoundary>
         )}
       </Stack.Screen>
@@ -691,12 +711,19 @@ function SystemStack() {
   );
 }
 
-// Main Admin Tab Navigator - MD3 Canonical
+// Main Admin Tab Navigator - MD3 Canonical with RBAC Permissions
 export default function AdminNavigator() {
   const insets = useSafeAreaInsets();
+  const { role } = useAdminRole();
 
   // Calculate bottom padding with safe area (max of 16dp or safe area)
   const bottomPadding = Math.max(BottomNavMD3.insets.bottomMin, insets.bottom);
+
+  // Tab permission mapping
+  const canViewDashboard = true; // Dashboard visible to all admins
+  const canViewManagement = hasPermission(role, ADMIN_PERMISSIONS.USER_MANAGEMENT);
+  const canViewAnalytics = hasPermission(role, ADMIN_PERMISSIONS.ANALYTICS_VIEW);
+  const canViewSystem = hasPermission(role, ADMIN_PERMISSIONS.SYSTEM_SETTINGS);
 
   return (
     <Tab.Navigator
@@ -739,50 +766,65 @@ export default function AdminNavigator() {
         tabBarActiveBackgroundColor: `${BottomNavMD3.colors.active}1F`, // Primary @ 12% (1F hex)
       }}
     >
-      <Tab.Screen
-        name="Dashboard"
-        component={DashboardStack}
-        options={{
-          tabBarLabel: 'Dashboard',
-          tabBarAccessibilityLabel: 'Dashboard tab',
-          tabBarIcon: ({ color }) => (
-            <Icon name="dashboard" size={BottomNavMD3.item.icon} color={color} />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Management"
-        component={ManagementStack}
-        options={{
-          tabBarLabel: 'Management',
-          tabBarAccessibilityLabel: 'Management tab',
-          tabBarIcon: ({ color }) => (
-            <Icon name="people" size={BottomNavMD3.item.icon} color={color} />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Analytics"
-        component={AnalyticsStack}
-        options={{
-          tabBarLabel: 'Analytics',
-          tabBarAccessibilityLabel: 'Analytics tab',
-          tabBarIcon: ({ color }) => (
-            <Icon name="analytics" size={BottomNavMD3.item.icon} color={color} />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="System"
-        component={SystemStack}
-        options={{
-          tabBarLabel: 'System',
-          tabBarAccessibilityLabel: 'System tab',
-          tabBarIcon: ({ color }) => (
-            <Icon name="settings" size={BottomNavMD3.item.icon} color={color} />
-          ),
-        }}
-      />
+      {/* Dashboard - visible to all admins */}
+      {canViewDashboard && (
+        <Tab.Screen
+          name="Dashboard"
+          component={DashboardStack}
+          options={{
+            tabBarLabel: 'Dashboard',
+            tabBarAccessibilityLabel: 'Dashboard tab',
+            tabBarIcon: ({ color }) => (
+              <Icon name="dashboard" size={BottomNavMD3.item.icon} color={color} />
+            ),
+          }}
+        />
+      )}
+
+      {/* Management - requires USER_MANAGEMENT permission */}
+      {canViewManagement && (
+        <Tab.Screen
+          name="Management"
+          component={ManagementStack}
+          options={{
+            tabBarLabel: 'Management',
+            tabBarAccessibilityLabel: 'Management tab',
+            tabBarIcon: ({ color }) => (
+              <Icon name="people" size={BottomNavMD3.item.icon} color={color} />
+            ),
+          }}
+        />
+      )}
+
+      {/* Analytics - requires ANALYTICS_VIEW permission */}
+      {canViewAnalytics && (
+        <Tab.Screen
+          name="Analytics"
+          component={AnalyticsStack}
+          options={{
+            tabBarLabel: 'Analytics',
+            tabBarAccessibilityLabel: 'Analytics tab',
+            tabBarIcon: ({ color }) => (
+              <Icon name="analytics" size={BottomNavMD3.item.icon} color={color} />
+            ),
+          }}
+        />
+      )}
+
+      {/* System - requires SYSTEM_SETTINGS permission */}
+      {canViewSystem && (
+        <Tab.Screen
+          name="System"
+          component={SystemStack}
+          options={{
+            tabBarLabel: 'System',
+            tabBarAccessibilityLabel: 'System tab',
+            tabBarIcon: ({ color }) => (
+              <Icon name="settings" size={BottomNavMD3.item.icon} color={color} />
+            ),
+          }}
+        />
+      )}
     </Tab.Navigator>
   );
 }

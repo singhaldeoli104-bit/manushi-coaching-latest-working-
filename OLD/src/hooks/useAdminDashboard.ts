@@ -2,16 +2,21 @@
  * Custom hook for Admin Dashboard data
  * Uses React Query for data fetching and caching
  * ✅ Real Supabase data - NO MOCK DATA
+ * ✅ Week 2, Days 8-10: Dashboard KPIs with real data
  */
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
+import { usePlaceholderData, DASHBOARD_KPIS_PLACEHOLDER } from './usePlaceholderData';
 
 interface DashboardKPIs {
-  totalUsers: number;
-  totalRevenue: number;
-  activeStudents: number;
-  pendingFees: number;
+  activeUsers: number; // COUNT(profiles WHERE is_active = true)
+  mtdRevenue: number; // SUM(payments.amount WHERE created_at >= start_of_month)
+  openTickets: number; // COUNT(support_tickets WHERE status IN ('open', 'assigned'))
+  attendanceRate: number; // AVG(attendance.attendance_percentage) for current month
+  totalUsers: number; // COUNT(profiles) - for backward compatibility
+  activeStudents: number; // COUNT(profiles WHERE role = 'student' AND is_active = true)
+  pendingFees: number; // COUNT(payments WHERE status = 'pending')
 }
 
 interface SystemAlert {
@@ -40,84 +45,126 @@ interface ActivityEvent {
 
 /**
  * Fetch dashboard KPIs from Supabase
- * ✅ Real Supabase queries - NO MOCK DATA
+ * ✅ Week 2, Days 8-10: Real Supabase queries using profiles table
+ * ✅ NO MOCK DATA - All metrics from actual database tables
  */
 const fetchDashboardKPIs = async (): Promise<DashboardKPIs> => {
   console.log('📊 [AdminDashboard] Fetching KPIs...');
 
   try {
-    // Fetch total users (parents + students)
-    const { count: parentCount, error: parentError } = await supabase
-      .from('parent_profiles')
-      .select('*', { count: 'exact', head: true });
-
-    if (parentError) {
-      console.warn('⚠️ [AdminDashboard] parent_profiles table error:', parentError.message);
-      // Return default values if tables don't exist
-      return {
-        totalUsers: 0,
-        totalRevenue: 0,
-        activeStudents: 0,
-        pendingFees: 0,
-      };
-    }
-
-    const { count: studentCount, error: studentError } = await supabase
-      .from('student_profiles')
-      .select('*', { count: 'exact', head: true });
-
-    if (studentError) {
-      console.warn('⚠️ [AdminDashboard] student_profiles table error:', studentError.message);
-    }
-
-    // Fetch total revenue
-    const { data: revenueData, error: revenueError } = await supabase
-      .from('fee_payments')
-      .select('amount')
-      .eq('status', 'completed');
-
-    if (revenueError) {
-      console.warn('⚠️ [AdminDashboard] fee_payments table error:', revenueError.message);
-    }
-
-    const totalRevenue = revenueData?.reduce((sum, payment) => sum + payment.amount, 0) || 0;
-
-    // Fetch active students (enrolled this year)
-    const currentYear = new Date().getFullYear();
-    const { count: activeCount, error: activeError } = await supabase
-      .from('student_profiles')
+    // 1. Active Users: COUNT(profiles WHERE is_active = true)
+    const { count: activeUsersCount, error: activeUsersError } = await supabase
+      .from('profiles')
       .select('*', { count: 'exact', head: true })
-      .eq('enrollment_year', currentYear)
-      .eq('status', 'active');
+      .eq('is_active', true);
 
-    if (activeError) {
-      console.warn('⚠️ [AdminDashboard] active students query error:', activeError.message);
+    if (activeUsersError) {
+      console.warn('⚠️ [AdminDashboard] Active users query error:', activeUsersError.message);
     }
 
-    // Fetch pending fees
-    const { count: pendingCount, error: pendingError } = await supabase
-      .from('fee_payments')
+    // 2. Total Users: COUNT(profiles)
+    const { count: totalUsersCount, error: totalUsersError } = await supabase
+      .from('profiles')
+      .select('*', { count: 'exact', head: true });
+
+    if (totalUsersError) {
+      console.warn('⚠️ [AdminDashboard] Total users query error:', totalUsersError.message);
+    }
+
+    // 3. MTD Revenue: SUM(payments.amount WHERE created_at >= start_of_month AND status = 'completed')
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+    const { data: paymentsData, error: paymentsError } = await supabase
+      .from('payments')
+      .select('amount')
+      .eq('status', 'completed')
+      .gte('created_at', startOfMonth);
+
+    if (paymentsError) {
+      console.warn('⚠️ [AdminDashboard] Payments query error:', paymentsError.message);
+    }
+
+    const mtdRevenue = paymentsData?.reduce((sum, payment) => sum + (payment.amount || 0), 0) || 0;
+
+    // 4. Open Tickets: COUNT(support_tickets WHERE status IN ('open', 'assigned'))
+    // Note: This table may not exist yet, so we handle the error gracefully
+    let openTicketsCount = 0;
+    const { count: ticketsCount, error: ticketsError } = await supabase
+      .from('support_tickets')
+      .select('*', { count: 'exact', head: true })
+      .in('status', ['open', 'assigned']);
+
+    if (ticketsError) {
+      console.warn('⚠️ [AdminDashboard] Support tickets query error (table may not exist):', ticketsError.message);
+    } else {
+      openTicketsCount = ticketsCount || 0;
+    }
+
+    // 5. Attendance Rate: AVG(attendance.attendance_percentage) for current month
+    // Note: This table may not exist yet, so we handle the error gracefully
+    let attendanceRate = 0;
+    const { data: attendanceData, error: attendanceError } = await supabase
+      .from('attendance')
+      .select('attendance_percentage')
+      .gte('date', startOfMonth);
+
+    if (attendanceError) {
+      console.warn('⚠️ [AdminDashboard] Attendance query error (table may not exist):', attendanceError.message);
+    } else if (attendanceData && attendanceData.length > 0) {
+      const sum = attendanceData.reduce((acc, record) => acc + (record.attendance_percentage || 0), 0);
+      attendanceRate = Math.round(sum / attendanceData.length);
+    }
+
+    // 6. Active Students: COUNT(profiles WHERE role = 'student' AND is_active = true)
+    const { count: activeStudentsCount, error: activeStudentsError } = await supabase
+      .from('profiles')
+      .select('*', { count: 'exact', head: true })
+      .eq('role', 'student')
+      .eq('is_active', true);
+
+    if (activeStudentsError) {
+      console.warn('⚠️ [AdminDashboard] Active students query error:', activeStudentsError.message);
+    }
+
+    // 7. Pending Fees: COUNT(payments WHERE status = 'pending')
+    const { count: pendingFeesCount, error: pendingFeesError } = await supabase
+      .from('payments')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'pending');
 
-    if (pendingError) {
-      console.warn('⚠️ [AdminDashboard] pending fees query error:', pendingError.message);
+    if (pendingFeesError) {
+      console.warn('⚠️ [AdminDashboard] Pending fees query error:', pendingFeesError.message);
     }
 
-    console.log('✅ [AdminDashboard] KPIs fetched successfully');
+    console.log('✅ [AdminDashboard] KPIs fetched successfully:', {
+      activeUsers: activeUsersCount,
+      totalUsers: totalUsersCount,
+      mtdRevenue,
+      openTickets: openTicketsCount,
+      attendanceRate,
+      activeStudents: activeStudentsCount,
+      pendingFees: pendingFeesCount,
+    });
 
     return {
-      totalUsers: (parentCount || 0) + (studentCount || 0),
-      totalRevenue,
-      activeStudents: activeCount || 0,
-      pendingFees: pendingCount || 0,
+      activeUsers: activeUsersCount || 0,
+      mtdRevenue,
+      openTickets: openTicketsCount,
+      attendanceRate,
+      totalUsers: totalUsersCount || 0,
+      activeStudents: activeStudentsCount || 0,
+      pendingFees: pendingFeesCount || 0,
     };
   } catch (error: any) {
     console.error('❌ [AdminDashboard] Error fetching KPIs:', error?.message || error);
     // Return default values on any error
     return {
+      activeUsers: 0,
+      mtdRevenue: 0,
+      openTickets: 0,
+      attendanceRate: 0,
       totalUsers: 0,
-      totalRevenue: 0,
       activeStudents: 0,
       pendingFees: 0,
     };
@@ -229,12 +276,16 @@ const fetchRecentActivity = async (): Promise<ActivityEvent[]> => {
 
 /**
  * Hook to fetch admin dashboard data
+ * ✅ Week 2, Days 8-10: Enhanced with placeholderData for instant skeleton rendering
  * Uses TanStack Query with 5 minute stale time
  */
 export const useAdminDashboard = () => {
+  const kpisPlaceholder = usePlaceholderData(DASHBOARD_KPIS_PLACEHOLDER);
+
   const kpisQuery = useQuery({
     queryKey: ['admin', 'dashboard', 'kpis'],
     queryFn: fetchDashboardKPIs,
+    placeholderData: kpisPlaceholder,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
   });

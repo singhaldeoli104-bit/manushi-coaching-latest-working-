@@ -89,3 +89,22 @@ export const checkPermission = (
 export const getRolePermissions = (role: AdminRole): AdminPermission[] => {
   return ROLE_PERMISSIONS[role];
 };
+
+/**
+ * Alias for hasPermission - shorter syntax for RBAC checks
+ * @param role - Admin role to check
+ * @param permission - Permission to verify (can use string for flexibility)
+ * @returns true if role has permission, false otherwise
+ */
+export const can = (
+  role: AdminRole,
+  permission: string
+): boolean => {
+  // Guard: if role is undefined or invalid, return false
+  if (!role || !ROLE_PERMISSIONS[role]) {
+    return false;
+  }
+
+  const rolePermissions = ROLE_PERMISSIONS[role];
+  return rolePermissions.includes(permission as AdminPermission);
+};

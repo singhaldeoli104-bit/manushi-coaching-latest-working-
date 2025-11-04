@@ -18,6 +18,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Alert } from 'react-native';
 import { IconButton } from 'react-native-paper';
+import { useNavigation } from '@react-navigation/native';
 import { BaseScreen } from '../../shared/components/BaseScreen';
 import { Card, CardContent, CardHeader, CardActions } from '../../ui/surfaces/Card';
 import { Row, Col, T, Spacer, Button as UIButton } from '../../ui';
@@ -27,9 +28,9 @@ import { KPICard } from '../../components/admin/KPICard';
 import { useAdminDashboard } from '../../hooks/useAdminDashboard';
 import { useAuth } from '../../context/AuthContext';
 import { trackAction, trackScreenView } from '../../utils/navigationAnalytics';
-import { safeNavigate } from '../../utils/navigationService';
 
 const AdminDashboardScreen: React.FC = () => {
+  const navigation = useNavigation();
   const { user } = useAuth();
   const {
     kpis,
@@ -185,7 +186,7 @@ const AdminDashboardScreen: React.FC = () => {
               icon="👥"
               onPress={() => {
                 trackAction('view_users_from_kpi', 'AdminDashboard');
-                safeNavigate('UserManagement' as any);
+                navigation.navigate('Management' as never, { screen: 'UserManagement' } as never);
               }}
             />
           </View>
@@ -197,7 +198,7 @@ const AdminDashboardScreen: React.FC = () => {
               icon="💰"
               onPress={() => {
                 trackAction('view_revenue_from_kpi', 'AdminDashboard');
-                safeNavigate('PaymentManagement' as any);
+                navigation.navigate('Analytics' as never, { screen: 'FinancialReports' } as never);
               }}
             />
           </View>
@@ -211,7 +212,7 @@ const AdminDashboardScreen: React.FC = () => {
               icon="🎓"
               onPress={() => {
                 trackAction('view_students_from_kpi', 'AdminDashboard');
-                safeNavigate('StudentManagement' as any);
+                navigation.navigate('Management' as never, { screen: 'UserManagement' } as never);
               }}
             />
           </View>
@@ -223,7 +224,7 @@ const AdminDashboardScreen: React.FC = () => {
               subtitle={kpis?.pendingFees && kpis.pendingFees > 0 ? 'Needs attention' : 'All clear'}
               onPress={() => {
                 trackAction('view_pending_fees_from_kpi', 'AdminDashboard');
-                safeNavigate('PaymentManagement' as any);
+                navigation.navigate('Analytics' as never, { screen: 'FinancialReports' } as never);
               }}
             />
           </View>
@@ -243,7 +244,7 @@ const AdminDashboardScreen: React.FC = () => {
             icon="arrow-right"
             onPress={() => {
               trackAction('view_system_health_details', 'AdminDashboard');
-              safeNavigate('RealTimeMonitoring' as any);
+              navigation.navigate('Analytics' as never, { screen: 'RealTimeMonitoring' } as never);
             }}
             accessibilityLabel="View system health details"
           />
@@ -262,7 +263,7 @@ const AdminDashboardScreen: React.FC = () => {
             variant="elevated"
             onPress={() => {
               trackAction('view_system_health_card', 'AdminDashboard');
-              safeNavigate('RealTimeMonitoring' as any);
+              navigation.navigate('Analytics' as never, { screen: 'RealTimeMonitoring' } as never);
             }}
             accessibilityLabel={`System uptime: ${systemHealth.uptime}%. Database: ${systemHealth.databaseStatus}.`}
           >
@@ -323,7 +324,7 @@ const AdminDashboardScreen: React.FC = () => {
                 onPress={(e) => {
                   e?.stopPropagation?.();
                   trackAction('refresh_system_health', 'AdminDashboard');
-                  safeNavigate('RealTimeMonitoring' as any);
+                  navigation.navigate('Analytics' as never, { screen: 'RealTimeMonitoring' } as never);
                 }}
               >
                 Refresh
@@ -352,7 +353,7 @@ const AdminDashboardScreen: React.FC = () => {
               icon="arrow-right"
               onPress={() => {
                 trackAction('view_all_activity', 'AdminDashboard');
-                safeNavigate('AuditLogs' as any);
+                navigation.navigate('System' as never, { screen: 'ComprehensiveAudit' } as never);
               }}
               accessibilityLabel="View all activity"
             />
@@ -368,7 +369,7 @@ const AdminDashboardScreen: React.FC = () => {
                   variant="elevated"
                   onPress={() => {
                     trackAction('view_activity_detail', 'AdminDashboard', { activityId: activity.id });
-                    safeNavigate('AuditLogDetail' as any, { auditId: activity.id });
+                    navigation.navigate('System' as never, { screen: 'ComprehensiveAudit' } as never);
                   }}
                   accessibilityLabel={`Activity: ${activity.action} by ${activity.actorName || 'Unknown'}. ${activity.timestamp}`}
                 >
@@ -432,7 +433,7 @@ const AdminDashboardScreen: React.FC = () => {
             variant="primary"
             onPress={() => {
               trackAction('quick_action_add_user', 'AdminDashboard');
-              safeNavigate('AddUser' as any);
+              navigation.navigate('Management' as never, { screen: 'UserManagement' } as never);
             }}
             style={{ flex: 1, minWidth: 150 }}
           >
@@ -442,7 +443,7 @@ const AdminDashboardScreen: React.FC = () => {
             variant="primary"
             onPress={() => {
               trackAction('quick_action_analytics', 'AdminDashboard');
-              safeNavigate('Analytics' as any);
+              navigation.navigate('Analytics' as never, { screen: 'AdvancedAnalytics' } as never);
             }}
             style={{ flex: 1, minWidth: 150 }}
           >
@@ -452,7 +453,7 @@ const AdminDashboardScreen: React.FC = () => {
             variant="primary"
             onPress={() => {
               trackAction('quick_action_announcement', 'AdminDashboard');
-              safeNavigate('Announcements' as any);
+              navigation.navigate('Management' as never, { screen: 'ContentManagement' } as never);
             }}
             style={{ flex: 1, minWidth: 150 }}
           >
@@ -462,7 +463,7 @@ const AdminDashboardScreen: React.FC = () => {
             variant="primary"
             onPress={() => {
               trackAction('quick_action_settings', 'AdminDashboard');
-              safeNavigate('AdminSettings' as any);
+              navigation.navigate('System' as never, { screen: 'SystemSettings' } as never);
             }}
             style={{ flex: 1, minWidth: 150 }}
           >
@@ -488,7 +489,7 @@ const AdminDashboardScreen: React.FC = () => {
               icon="arrow-right"
               onPress={() => {
                 trackAction('view_all_alerts', 'AdminDashboard');
-                safeNavigate('SystemAlerts' as any);
+                navigation.navigate('Analytics' as never, { screen: 'RealTimeMonitoring' } as never);
               }}
               accessibilityLabel="View all system alerts"
             />
