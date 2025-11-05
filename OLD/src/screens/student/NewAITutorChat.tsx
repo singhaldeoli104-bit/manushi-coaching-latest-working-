@@ -21,6 +21,7 @@ interface Message {
   text: string;
   isUser: boolean;
   timestamp: Date;
+  followUpQuestions?: string[];
 }
 
 export default function NewAITutorChat({ navigation }: Props) {
@@ -143,11 +144,49 @@ export default function NewAITutorChat({ navigation }: Props) {
     // - Or custom AI tutor backend
     // Include proper error handling, rate limiting, and response streaming
     setTimeout(() => {
+      // Generate context-aware response and follow-up questions
+      let responseText = 'I understand your question. Let me help you with that...';
+      let followUps: string[] = [];
+
+      const lowerInput = inputText.toLowerCase();
+
+      if (lowerInput.includes('math') || lowerInput.includes('equation') || lowerInput.includes('solve')) {
+        responseText = "I'd be happy to help you solve that! Here's my step-by-step approach:\n\n1. First, let me identify the type of equation\n2. Then I'll apply the appropriate solving method\n3. Finally, I'll verify the solution\n\nCould you please share the specific equation you'd like me to solve?";
+        followUps = [
+          'Show me another example',
+          'Explain the formula used',
+          'Give me similar problems',
+        ];
+      } else if (lowerInput.includes('science') || lowerInput.includes('physics') || lowerInput.includes('chemistry')) {
+        responseText = "I love helping with science! I can explain complex concepts in simple terms, provide real-world examples, and help you understand the 'why' behind scientific phenomena.\n\nWhich science topic would you like to explore?";
+        followUps = [
+          'Explain with examples',
+          'Show me experiments',
+          'Connect to daily life',
+        ];
+      } else if (lowerInput.includes('code') || lowerInput.includes('program')) {
+        responseText = "Great! I can help with programming concepts. I can:\n\n• Explain code line by line\n• Help debug errors\n• Suggest best practices\n• Provide examples in multiple languages\n\nWhat specific programming topic would you like help with?";
+        followUps = [
+          'Show me code examples',
+          'Explain common errors',
+          'Best practices for beginners',
+        ];
+      } else {
+        responseText = "I'm here to help you learn! I can assist with:\n\n📚 Mathematics - equations, calculus, algebra\n🔬 Sciences - physics, chemistry, biology\n💻 Programming - coding, debugging, concepts\n\nWhat specific topic would you like to explore?";
+        followUps = [
+          'Help with homework',
+          'Practice problems',
+          'Concept explanation',
+          'Study tips',
+        ];
+      }
+
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
-        text: 'I understand your question. Let me help you with that...',
+        text: responseText,
         isUser: false,
         timestamp: new Date(),
+        followUpQuestions: followUps,
       };
       setMessages(prev => [...prev, aiResponse]);
       setIsSending(false);
@@ -156,43 +195,94 @@ export default function NewAITutorChat({ navigation }: Props) {
 
   // Render message
   const renderMessage = ({ item }: { item: Message }) => (
-    <View
-      style={[
-        styles.messageContainer,
-        item.isUser ? styles.userMessageContainer : styles.aiMessageContainer,
-      ]}
-    >
-      {!item.isUser && (
-        <View style={styles.aiAvatar}>
-          <T variant="body">🤖</T>
-        </View>
-      )}
+    <View>
       <View
         style={[
-          styles.messageBubble,
-          item.isUser ? styles.userBubble : styles.aiBubble,
+          styles.messageContainer,
+          item.isUser ? styles.userMessageContainer : styles.aiMessageContainer,
         ]}
       >
-        <T variant="body" style={item.isUser ? styles.userText : styles.aiText}>
-          {item.text}
-        </T>
-        <T
-          variant="caption"
+        {!item.isUser && (
+          <View style={styles.aiAvatar}>
+            <T variant="body">🤖</T>
+          </View>
+        )}
+        <View
           style={[
-            styles.messageTime,
-            item.isUser && styles.userMessageTime,
+            styles.messageBubble,
+            item.isUser ? styles.userBubble : styles.aiBubble,
           ]}
         >
-          {item.timestamp.toLocaleTimeString('en-US', {
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true,
-          })}
-        </T>
+          <T variant="body" style={item.isUser ? styles.userText : styles.aiText}>
+            {item.text}
+          </T>
+          <T
+            variant="caption"
+            style={[
+              styles.messageTime,
+              item.isUser && styles.userMessageTime,
+            ]}
+          >
+            {item.timestamp.toLocaleTimeString('en-US', {
+              hour: 'numeric',
+              minute: '2-digit',
+              hour12: true,
+            })}
+          </T>
+        </View>
+        {item.isUser && (
+          <View style={styles.userAvatar}>
+            <T variant="body">👤</T>
+          </View>
+        )}
       </View>
-      {item.isUser && (
-        <View style={styles.userAvatar}>
-          <T variant="body">👤</T>
+
+      {/* Follow-up Questions */}
+      {!item.isUser && item.followUpQuestions && item.followUpQuestions.length > 0 && (
+        <View style={styles.followUpContainer}>
+          <T variant="caption" style={styles.followUpTitle}>
+            💡 Quick follow-ups:
+          </T>
+          <View style={styles.followUpList}>
+            {item.followUpQuestions.map((question, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.followUpButton}
+                onPress={() => {
+                  trackAction('select_followup', 'NewAITutorChat', { question });
+                  setInputText(question);
+                  // Auto-send the follow-up question
+                  setTimeout(() => {
+                    setInputText('');
+                    const userMessage: Message = {
+                      id: Date.now().toString(),
+                      text: question,
+                      isUser: true,
+                      timestamp: new Date(),
+                    };
+                    setMessages(prev => [...prev, userMessage]);
+                    setIsSending(true);
+                    setTimeout(() => {
+                      const aiResponse: Message = {
+                        id: (Date.now() + 1).toString(),
+                        text: `Let me help you with "${question}"...`,
+                        isUser: false,
+                        timestamp: new Date(),
+                      };
+                      setMessages(prev => [...prev, aiResponse]);
+                      setIsSending(false);
+                    }, 1500);
+                  }, 100);
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={`Ask: ${question}`}
+              >
+                <T variant="caption" style={styles.followUpText}>
+                  {question}
+                </T>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
       )}
     </View>
@@ -392,5 +482,32 @@ const styles = StyleSheet.create({
   },
   suggestionText: {
     color: '#4B5563',
+  },
+  followUpContainer: {
+    marginLeft: 40,
+    marginTop: 8,
+    marginBottom: 12,
+  },
+  followUpTitle: {
+    color: '#6B7280',
+    marginBottom: 6,
+    fontWeight: '600',
+  },
+  followUpList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  followUpButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#DBEAFE',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#93C5FD',
+  },
+  followUpText: {
+    color: '#1E40AF',
+    fontWeight: '500',
   },
 });
