@@ -9,7 +9,11 @@
       "Bash(git init:*)",
       "Bash(test:*)",
       "Bash(git remote add:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nInitial commit - Manushi Coaching App\n\nReact Native coaching management app with parent, student, and teacher portals.\n\nFeatures:\n- Parent dashboard with child management\n- Student portal for assignments and classes\n- Real-time communication system\n- Supabase integration\n- Advanced navigation with analytics\n- Deep linking support\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git config:*)",
+      "Bash(git checkout:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []
