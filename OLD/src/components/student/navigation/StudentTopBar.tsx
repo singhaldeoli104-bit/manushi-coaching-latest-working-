@@ -1,12 +1,12 @@
 /**
- * MD3 Top App Bar for Student Screens
+ * Premium Minimal Top App Bar for Student Screens
  *
  * Material Design 3 compliant top app bar with 2 variants:
  * - center-aligned: Title centered, navigation + actions
  * - small: Title left-aligned, navigation + actions
  *
  * Features:
- * - 64dp height (MD3 spec)
+ * - 56dp height (Premium Minimal - reduced from 64dp for max content area)
  * - Hamburger menu icon (24dp, left)
  * - Dynamic screen title (Title Large)
  * - Three-dot overflow menu (24dp, right)
@@ -326,9 +326,9 @@ const styles = StyleSheet.create({
     zIndex: 10, // Ensure menu appears above content
   },
 
-  // Content (64dp height)
+  // Content (56dp height - Premium Minimal)
   content: {
-    height: 64, // MD3: 64dp top app bar height
+    height: 56, // Premium Minimal: 56dp compact header (reduced from 64dp)
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 4, // MD3: 4dp padding for icon buttons
@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
   // Overflow Menu Dropdown
   menuDropdown: {
     position: 'absolute',
-    top: 56, // Below icon button
+    top: 48, // Below icon button (adjusted for 56dp header)
     right: 4,
     minWidth: 180, // MD3: 180dp min width
     backgroundColor: LightTheme.Surface,

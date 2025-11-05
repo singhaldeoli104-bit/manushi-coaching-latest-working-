@@ -5,8 +5,20 @@
  *
  * Usage:
  * import { Tabs, Modal, BottomSheet, SearchBar, EmptyState, LoadingState } from '@/components/student/molecules';
+ * import { EventCard, AssignmentCard, HorizontalCarousel } from '@/components/student/molecules';
  */
 
+// Premium Minimal Card Components (NEW)
+export { EventCard } from './EventCard';
+export type { EventCardProps } from './EventCard';
+
+export { AssignmentCard } from './AssignmentCard';
+export type { AssignmentCardProps } from './AssignmentCard';
+
+export { HorizontalCarousel } from './HorizontalCarousel';
+export type { HorizontalCarouselProps } from './HorizontalCarousel';
+
+// Existing Components
 export { Tabs } from './Tabs';
 export type { TabsProps, TabItem } from './Tabs';
 
