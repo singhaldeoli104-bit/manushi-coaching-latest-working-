@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BaseScreen } from '../../shared/components/BaseScreen';
@@ -13,6 +13,7 @@ import { Card } from '../../ui/surfaces/Card';
 import { Badge } from '../../ui/data-display/Badge';
 import { T } from '../../ui';
 import { trackScreenView, trackAction } from '../../utils/navigationAnalytics';
+import { safeNavigate } from '../../utils/navigationService';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../config/supabase';
 
@@ -75,7 +76,28 @@ export default function NewEnhancedLiveClass({ route, navigation }: Props) {
 
   const handleFeaturePress = (action: string) => {
     trackAction('use_live_feature', 'NewEnhancedLiveClass', { feature: action, classId });
-    // Feature actions would be implemented here
+
+    // Navigate to respective feature screens
+    switch (action) {
+      case 'whiteboard':
+        // TODO: Create Whiteboard.tsx screen for collaborative whiteboard
+        safeNavigate('Whiteboard', { classId });
+        break;
+      case 'screen_share':
+        // Screen sharing handled within video stream - no separate screen needed
+        Alert.alert('Screen Share', 'Screen sharing is now enabled in the video stream');
+        break;
+      case 'chat':
+        // TODO: Create ClassChat.tsx screen for live class chat
+        safeNavigate('ClassChat', { classId });
+        break;
+      case 'notes':
+        // TODO: Create ClassNotes.tsx screen for note-taking during class
+        safeNavigate('ClassNotes', { classId });
+        break;
+      default:
+        Alert.alert('Feature', 'This feature is being prepared');
+    }
   };
 
   return (
