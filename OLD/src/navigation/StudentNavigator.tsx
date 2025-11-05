@@ -11,31 +11,10 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useTheme } from '../context/ThemeContext';
 
 // ==========================================
-// OLD SCREENS - Keep for gradual replacement
+// OLD SCREENS - REMOVED (Backed up to OLD/backup/screens/student/)
 // ==========================================
-import StudentDashboard from '../screens/student/StudentDashboard';
-import ScheduleScreen from '../screens/student/ScheduleScreen';
-import EnhancedScheduleScreen from '../screens/student/EnhancedScheduleScreen';
-import StudentLiveClassScreen from '../screens/student/StudentLiveClassScreen';
-import LiveClassParticipationScreen from '../screens/student/LiveClassParticipationScreen';
-import EnhancedLiveClassParticipationScreen from '../screens/student/EnhancedLiveClassParticipationScreen';
-import ClassDetailScreen from '../screens/student/ClassDetailScreen';
-import VirtualClassroomInterface from '../screens/student/VirtualClassroomInterface';
-import EnhancedInteractiveClassroomScreen from '../screens/student/EnhancedInteractiveClassroomScreen';
-import AssignmentDetailScreen from '../screens/student/AssignmentDetailScreen';
-import CollaborativeAssignmentWorkspace from '../screens/student/CollaborativeAssignmentWorkspace';
-import DoubtSubmissionScreen from '../screens/student/DoubtSubmissionScreen';
-import SimpleDoubtSubmissionScreen from '../screens/student/SimpleDoubtSubmissionScreen';
-import ProgressDetailScreen from '../screens/student/ProgressDetailScreen';
-import GamifiedLearningHub from '../screens/student/GamifiedLearningHub';
-import StudentAILearningDashboard from '../screens/student/StudentAILearningDashboard';
-import AIStudyScreen from '../screens/student/AIStudyScreen';
-import EnhancedAIStudyAssistantScreen from '../screens/student/EnhancedAIStudyAssistantScreen';
-import AITutorChatInterface from '../screens/student/AITutorChatInterface';
-import StudyLibraryScreen from '../screens/student/StudyLibraryScreen';
-import LiveCollaborationStudio from '../screens/student/LiveCollaborationStudio';
-import PeerLearningNetwork from '../screens/student/PeerLearningNetwork';
-import ActivityDetailScreen from '../screens/student/ActivityDetailScreen';
+// All old screens have been backed up and removed from the codebase
+// Only NEW Premium Minimal Design screens remain active
 
 // ==========================================
 // NEW SCREENS - Premium Minimal Design (21 screens)
@@ -115,32 +94,6 @@ function HomeStack() {
         options={{ headerShown: false, title: 'AI Dashboard' }}
       />
 
-      {/* OLD SCREENS - Kept for backward compatibility */}
-      <Stack.Screen
-        name="StudentDashboard"
-        component={StudentDashboard}
-        options={{ headerShown: false, title: 'Dashboard (Old)' }}
-      />
-      <Stack.Screen
-        name="StudentAILearningDashboard"
-        component={StudentAILearningDashboard}
-        options={{ title: 'AI Learning Dashboard (Old)' }}
-      />
-      <Stack.Screen
-        name="DoubtSubmission"
-        component={DoubtSubmissionScreen}
-        options={{ title: 'Submit Doubt (Old)' }}
-      />
-      <Stack.Screen
-        name="SimpleDoubtSubmission"
-        component={SimpleDoubtSubmissionScreen}
-        options={{ title: 'Quick Doubt (Old)' }}
-      />
-      <Stack.Screen
-        name="ActivityDetail"
-        component={ActivityDetailScreen}
-        options={{ title: 'Activity Details (Old)' }}
-      />
     </Stack.Navigator>
   );
 }
@@ -211,47 +164,6 @@ function ClassesStack() {
         options={{ headerShown: false, title: 'Class Notes' }}
       />
 
-      {/* OLD SCREENS - Kept for backward compatibility */}
-      <Stack.Screen
-        name="Schedule"
-        component={ScheduleScreen}
-        options={{ title: 'Class Schedule (Old)' }}
-      />
-      <Stack.Screen
-        name="EnhancedSchedule"
-        component={EnhancedScheduleScreen}
-        options={{ title: 'My Schedule (Old)' }}
-      />
-      <Stack.Screen
-        name="ClassDetail"
-        component={ClassDetailScreen}
-        options={{ title: 'Class Details (Old)' }}
-      />
-      <Stack.Screen
-        name="StudentLiveClass"
-        component={StudentLiveClassScreen}
-        options={{ title: 'Live Class (Old)', headerShown: false }}
-      />
-      <Stack.Screen
-        name="LiveClassParticipation"
-        component={LiveClassParticipationScreen}
-        options={{ title: 'Join Class (Old)', headerShown: false }}
-      />
-      <Stack.Screen
-        name="EnhancedLiveClass"
-        component={EnhancedLiveClassParticipationScreen}
-        options={{ title: 'Live Session (Old)', headerShown: false }}
-      />
-      <Stack.Screen
-        name="VirtualClassroom"
-        component={VirtualClassroomInterface}
-        options={{ title: 'Virtual Classroom (Old)', headerShown: false }}
-      />
-      <Stack.Screen
-        name="InteractiveClassroom"
-        component={EnhancedInteractiveClassroomScreen}
-        options={{ title: 'Interactive Class (Old)', headerShown: false }}
-      />
     </Stack.Navigator>
   );
 }
@@ -312,37 +224,6 @@ function AssignmentsStack() {
         options={{ headerShown: false, title: 'AI Study Summaries' }}
       />
 
-      {/* OLD SCREENS - Kept for backward compatibility */}
-      <Stack.Screen
-        name="AssignmentDetail"
-        component={AssignmentDetailScreen}
-        options={{ title: 'Assignments (Old)' }}
-      />
-      <Stack.Screen
-        name="CollaborativeWorkspace"
-        component={CollaborativeAssignmentWorkspace}
-        options={{ title: 'Collaborative Work (Old)' }}
-      />
-      <Stack.Screen
-        name="StudyLibrary"
-        component={StudyLibraryScreen}
-        options={{ title: 'Study Resources (Old)' }}
-      />
-      <Stack.Screen
-        name="AIStudy"
-        component={AIStudyScreen}
-        options={{ title: 'AI Study Assistant (Old)' }}
-      />
-      <Stack.Screen
-        name="EnhancedAIStudy"
-        component={EnhancedAIStudyAssistantScreen}
-        options={{ title: 'Smart Study (Old)' }}
-      />
-      <Stack.Screen
-        name="AITutorChat"
-        component={AITutorChatInterface}
-        options={{ title: 'AI Tutor (Old)' }}
-      />
     </Stack.Navigator>
   );
 }
@@ -371,17 +252,6 @@ function PerformanceStack() {
         options={{ headerShown: false, title: 'Learning Hub' }}
       />
 
-      {/* OLD SCREENS - Kept for backward compatibility */}
-      <Stack.Screen
-        name="ProgressDetail"
-        component={ProgressDetailScreen}
-        options={{ title: 'My Progress (Old)' }}
-      />
-      <Stack.Screen
-        name="GamifiedHub"
-        component={GamifiedLearningHub}
-        options={{ title: 'Learning Hub (Old)' }}
-      />
     </Stack.Navigator>
   );
 }
@@ -412,17 +282,6 @@ function CollaborationStack() {
         options={{ headerShown: false, title: 'Peer Profile' }}
       />
 
-      {/* OLD SCREENS - Kept for backward compatibility */}
-      <Stack.Screen
-        name="LiveCollaboration"
-        component={LiveCollaborationStudio}
-        options={{ title: 'Collaboration Studio (Old)' }}
-      />
-      <Stack.Screen
-        name="PeerLearning"
-        component={PeerLearningNetwork}
-        options={{ title: 'Peer Network (Old)' }}
-      />
     </Stack.Navigator>
   );
 }
