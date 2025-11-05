@@ -44,7 +44,7 @@ export default function NewAIStudyScreen({ navigation }: Props) {
       title: 'Practice Problems',
       description: 'AI-generated practice questions',
       icon: '📝',
-      route: 'StudyLibrary',
+      route: 'AIPracticeProblems',
       color: '#10B981',
     },
     {
@@ -52,7 +52,7 @@ export default function NewAIStudyScreen({ navigation }: Props) {
       title: 'Study Summaries',
       description: 'AI-generated topic summaries',
       icon: '📚',
-      route: 'StudyLibrary',
+      route: 'AIStudySummaries',
       color: '#F59E0B',
     },
     {

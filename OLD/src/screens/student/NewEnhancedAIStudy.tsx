@@ -10,7 +10,8 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BaseScreen } from '../../shared/components/BaseScreen';
 import { Card } from '../../ui/surfaces/Card';
 import { T } from '../../ui';
-import { trackScreenView } from '../../utils/navigationAnalytics';
+import { trackScreenView, trackAction } from '../../utils/navigationAnalytics';
+import { safeNavigate } from '../../utils/navigationService';
 
 type Props = NativeStackScreenProps<any, 'NewEnhancedAIStudy'>;
 
@@ -20,9 +21,9 @@ export default function NewEnhancedAIStudy({ navigation }: Props) {
   }, []);
 
   const tools = [
-    { icon: '📖', title: 'Smart Notes', description: 'AI-generated study notes' },
-    { icon: '🧪', title: 'Practice Tests', description: 'Adaptive practice quizzes' },
-    { icon: '💡', title: 'Concept Maps', description: 'Visual learning aids' },
+    { id: 'smart-notes', icon: '📖', title: 'Smart Notes', description: 'AI-generated study notes', route: 'StudyLibrary' },
+    { id: 'practice-tests', icon: '🧪', title: 'Practice Tests', description: 'Adaptive practice quizzes', route: 'AIPracticeProblems' },
+    { id: 'concept-maps', icon: '💡', title: 'Concept Maps', description: 'Visual learning aids', route: 'StudyLibrary' },
   ];
 
   return (
@@ -37,8 +38,16 @@ export default function NewEnhancedAIStudy({ navigation }: Props) {
           </T>
         </Card>
 
-        {tools.map((tool, index) => (
-          <TouchableOpacity key={index}>
+        {tools.map((tool) => (
+          <TouchableOpacity
+            key={tool.id}
+            onPress={() => {
+              trackAction('select_ai_tool', 'NewEnhancedAIStudy', { tool: tool.id });
+              safeNavigate(tool.route);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={`Open ${tool.title}`}
+          >
             <Card style={styles.toolCard}>
               <T variant="h1">{tool.icon}</T>
               <View style={styles.toolInfo}>

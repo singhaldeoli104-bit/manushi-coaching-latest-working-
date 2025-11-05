@@ -65,8 +65,19 @@ const NewStudentDashboard: React.FC<Props> = ({ navigation }) => {
             .eq('student_id', studentId)
             .eq('status', 'pending'),
 
-          // Get attendance percentage (RPC function or manual calc)
-          Promise.resolve({ data: 92 }), // Placeholder - replace with actual RPC
+          // Get attendance percentage - calculate from class_sessions
+          supabase
+            .from('class_sessions')
+            .select('id, attended')
+            .eq('student_id', studentId)
+            .not('start_time', 'is', null)
+            .then(({ data, error }) => {
+              if (error || !data || data.length === 0) return { data: 0 };
+              const total = data.length;
+              const attendedCount = data.filter((cls) => cls.attended === true).length;
+              const percentage = Math.round((attendedCount / total) * 100);
+              return { data: percentage };
+            }),
 
           // Get study streak
           supabase
