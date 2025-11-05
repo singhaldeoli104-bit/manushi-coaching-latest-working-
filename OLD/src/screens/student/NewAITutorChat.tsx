@@ -58,7 +58,13 @@ export default function NewAITutorChat({ navigation }: Props) {
       messageLength: inputText.length,
     });
 
-    // Simulate AI response (in real app, call AI API)
+    // TODO: Replace with real AI API integration
+    // This is a placeholder simulation. In production, replace with:
+    // - OpenAI API call (GPT-4, GPT-3.5)
+    // - Anthropic Claude API
+    // - Google Gemini API
+    // - Or custom AI tutor backend
+    // Include proper error handling, rate limiting, and response streaming
     setTimeout(() => {
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),

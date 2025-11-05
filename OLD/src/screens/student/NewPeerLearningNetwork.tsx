@@ -12,6 +12,7 @@ import { BaseScreen } from '../../shared/components/BaseScreen';
 import { Card } from '../../ui/surfaces/Card';
 import { T } from '../../ui';
 import { trackScreenView, trackAction } from '../../utils/navigationAnalytics';
+import { safeNavigate } from '../../utils/navigationService';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../config/supabase';
 
@@ -98,7 +99,10 @@ export default function NewPeerLearningNetwork({ navigation }: Props) {
           renderItem={({ item }) => (
             <TouchableOpacity
               style={styles.peerCard}
-              onPress={() => trackAction('view_peer', 'NewPeerLearningNetwork', { peerId: item.id })}
+              onPress={() => {
+                trackAction('view_peer', 'NewPeerLearningNetwork', { peerId: item.id });
+                safeNavigate('PeerDetail', { peerId: item.student_id, peerName: item.name });
+              }}
               accessibilityRole="button"
               accessibilityLabel={`Connect with ${item.name}`}
             >
