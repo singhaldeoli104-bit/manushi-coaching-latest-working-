@@ -10,7 +10,9 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useTheme } from '../context/ThemeContext';
 
-// Actual Screen Imports (verified to exist)
+// ==========================================
+// OLD SCREENS - Keep for gradual replacement
+// ==========================================
 import StudentDashboard from '../screens/student/StudentDashboard';
 import ScheduleScreen from '../screens/student/ScheduleScreen';
 import EnhancedScheduleScreen from '../screens/student/EnhancedScheduleScreen';
@@ -34,6 +36,32 @@ import StudyLibraryScreen from '../screens/student/StudyLibraryScreen';
 import LiveCollaborationStudio from '../screens/student/LiveCollaborationStudio';
 import PeerLearningNetwork from '../screens/student/PeerLearningNetwork';
 import ActivityDetailScreen from '../screens/student/ActivityDetailScreen';
+
+// ==========================================
+// NEW SCREENS - Premium Minimal Design
+// ==========================================
+// Note: These imports will be uncommented as screens are created
+// import NewStudentDashboard from '../screens/student/NewStudentDashboard';
+// import NewScheduleScreen from '../screens/student/NewScheduleScreen';
+// import NewClassDetailScreen from '../screens/student/NewClassDetailScreen';
+// import NewAssignmentDetailScreen from '../screens/student/NewAssignmentDetailScreen';
+// import NewProgressDetailScreen from '../screens/student/NewProgressDetailScreen';
+// import NewStudyLibraryScreen from '../screens/student/NewStudyLibraryScreen';
+// import NewAIStudyScreen from '../screens/student/NewAIStudyScreen';
+// import NewAITutorChat from '../screens/student/NewAITutorChat';
+// import NewAILearningDashboard from '../screens/student/NewAILearningDashboard';
+// import NewCollaborativeAssignment from '../screens/student/NewCollaborativeAssignment';
+// import NewPeerLearningNetwork from '../screens/student/NewPeerLearningNetwork';
+// import NewVirtualClassroom from '../screens/student/NewVirtualClassroom';
+// import NewLiveClassScreen from '../screens/student/NewLiveClassScreen';
+// import NewInteractiveClassroom from '../screens/student/NewInteractiveClassroom';
+// import NewGamifiedLearningHub from '../screens/student/NewGamifiedLearningHub';
+// import NewEnhancedAIStudy from '../screens/student/NewEnhancedAIStudy';
+// import NewEnhancedLiveClass from '../screens/student/NewEnhancedLiveClass';
+// import NewEnhancedSchedule from '../screens/student/NewEnhancedSchedule';
+// import NewActivityDetail from '../screens/student/NewActivityDetail';
+// import NewSimpleDoubt from '../screens/student/NewSimpleDoubt';
+// import NewDoubtSubmission from '../screens/student/NewDoubtSubmission';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -75,6 +103,33 @@ function HomeStack() {
         component={ActivityDetailScreen}
         options={{ title: 'Activity Details' }}
       />
+
+      {/* NEW SCREENS - Premium Minimal Design (Uncomment as created) */}
+      {/* <Stack.Screen
+        name="NewStudentDashboard"
+        component={NewStudentDashboard}
+        options={{ headerShown: false, title: 'Dashboard (New)' }}
+      /> */}
+      {/* <Stack.Screen
+        name="NewActivityDetail"
+        component={NewActivityDetail}
+        options={{ title: 'Activity (New)' }}
+      /> */}
+      {/* <Stack.Screen
+        name="NewSimpleDoubt"
+        component={NewSimpleDoubt}
+        options={{ title: 'Quick Doubt (New)' }}
+      /> */}
+      {/* <Stack.Screen
+        name="NewDoubtSubmission"
+        component={NewDoubtSubmission}
+        options={{ title: 'Submit Doubt (New)' }}
+      /> */}
+      {/* <Stack.Screen
+        name="NewAILearningDashboard"
+        component={NewAILearningDashboard}
+        options={{ title: 'AI Dashboard (New)' }}
+      /> */}
     </Stack.Navigator>
   );
 }
@@ -130,6 +185,43 @@ function ClassesStack() {
         component={EnhancedInteractiveClassroomScreen}
         options={{ title: 'Interactive Class', headerShown: false }}
       />
+
+      {/* NEW SCREENS - Premium Minimal Design (Uncomment as created) */}
+      {/* <Stack.Screen
+        name="NewScheduleScreen"
+        component={NewScheduleScreen}
+        options={{ title: 'Schedule (New)' }}
+      /> */}
+      {/* <Stack.Screen
+        name="NewEnhancedSchedule"
+        component={NewEnhancedSchedule}
+        options={{ title: 'My Schedule (New)' }}
+      /> */}
+      {/* <Stack.Screen
+        name="NewClassDetailScreen"
+        component={NewClassDetailScreen}
+        options={{ title: 'Class Details (New)' }}
+      /> */}
+      {/* <Stack.Screen
+        name="NewLiveClassScreen"
+        component={NewLiveClassScreen}
+        options={{ title: 'Live Class (New)', headerShown: false }}
+      /> */}
+      {/* <Stack.Screen
+        name="NewEnhancedLiveClass"
+        component={NewEnhancedLiveClass}
+        options={{ title: 'Live Session (New)', headerShown: false }}
+      /> */}
+      {/* <Stack.Screen
+        name="NewVirtualClassroom"
+        component={NewVirtualClassroom}
+        options={{ title: 'Virtual Classroom (New)', headerShown: false }}
+      /> */}
+      {/* <Stack.Screen
+        name="NewInteractiveClassroom"
+        component={NewInteractiveClassroom}
+        options={{ title: 'Interactive Class (New)', headerShown: false }}
+      /> */}
     </Stack.Navigator>
   );
 }
@@ -175,6 +267,38 @@ function AssignmentsStack() {
         component={AITutorChatInterface}
         options={{ title: 'AI Tutor' }}
       />
+
+      {/* NEW SCREENS - Premium Minimal Design (Uncomment as created) */}
+      {/* <Stack.Screen
+        name="NewAssignmentDetailScreen"
+        component={NewAssignmentDetailScreen}
+        options={{ title: 'Assignment (New)' }}
+      /> */}
+      {/* <Stack.Screen
+        name="NewCollaborativeAssignment"
+        component={NewCollaborativeAssignment}
+        options={{ title: 'Collaborative Work (New)' }}
+      /> */}
+      {/* <Stack.Screen
+        name="NewStudyLibraryScreen"
+        component={NewStudyLibraryScreen}
+        options={{ title: 'Study Resources (New)' }}
+      /> */}
+      {/* <Stack.Screen
+        name="NewAIStudyScreen"
+        component={NewAIStudyScreen}
+        options={{ title: 'AI Study (New)' }}
+      /> */}
+      {/* <Stack.Screen
+        name="NewEnhancedAIStudy"
+        component={NewEnhancedAIStudy}
+        options={{ title: 'Smart Study (New)' }}
+      /> */}
+      {/* <Stack.Screen
+        name="NewAITutorChat"
+        component={NewAITutorChat}
+        options={{ title: 'AI Tutor (New)' }}
+      /> */}
     </Stack.Navigator>
   );
 }
@@ -200,6 +324,18 @@ function PerformanceStack() {
         component={GamifiedLearningHub}
         options={{ title: 'Learning Hub' }}
       />
+
+      {/* NEW SCREENS - Premium Minimal Design (Uncomment as created) */}
+      {/* <Stack.Screen
+        name="NewProgressDetailScreen"
+        component={NewProgressDetailScreen}
+        options={{ title: 'Progress (New)' }}
+      /> */}
+      {/* <Stack.Screen
+        name="NewGamifiedLearningHub"
+        component={NewGamifiedLearningHub}
+        options={{ title: 'Learning Hub (New)' }}
+      /> */}
     </Stack.Navigator>
   );
 }
@@ -225,6 +361,13 @@ function CollaborationStack() {
         component={PeerLearningNetwork}
         options={{ title: 'Peer Network' }}
       />
+
+      {/* NEW SCREENS - Premium Minimal Design (Uncomment as created) */}
+      {/* <Stack.Screen
+        name="NewPeerLearningNetwork"
+        component={NewPeerLearningNetwork}
+        options={{ title: 'Peer Network (New)' }}
+      /> */}
     </Stack.Navigator>
   );
 }
