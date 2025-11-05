@@ -5,13 +5,15 @@
  */
 
 import React from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BaseScreen } from '../../shared/components/BaseScreen';
 import { Card } from '../../ui/surfaces/Card';
+import { Badge } from '../../ui/data-display/Badge';
+import { Button } from '../../ui/inputs/Button';
 import { T } from '../../ui';
-import { trackScreenView } from '../../utils/navigationAnalytics';
+import { trackScreenView, trackAction } from '../../utils/navigationAnalytics';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../config/supabaseClient';
 
@@ -28,7 +30,11 @@ interface Insight {
 interface Recommendation {
   id: string;
   text: string;
-  priority: number;
+  priority: 'high' | 'medium' | 'low';
+  category: string;
+  actionType: 'study' | 'review' | 'practice' | 'complete';
+  estimatedTime: string;
+  icon: string;
 }
 
 export default function NewAILearningDashboard({ navigation }: Props) {
@@ -81,11 +87,41 @@ export default function NewAILearningDashboard({ navigation }: Props) {
 
       if (error) throw error;
 
-      return (data || []).map(item => ({
-        id: item.id,
-        text: item.message,
-        priority: item.priority,
-      })) as Recommendation[];
+      return (data || []).map(item => {
+        // Derive priority from priority number
+        const priorityLevel = item.priority >= 80 ? 'high' : item.priority >= 50 ? 'medium' : 'low';
+
+        // Derive category and action type from message content
+        const message = item.message?.toLowerCase() || '';
+        let category = item.category || 'General';
+        let actionType: 'study' | 'review' | 'practice' | 'complete' = 'study';
+        let estimatedTime = '15 min';
+        let icon = '📚';
+
+        if (message.includes('review') || message.includes('revise')) {
+          actionType = 'review';
+          icon = '🔄';
+          estimatedTime = '20 min';
+        } else if (message.includes('practice') || message.includes('exercise')) {
+          actionType = 'practice';
+          icon = '💪';
+          estimatedTime = '30 min';
+        } else if (message.includes('complete') || message.includes('finish')) {
+          actionType = 'complete';
+          icon = '✅';
+          estimatedTime = '25 min';
+        }
+
+        return {
+          id: item.id,
+          text: item.message,
+          priority: priorityLevel,
+          category,
+          actionType,
+          estimatedTime,
+          icon,
+        };
+      }) as Recommendation[];
     },
     enabled: !!user?.id,
   });
@@ -94,6 +130,43 @@ export default function NewAILearningDashboard({ navigation }: Props) {
   const recommendations = recommendationsData || [];
 
   const isLoading = insightsLoading || recommendationsLoading;
+
+  // Handler for recommendation actions
+  const handleRecommendationAction = (rec: Recommendation) => {
+    trackAction('start_recommendation', 'NewAILearningDashboard', {
+      recommendationId: rec.id,
+      actionType: rec.actionType,
+      priority: rec.priority,
+    });
+
+    switch (rec.actionType) {
+      case 'study':
+        Alert.alert('Start Studying', `Starting study session: ${rec.text}`);
+        break;
+      case 'review':
+        Alert.alert('Start Review', `Starting review: ${rec.text}`);
+        break;
+      case 'practice':
+        Alert.alert('Start Practice', `Starting practice: ${rec.text}`);
+        break;
+      case 'complete':
+        Alert.alert('Complete Task', `Completing: ${rec.text}`);
+        break;
+    }
+  };
+
+  const getPriorityBadgeVariant = (priority: string): 'success' | 'warning' | 'error' | 'info' | 'neutral' => {
+    switch (priority) {
+      case 'high':
+        return 'error';
+      case 'medium':
+        return 'warning';
+      case 'low':
+        return 'info';
+      default:
+        return 'neutral';
+    }
+  };
 
   return (
     <BaseScreen scrollable={false} loading={isLoading}>
@@ -132,19 +205,51 @@ export default function NewAILearningDashboard({ navigation }: Props) {
           )}
         </Card>
 
+        {/* 1. Personalized Recommendations Widget */}
         <Card style={styles.recommendationsCard}>
           <T variant="title" weight="semiBold" style={styles.sectionTitle}>
-            Recommended Actions
+            📌 Personalized Recommendations
           </T>
           {recommendations.length > 0 ? (
             recommendations.map((rec) => (
-              <View key={rec.id} style={styles.recommendationItem}>
-                <T variant="body">• {rec.text}</T>
+              <View key={rec.id} style={styles.recommendationWidget}>
+                <View style={styles.recommendationHeader}>
+                  <View style={styles.recommendationIconContainer}>
+                    <T variant="h3">{rec.icon}</T>
+                  </View>
+                  <View style={styles.recommendationContent}>
+                    <View style={styles.recommendationMeta}>
+                      <Badge
+                        variant={getPriorityBadgeVariant(rec.priority)}
+                        label={rec.priority.toUpperCase()}
+                      />
+                      <T variant="caption" style={styles.estimatedTime}>
+                        ⏱ {rec.estimatedTime}
+                      </T>
+                    </View>
+                    <T variant="body" weight="semiBold" style={styles.recommendationText}>
+                      {rec.text}
+                    </T>
+                    <T variant="caption" style={styles.recommendationCategory}>
+                      {rec.category}
+                    </T>
+                  </View>
+                </View>
+                <Button
+                  variant="primary"
+                  onPress={() => handleRecommendationAction(rec)}
+                  style={styles.recommendationButton}
+                >
+                  {rec.actionType === 'study' && 'Start Study'}
+                  {rec.actionType === 'review' && 'Review Now'}
+                  {rec.actionType === 'practice' && 'Practice'}
+                  {rec.actionType === 'complete' && 'Complete'}
+                </Button>
               </View>
             ))
           ) : (
             <T variant="body" style={styles.emptyText}>
-              No recommendations available yet
+              No recommendations available yet. Complete some assignments to get personalized suggestions!
             </T>
           )}
         </Card>
@@ -191,10 +296,51 @@ const styles = StyleSheet.create({
   recommendationsCard: {
     padding: 16,
     marginBottom: 32,
+    gap: 16,
+  },
+  recommendationWidget: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    padding: 16,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  recommendationHeader: {
+    flexDirection: 'row',
     gap: 12,
   },
-  recommendationItem: {
-    paddingVertical: 8,
+  recommendationIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  recommendationContent: {
+    flex: 1,
+    gap: 6,
+  },
+  recommendationMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  estimatedTime: {
+    color: '#6B7280',
+  },
+  recommendationText: {
+    color: '#111827',
+    lineHeight: 20,
+  },
+  recommendationCategory: {
+    color: '#9CA3AF',
+  },
+  recommendationButton: {
+    width: '100%',
   },
   emptyText: {
     color: '#9CA3AF',

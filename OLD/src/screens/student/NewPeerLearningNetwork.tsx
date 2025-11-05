@@ -4,12 +4,16 @@
  * Used in: StudentNavigator (CollaborationStack)
  */
 
-import React from 'react';
-import { View, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { View, StyleSheet, FlatList, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BaseScreen } from '../../shared/components/BaseScreen';
-import { Card } from '../../ui/surfaces/Card';
+import { Card, CardHeader, CardContent } from '../../ui/surfaces/Card';
+import { Badge } from '../../ui/data-display/Badge';
+import { Button } from '../../ui/inputs/Button';
+import { Chip } from '../../ui/inputs/Chip';
+import { Row } from '../../ui/layout/Row';
 import { T } from '../../ui';
 import { trackScreenView, trackAction } from '../../utils/navigationAnalytics';
 import { safeNavigate } from '../../utils/navigationService';
@@ -27,12 +31,122 @@ interface Peer {
   student_id: string;
 }
 
+interface StudyGroup {
+  id: string;
+  name: string;
+  subject: string;
+  members: number;
+  description: string;
+  isJoined: boolean;
+}
+
+interface PeerMatch {
+  id: string;
+  name: string;
+  avatar: string;
+  matchPercentage: number;
+  commonSubjects: string[];
+  studyStrength: string;
+}
+
+interface SharedResource {
+  id: string;
+  title: string;
+  type: 'pdf' | 'video' | 'link' | 'document';
+  sharedBy: string;
+  timestamp: string;
+}
+
+interface CollaborativeNote {
+  id: string;
+  title: string;
+  subject: string;
+  contributors: number;
+  lastUpdated: string;
+}
+
+interface LeaderboardEntry {
+  id: string;
+  name: string;
+  avatar: string;
+  rank: number;
+  points: number;
+  badge: string;
+}
+
 export default function NewPeerLearningNetwork({ navigation }: Props) {
   const { user } = useAuth();
+
+  // State for new features
+  const [activeTab, setActiveTab] = useState<'peers' | 'groups' | 'matches' | 'resources' | 'notes' | 'leaderboard'>('peers');
+  const [studyGroups, setStudyGroups] = useState<StudyGroup[]>([
+    { id: '1', name: 'Math Study Squad', subject: 'Mathematics', members: 8, description: 'Daily problem solving', isJoined: true },
+    { id: '2', name: 'Physics Lab Team', subject: 'Physics', members: 6, description: 'Experiment discussions', isJoined: false },
+    { id: '3', name: 'Chemistry Club', subject: 'Chemistry', members: 10, description: 'Organic chemistry focus', isJoined: true },
+  ]);
+  const [peerMatches, setPeerMatches] = useState<PeerMatch[]>([
+    { id: '1', name: 'Sarah Johnson', avatar: '👩‍🎓', matchPercentage: 95, commonSubjects: ['Math', 'Physics'], studyStrength: 'Problem Solving' },
+    { id: '2', name: 'Mike Chen', avatar: '👨‍🎓', matchPercentage: 88, commonSubjects: ['Chemistry', 'Biology'], studyStrength: 'Lab Work' },
+    { id: '3', name: 'Emma Davis', avatar: '👧', matchPercentage: 82, commonSubjects: ['Math'], studyStrength: 'Theory' },
+  ]);
+  const [sharedResources, setSharedResources] = useState<SharedResource[]>([
+    { id: '1', title: 'Calculus Notes Chapter 5', type: 'pdf', sharedBy: 'Sarah J.', timestamp: '2 hours ago' },
+    { id: '2', title: 'Physics Lab Demo Video', type: 'video', sharedBy: 'Mike C.', timestamp: '5 hours ago' },
+    { id: '3', title: 'Chemistry Reference Guide', type: 'link', sharedBy: 'Emma D.', timestamp: '1 day ago' },
+  ]);
+  const [collaborativeNotes, setCollaborativeNotes] = useState<CollaborativeNote[]>([
+    { id: '1', title: 'Trigonometry Summary', subject: 'Mathematics', contributors: 5, lastUpdated: '30 min ago' },
+    { id: '2', title: 'Thermodynamics Concepts', subject: 'Physics', contributors: 3, lastUpdated: '2 hours ago' },
+  ]);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([
+    { id: '1', name: 'Sarah Johnson', avatar: '👩‍🎓', rank: 1, points: 2450, badge: '🏆' },
+    { id: '2', name: 'Mike Chen', avatar: '👨‍🎓', rank: 2, points: 2180, badge: '🥈' },
+    { id: '3', name: 'You', avatar: '👤', rank: 3, points: 1950, badge: '🥉' },
+    { id: '4', name: 'Emma Davis', avatar: '👧', rank: 4, points: 1720, badge: '⭐' },
+    { id: '5', name: 'Alex Kim', avatar: '🧑‍🎓', rank: 5, points: 1580, badge: '⭐' },
+  ]);
 
   React.useEffect(() => {
     trackScreenView('NewPeerLearningNetwork');
   }, []);
+
+  // Handlers
+  const handleJoinGroup = (groupId: string) => {
+    setStudyGroups(prev => prev.map(g =>
+      g.id === groupId ? { ...g, isJoined: !g.isJoined, members: g.isJoined ? g.members - 1 : g.members + 1 } : g
+    ));
+    trackAction('toggle_study_group', 'NewPeerLearningNetwork', { groupId });
+  };
+
+  const handleGroupChat = (groupId: string, groupName: string) => {
+    trackAction('open_group_chat', 'NewPeerLearningNetwork', { groupId });
+    Alert.alert('Group Chat', `Opening chat for ${groupName}...`);
+  };
+
+  const handleConnectPeer = (peerId: string, name: string) => {
+    trackAction('connect_matched_peer', 'NewPeerLearningNetwork', { peerId });
+    Alert.alert('Peer Matching', `Connecting with ${name}...`);
+  };
+
+  const handleDownloadResource = (resourceId: string, title: string) => {
+    trackAction('download_shared_resource', 'NewPeerLearningNetwork', { resourceId });
+    Alert.alert('Download', `Downloading "${title}"...`);
+  };
+
+  const handleOpenNote = (noteId: string, title: string) => {
+    trackAction('open_collaborative_note', 'NewPeerLearningNetwork', { noteId });
+    Alert.alert('Collaborative Note', `Opening "${title}"...`);
+  };
+
+  const getResourceIcon = (type: string) => {
+    switch (type) {
+      case 'pdf': return '📄';
+      case 'video': return '🎥';
+      case 'link': return '🔗';
+      case 'document': return '📝';
+      default: return '📎';
+    }
+  };
 
   // Fetch peers from same class/batch
   const { data: peers, isLoading, error, refetch } = useQuery({
@@ -75,74 +189,223 @@ export default function NewPeerLearningNetwork({ navigation }: Props) {
       scrollable={false}
       loading={isLoading}
       error={error ? 'Failed to load peers' : null}
-      empty={!peers || peers.length === 0}
-      emptyMessage="No peers found"
     >
-      <View style={styles.container}>
-        <Card style={styles.headerCard}>
-          <T variant="h2" weight="bold">
-            Peer Learning Network
-          </T>
-          <T variant="body" style={styles.subtitle}>
-            Connect with classmates for group study
-          </T>
-        </Card>
+      <ScrollView style={styles.scrollContainer}>
+        <View style={styles.container}>
+          <Card style={styles.headerCard}>
+            <T variant="h2" weight="bold">
+              Peer Learning Network
+            </T>
+            <T variant="body" style={styles.subtitle}>
+              Collaborate, share, and learn together
+            </T>
+          </Card>
 
-        <FlatList
-          data={peers}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.peersList}
-          onRefresh={() => {
-            trackAction('refresh_peers', 'NewPeerLearningNetwork');
-            refetch();
-          }}
-          refreshing={false}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.peerCard}
-              onPress={() => {
-                trackAction('view_peer', 'NewPeerLearningNetwork', { peerId: item.id });
-                safeNavigate('PeerDetail', { peerId: item.student_id, peerName: item.name });
-              }}
-              accessibilityRole="button"
-              accessibilityLabel={`Connect with ${item.name}`}
-            >
-              <View style={styles.peerAvatar}>
-                <T variant="h2">{item.avatar}</T>
-              </View>
-              <View style={styles.peerInfo}>
-                <T variant="body" weight="semiBold">
-                  {item.name}
-                </T>
-                <T variant="caption" style={styles.peerSubjects}>
-                  {item.subjects}
-                </T>
-              </View>
-              <T variant="body" style={styles.connectIcon}>
-                💬
-              </T>
-            </TouchableOpacity>
+          {/* Tab Selector */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabScroll}>
+            <Row gap="xs" style={{ paddingHorizontal: 16, paddingVertical: 8 }}>
+              <Chip variant="filter" label="👥 Peers" selected={activeTab === 'peers'} onPress={() => setActiveTab('peers')} />
+              <Chip variant="filter" label="📚 Groups" selected={activeTab === 'groups'} onPress={() => setActiveTab('groups')} />
+              <Chip variant="filter" label="🎯 Matches" selected={activeTab === 'matches'} onPress={() => setActiveTab('matches')} />
+              <Chip variant="filter" label="📁 Resources" selected={activeTab === 'resources'} onPress={() => setActiveTab('resources')} />
+              <Chip variant="filter" label="📝 Notes" selected={activeTab === 'notes'} onPress={() => setActiveTab('notes')} />
+              <Chip variant="filter" label="🏆 Board" selected={activeTab === 'leaderboard'} onPress={() => setActiveTab('leaderboard')} />
+            </Row>
+          </ScrollView>
+
+          {/* 1. Peers Tab (Original) */}
+          {activeTab === 'peers' && peers && (
+            <View style={styles.tabContent}>
+              {peers.map((item) => (
+                <TouchableOpacity
+                  key={item.id}
+                  style={styles.peerCard}
+                  onPress={() => {
+                    trackAction('view_peer', 'NewPeerLearningNetwork', { peerId: item.id });
+                    safeNavigate('PeerDetail', { peerId: item.student_id, peerName: item.name });
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Connect with ${item.name}`}
+                >
+                  <View style={styles.peerAvatar}>
+                    <T variant="h2">{item.avatar}</T>
+                  </View>
+                  <View style={styles.peerInfo}>
+                    <T variant="body" weight="semiBold">{item.name}</T>
+                    <T variant="caption" style={styles.peerSubjects}>{item.subjects}</T>
+                  </View>
+                  <T variant="body">💬</T>
+                </TouchableOpacity>
+              ))}
+            </View>
           )}
-        />
-      </View>
+
+          {/* 2. Study Groups Tab */}
+          {activeTab === 'groups' && (
+            <View style={styles.tabContent}>
+              {studyGroups.map((group) => (
+                <Card key={group.id} style={styles.groupCard}>
+                  <View style={styles.groupHeader}>
+                    <View style={{ flex: 1 }}>
+                      <T variant="body" weight="semiBold">{group.name}</T>
+                      <T variant="caption" style={{ color: '#6B7280' }}>{group.subject}</T>
+                    </View>
+                    <Badge variant="info" label={`${group.members} members`} />
+                  </View>
+                  <T variant="caption" style={{ color: '#6B7280', marginVertical: 8 }}>
+                    {group.description}
+                  </T>
+                  <Row gap="xs">
+                    <Button
+                      variant={group.isJoined ? 'primary' : 'outline'}
+                      onPress={() => handleJoinGroup(group.id)}
+                      style={{ flex: 1 }}
+                    >
+                      {group.isJoined ? 'Joined ✓' : 'Join'}
+                    </Button>
+                    {group.isJoined && (
+                      <Button variant="outline" onPress={() => handleGroupChat(group.id, group.name)}>
+                        💬 Chat
+                      </Button>
+                    )}
+                  </Row>
+                </Card>
+              ))}
+            </View>
+          )}
+
+          {/* 3. Peer Matching Tab */}
+          {activeTab === 'matches' && (
+            <View style={styles.tabContent}>
+              {peerMatches.map((match) => (
+                <Card key={match.id} style={styles.matchCard}>
+                  <View style={styles.matchHeader}>
+                    <T variant="h2">{match.avatar}</T>
+                    <View style={{ flex: 1, marginLeft: 12 }}>
+                      <T variant="body" weight="semiBold">{match.name}</T>
+                      <T variant="caption" style={{ color: '#6B7280' }}>
+                        {match.studyStrength}
+                      </T>
+                    </View>
+                    <View style={styles.matchBadge}>
+                      <T variant="caption" weight="bold" style={{ color: '#10B981' }}>
+                        {match.matchPercentage}%
+                      </T>
+                    </View>
+                  </View>
+                  <View style={styles.matchSubjects}>
+                    {match.commonSubjects.map((subject, idx) => (
+                      <Badge key={idx} variant="info" label={subject} />
+                    ))}
+                  </View>
+                  <Button variant="primary" onPress={() => handleConnectPeer(match.id, match.name)}>
+                    Connect
+                  </Button>
+                </Card>
+              ))}
+            </View>
+          )}
+
+          {/* 4. Resource Sharing Tab */}
+          {activeTab === 'resources' && (
+            <View style={styles.tabContent}>
+              {sharedResources.map((resource) => (
+                <View key={resource.id} style={styles.resourceItem}>
+                  <T variant="h3">{getResourceIcon(resource.type)}</T>
+                  <View style={{ flex: 1, marginLeft: 12 }}>
+                    <T variant="body" weight="semiBold">{resource.title}</T>
+                    <T variant="caption" style={{ color: '#9CA3AF' }}>
+                      {resource.sharedBy} • {resource.timestamp}
+                    </T>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => handleDownloadResource(resource.id, resource.title)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Download ${resource.title}`}
+                  >
+                    <T variant="h3">⬇️</T>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* 5. Collaborative Notes Tab */}
+          {activeTab === 'notes' && (
+            <View style={styles.tabContent}>
+              {collaborativeNotes.map((note) => (
+                <TouchableOpacity
+                  key={note.id}
+                  style={styles.noteCard}
+                  onPress={() => handleOpenNote(note.id, note.title)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open note ${note.title}`}
+                >
+                  <View style={styles.noteHeader}>
+                    <T variant="body" weight="semiBold">{note.title}</T>
+                    <Badge variant="success" label={note.subject} />
+                  </View>
+                  <View style={styles.noteFooter}>
+                    <T variant="caption" style={{ color: '#9CA3AF' }}>
+                      👥 {note.contributors} contributors
+                    </T>
+                    <T variant="caption" style={{ color: '#9CA3AF' }}>
+                      Updated {note.lastUpdated}
+                    </T>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+
+          {/* 6. Leaderboard Tab */}
+          {activeTab === 'leaderboard' && (
+            <View style={styles.tabContent}>
+              {leaderboard.map((entry) => (
+                <View key={entry.id} style={[styles.leaderboardItem, entry.name === 'You' && styles.leaderboardItemHighlight]}>
+                  <View style={styles.leaderboardRank}>
+                    <T variant="body" weight="bold">{entry.badge}</T>
+                    <T variant="caption" style={{ color: '#6B7280' }}>#{entry.rank}</T>
+                  </View>
+                  <T variant="h3">{entry.avatar}</T>
+                  <View style={{ flex: 1, marginLeft: 12 }}>
+                    <T variant="body" weight="semiBold">{entry.name}</T>
+                    <T variant="caption" style={{ color: '#6B7280' }}>
+                      {entry.points.toLocaleString()} points
+                    </T>
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+      </ScrollView>
     </BaseScreen>
   );
 }
 
 const styles = StyleSheet.create({
+  scrollContainer: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    padding: 16,
+    paddingBottom: 16,
   },
   headerCard: {
     padding: 16,
-    marginBottom: 16,
+    margin: 16,
+    marginBottom: 8,
     gap: 8,
   },
   subtitle: {
     color: '#6B7280',
   },
-  peersList: {
+  tabScroll: {
+    flexGrow: 0,
+  },
+  tabContent: {
+    padding: 16,
     gap: 12,
   },
   peerCard: {
@@ -173,7 +436,70 @@ const styles = StyleSheet.create({
   peerSubjects: {
     color: '#6B7280',
   },
-  connectIcon: {
-    fontSize: 24,
+  groupCard: {
+    padding: 16,
+  },
+  groupHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  matchCard: {
+    padding: 16,
+    gap: 12,
+  },
+  matchHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  matchBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#D1FAE5',
+    borderRadius: 12,
+  },
+  matchSubjects: {
+    flexDirection: 'row',
+    gap: 6,
+    flexWrap: 'wrap',
+  },
+  resourceItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+  },
+  noteCard: {
+    padding: 16,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    gap: 12,
+  },
+  noteHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  noteFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  leaderboardItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    padding: 16,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+  },
+  leaderboardItemHighlight: {
+    backgroundColor: '#DBEAFE',
+    borderWidth: 2,
+    borderColor: '#3B82F6',
+  },
+  leaderboardRank: {
+    alignItems: 'center',
+    minWidth: 40,
   },
 });

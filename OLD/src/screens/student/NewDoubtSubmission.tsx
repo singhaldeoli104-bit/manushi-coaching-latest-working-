@@ -4,11 +4,15 @@
  * Used in: StudentNavigator (HomeStack)
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, TextInput, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BaseScreen } from '../../shared/components/BaseScreen';
 import { Card } from '../../ui/surfaces/Card';
+import { Button } from '../../ui/inputs/Button';
+import { Chip } from '../../ui/inputs/Chip';
+import { Row } from '../../ui/layout/Row';
 import { T } from '../../ui';
 import { trackAction, trackScreenView } from '../../utils/navigationAnalytics';
 import { useAuth } from '../../context/AuthContext';
@@ -18,16 +22,87 @@ type Props = NativeStackScreenProps<any, 'NewDoubtSubmission'>;
 
 const SUBJECTS = ['Mathematics', 'Physics', 'Chemistry', 'Biology', 'English', 'History'];
 
+interface ImageUpload {
+  id: string;
+  uri: string;
+  name: string;
+  size: string;
+}
+
 export default function NewDoubtSubmission({ navigation }: Props) {
   const { user } = useAuth();
   const [selectedSubject, setSelectedSubject] = useState('');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [priority, setPriority] = useState<'urgent' | 'normal'>('normal');
+  const [images, setImages] = useState<ImageUpload[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   React.useEffect(() => {
     trackScreenView('NewDoubtSubmission');
   }, []);
+
+  // Load draft on mount
+  useEffect(() => {
+    loadDraft();
+  }, []);
+
+  const loadDraft = async () => {
+    try {
+      const draft = await AsyncStorage.getItem('doubt_draft');
+      if (draft) {
+        const parsed = JSON.parse(draft);
+        setSelectedSubject(parsed.subject || '');
+        setTitle(parsed.title || '');
+        setDescription(parsed.description || '');
+        setPriority(parsed.priority || 'normal');
+        setImages(parsed.images || []);
+      }
+    } catch (error) {
+      console.error('Error loading draft:', error);
+    }
+  };
+
+  const handleSaveDraft = async () => {
+    try {
+      await AsyncStorage.setItem('doubt_draft', JSON.stringify({
+        subject: selectedSubject,
+        title,
+        description,
+        priority,
+        images,
+        timestamp: Date.now(),
+      }));
+      Alert.alert('Success', 'Draft saved successfully!');
+      trackAction('save_doubt_draft', 'NewDoubtSubmission');
+    } catch (error) {
+      console.error('Error saving draft:', error);
+      Alert.alert('Error', 'Failed to save draft');
+    }
+  };
+
+  const handleImageUpload = () => {
+    Alert.alert('Upload Image', 'Choose source:', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: '📷 Camera', onPress: () => simulateImageUpload('camera') },
+      { text: '📁 Gallery', onPress: () => simulateImageUpload('gallery') },
+    ]);
+  };
+
+  const simulateImageUpload = (source: 'camera' | 'gallery') => {
+    const newImage: ImageUpload = {
+      id: Date.now().toString(),
+      uri: 'simulated-uri',
+      name: `${source}_image_${Date.now()}.jpg`,
+      size: '1.2 MB',
+    };
+    setImages(prev => [...prev, newImage]);
+    trackAction('upload_doubt_image', 'NewDoubtSubmission', { source });
+  };
+
+  const handleRemoveImage = (imageId: string) => {
+    setImages(prev => prev.filter(img => img.id !== imageId));
+  };
 
   const handleSubmit = async () => {
     if (!selectedSubject || !title.trim() || !description.trim()) {
@@ -44,11 +119,15 @@ export default function NewDoubtSubmission({ navigation }: Props) {
         subject: selectedSubject,
         title: title.trim(),
         question: description.trim(),
+        priority,
         status: 'pending',
         created_at: new Date().toISOString(),
       });
 
       if (error) throw error;
+
+      // Clear draft on successful submission
+      await AsyncStorage.removeItem('doubt_draft');
 
       Alert.alert('Success', 'Your doubt has been submitted successfully!', [
         { text: 'OK', onPress: () => navigation.goBack() },
@@ -131,17 +210,75 @@ export default function NewDoubtSubmission({ navigation }: Props) {
             />
           </View>
 
-          <TouchableOpacity
-            style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
-            onPress={handleSubmit}
-            disabled={isSubmitting}
-            accessibilityRole="button"
-            accessibilityLabel="Submit doubt"
-          >
-            <T variant="body" weight="semiBold" style={styles.submitButtonText}>
-              {isSubmitting ? 'Submitting...' : '📤 Submit Doubt'}
+          <View style={styles.section}>
+            <T variant="body" weight="semiBold" style={styles.label}>
+              Priority
             </T>
-          </TouchableOpacity>
+            <Row gap="xs">
+              <Chip
+                variant="filter"
+                label="🔴 Urgent"
+                selected={priority === 'urgent'}
+                onPress={() => setPriority('urgent')}
+              />
+              <Chip
+                variant="filter"
+                label="🟢 Normal"
+                selected={priority === 'normal'}
+                onPress={() => setPriority('normal')}
+              />
+            </Row>
+          </View>
+
+          <View style={styles.section}>
+            <T variant="body" weight="semiBold" style={styles.label}>
+              Images (Optional)
+            </T>
+            <Button variant="outline" onPress={handleImageUpload}>
+              📷 Add Images
+            </Button>
+            {images.length > 0 && (
+              <View style={styles.imagesList}>
+                {images.map(img => (
+                  <View key={img.id} style={styles.imagePreview}>
+                    <View style={{ flex: 1 }}>
+                      <T variant="caption" weight="semiBold">{img.name}</T>
+                      <T variant="caption" style={{ color: '#9CA3AF' }}>{img.size}</T>
+                    </View>
+                    <TouchableOpacity
+                      onPress={() => handleRemoveImage(img.id)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Remove ${img.name}`}
+                    >
+                      <T variant="body">✕</T>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
+
+          <Row gap="md" style={{ marginTop: 8 }}>
+            <Button
+              variant="ghost"
+              onPress={handleSaveDraft}
+              style={{ flex: 1 }}
+              disabled={isSubmitting}
+            >
+              💾 Save Draft
+            </Button>
+            <TouchableOpacity
+              style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled, { flex: 1 }]}
+              onPress={handleSubmit}
+              disabled={isSubmitting}
+              accessibilityRole="button"
+              accessibilityLabel="Submit doubt"
+            >
+              <T variant="body" weight="semiBold" style={styles.submitButtonText}>
+                {isSubmitting ? 'Submitting...' : '📤 Submit'}
+              </T>
+            </TouchableOpacity>
+          </Row>
         </Card>
       </ScrollView>
     </BaseScreen>
@@ -210,5 +347,20 @@ const styles = StyleSheet.create({
   },
   submitButtonText: {
     color: '#FFFFFF',
+  },
+  imagesList: {
+    gap: 8,
+    marginTop: 8,
+  },
+  imagePreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
 });
