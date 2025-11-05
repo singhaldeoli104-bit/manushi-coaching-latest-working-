@@ -6,11 +6,13 @@
 
 import React, { useState, useCallback } from 'react';
 import { View, StyleSheet, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BaseScreen } from '../../shared/components/BaseScreen';
 import { T } from '../../ui';
 import { trackAction, trackScreenView } from '../../utils/navigationAnalytics';
 import { useAuth } from '../../context/AuthContext';
+import { supabase } from '../../config/supabase';
 
 type Props = NativeStackScreenProps<any, 'NewAITutorChat'>;
 
@@ -38,6 +40,81 @@ export default function NewAITutorChat({ navigation }: Props) {
   React.useEffect(() => {
     trackScreenView('NewAITutorChat');
   }, []);
+
+  // Fetch student's subjects and weak areas for dynamic suggestions
+  const { data: suggestions } = useQuery({
+    queryKey: ['ai-suggestions', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return getDefaultSuggestions();
+
+      // Get student's subjects
+      const { data: studentData, error: studentError } = await supabase
+        .from('students')
+        .select('subjects')
+        .eq('id', user.id)
+        .single();
+
+      if (studentError || !studentData) return getDefaultSuggestions();
+
+      // Get student's recent low grades to identify weak areas
+      const { data: gradesData, error: gradesError } = await supabase
+        .from('grades')
+        .select('subject, score, assignment_id')
+        .eq('student_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (gradesError) return getDefaultSuggestions();
+
+      // Calculate weak areas (subjects with avg score < 70%)
+      const subjectScores: { [key: string]: number[] } = {};
+      gradesData?.forEach((grade) => {
+        if (!subjectScores[grade.subject]) {
+          subjectScores[grade.subject] = [];
+        }
+        subjectScores[grade.subject].push(grade.score || 0);
+      });
+
+      const weakSubjects = Object.entries(subjectScores)
+        .map(([subject, scores]) => ({
+          subject,
+          avgScore: scores.reduce((a, b) => a + b, 0) / scores.length,
+        }))
+        .filter((item) => item.avgScore < 70)
+        .sort((a, b) => a.avgScore - b.avgScore)
+        .slice(0, 3)
+        .map((item) => item.subject);
+
+      // Generate suggestions based on weak areas
+      if (weakSubjects.length > 0) {
+        return weakSubjects.map((subject) => ({
+          text: `Help me improve in ${subject}`,
+          subject,
+        }));
+      }
+
+      // Fallback to student's subjects
+      const subjects = studentData.subjects?.split(',').map((s: string) => s.trim()) || [];
+      if (subjects.length > 0) {
+        return subjects.slice(0, 3).map((subject: string) => ({
+          text: `Explain ${subject} concepts`,
+          subject,
+        }));
+      }
+
+      return getDefaultSuggestions();
+    },
+    enabled: !!user?.id,
+  });
+
+  // Default suggestions if no data available
+  function getDefaultSuggestions() {
+    return [
+      { text: 'Explain photosynthesis', subject: 'Biology' },
+      { text: 'Help with algebra', subject: 'Mathematics' },
+      { text: 'What is Newton\'s law?', subject: 'Physics' },
+    ];
+  }
 
   // Handle send message
   const handleSend = useCallback(async () => {
@@ -163,27 +240,26 @@ export default function NewAITutorChat({ navigation }: Props) {
           </TouchableOpacity>
         </View>
 
-        {/* Suggested Questions */}
-        {messages.length === 1 && (
+        {/* Dynamic Suggested Questions */}
+        {messages.length === 1 && suggestions && (
           <View style={styles.suggestionsContainer}>
             <T variant="caption" style={styles.suggestionsTitle}>
-              Suggested questions:
+              {suggestions.some((s: any) => s.subject) ? 'Based on your study areas:' : 'Suggested questions:'}
             </T>
             <View style={styles.suggestionsList}>
-              {[
-                'Explain photosynthesis',
-                'Help with algebra',
-                'What is Newton\'s law?',
-              ].map((suggestion, index) => (
+              {suggestions.map((suggestion: any, index: number) => (
                 <TouchableOpacity
                   key={index}
                   style={styles.suggestionChip}
-                  onPress={() => setInputText(suggestion)}
+                  onPress={() => {
+                    trackAction('select_suggestion', 'NewAITutorChat', { suggestion: suggestion.text });
+                    setInputText(suggestion.text);
+                  }}
                   accessibilityRole="button"
-                  accessibilityLabel={`Ask: ${suggestion}`}
+                  accessibilityLabel={`Ask: ${suggestion.text}`}
                 >
                   <T variant="caption" style={styles.suggestionText}>
-                    {suggestion}
+                    {suggestion.text}
                   </T>
                 </TouchableOpacity>
               ))}
