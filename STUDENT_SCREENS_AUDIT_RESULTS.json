@@ -1,0 +1,229 @@
+{
+  "buttons": {
+    "total": 51,
+    "missing": 0,
+    "issues": []
+  },
+  "todos": [
+    {
+      "file": "AIPracticeProblems.tsx",
+      "line": 92,
+      "content": "// TODO: Create PracticeProblemDetail.tsx screen for solving problems"
+    },
+    {
+      "file": "AIStudySummaries.tsx",
+      "line": 83,
+      "content": "// TODO: Create SummaryDetail.tsx screen for full summary view"
+    },
+    {
+      "file": "NewAITutorChat.tsx",
+      "line": 138,
+      "content": "// TODO: Replace with real AI API integration"
+    }
+  ],
+  "comingSoon": [
+    {
+      "file": "ClassChat.tsx",
+      "line": 192,
+      "content": "placeholder=\"Type a message...\""
+    },
+    {
+      "file": "ClassNotes.tsx",
+      "line": 264,
+      "content": "placeholder=\"Note Title\""
+    },
+    {
+      "file": "ClassNotes.tsx",
+      "line": 275,
+      "content": "placeholder=\"Start writing your notes here...\""
+    },
+    {
+      "file": "NewAITutorChat.tsx",
+      "line": 139,
+      "content": "// This is a placeholder simulation. In production, replace with:"
+    },
+    {
+      "file": "NewAITutorChat.tsx",
+      "line": 224,
+      "content": "placeholder=\"Ask me anything...\""
+    },
+    {
+      "file": "NewAssignmentDetailScreen.tsx",
+      "line": 320,
+      "content": "placeholder=\"Write your answer here...\""
+    },
+    {
+      "file": "NewDoubtSubmission.tsx",
+      "line": 111,
+      "content": "placeholder=\"Brief title for your doubt\""
+    },
+    {
+      "file": "NewDoubtSubmission.tsx",
+      "line": 125,
+      "content": "placeholder=\"Explain your doubt in detail. Include any relevant information...\""
+    },
+    {
+      "file": "NewEnhancedLiveClass.tsx",
+      "line": 12,
+      "content": "import { VideoPlaceholder } from '../../shared/components/VideoPlaceholder';"
+    },
+    {
+      "file": "NewEnhancedLiveClass.tsx",
+      "line": 127,
+      "content": "<VideoPlaceholder"
+    },
+    {
+      "file": "NewEnhancedLiveClass.tsx",
+      "line": 131,
+      "content": "placeholderMessage=\"Enhanced Live Stream\""
+    },
+    {
+      "file": "NewEnhancedLiveClass.tsx",
+      "line": 180,
+      "content": "videoPlaceholder: {"
+    },
+    {
+      "file": "NewLiveClassScreen.tsx",
+      "line": 12,
+      "content": "import { VideoPlaceholder } from '../../shared/components/VideoPlaceholder';"
+    },
+    {
+      "file": "NewLiveClassScreen.tsx",
+      "line": 97,
+      "content": "<VideoPlaceholder"
+    },
+    {
+      "file": "NewLiveClassScreen.tsx",
+      "line": 101,
+      "content": "placeholderMessage=\"Live Class in Progress\""
+    },
+    {
+      "file": "NewLiveClassScreen.tsx",
+      "line": 135,
+      "content": "videoPlaceholder: {"
+    },
+    {
+      "file": "NewSimpleDoubt.tsx",
+      "line": 78,
+      "content": "placeholder=\"e.g., Mathematics, Physics\""
+    },
+    {
+      "file": "NewSimpleDoubt.tsx",
+      "line": 92,
+      "content": "placeholder=\"Describe your doubt in detail...\""
+    },
+    {
+      "file": "NewVirtualClassroom.tsx",
+      "line": 3,
+      "content": "* Purpose: Virtual classroom interface placeholder"
+    },
+    {
+      "file": "NewVirtualClassroom.tsx",
+      "line": 11,
+      "content": "import { VideoPlaceholder } from '../../shared/components/VideoPlaceholder';"
+    },
+    {
+      "file": "NewVirtualClassroom.tsx",
+      "line": 58,
+      "content": "<VideoPlaceholder"
+    },
+    {
+      "file": "NewVirtualClassroom.tsx",
+      "line": 61,
+      "content": "placeholderMessage=\"Virtual Classroom\""
+    },
+    {
+      "file": "NewVirtualClassroom.tsx",
+      "line": 105,
+      "content": "videoPlaceholder: {"
+    },
+    {
+      "file": "PeerDetail.tsx",
+      "line": 150,
+      "content": "{ text: 'Create New', onPress: () => Alert.alert('Creating...', 'Study group feature will be available soon') },"
+    },
+    {
+      "file": "PeerDetail.tsx",
+      "line": 151,
+      "content": "{ text: 'Join Existing', onPress: () => Alert.alert('Joining...', 'Study group feature will be available soon') },"
+    },
+    {
+      "file": "Whiteboard.tsx",
+      "line": 86,
+      "content": "{/* Whiteboard Canvas Placeholder */}"
+    },
+    {
+      "file": "Whiteboard.tsx",
+      "line": 89,
+      "content": "<View style={styles.canvasPlaceholder}>"
+    },
+    {
+      "file": "Whiteboard.tsx",
+      "line": 211,
+      "content": "canvasPlaceholder: {"
+    }
+  ],
+  "navigation": {
+    "declared": [
+      "NewStudentDashboard",
+      "NewScheduleScreen",
+      "NewClassDetailScreen",
+      "NewAssignmentDetailScreen",
+      "NewProgressDetailScreen",
+      "NewStudyLibraryScreen",
+      "NewAIStudyScreen",
+      "NewAITutorChat",
+      "NewAILearningDashboard",
+      "NewCollaborativeAssignment",
+      "NewPeerLearningNetwork",
+      "NewVirtualClassroom",
+      "NewLiveClassScreen",
+      "NewInteractiveClassroom",
+      "NewGamifiedLearningHub",
+      "NewEnhancedAIStudy",
+      "NewEnhancedLiveClass",
+      "NewEnhancedSchedule",
+      "NewActivityDetail",
+      "NewSimpleDoubt",
+      "NewDoubtSubmission",
+      "AIPracticeProblems",
+      "AIStudySummaries",
+      "PeerDetail",
+      "Whiteboard",
+      "ClassChat",
+      "ClassNotes"
+    ],
+    "existing": [
+      "AIPracticeProblems",
+      "AIStudySummaries",
+      "ClassChat",
+      "ClassNotes",
+      "NewAILearningDashboard",
+      "NewAIStudyScreen",
+      "NewAITutorChat",
+      "NewActivityDetail",
+      "NewAssignmentDetailScreen",
+      "NewClassDetailScreen",
+      "NewCollaborativeAssignment",
+      "NewDoubtSubmission",
+      "NewEnhancedAIStudy",
+      "NewEnhancedLiveClass",
+      "NewEnhancedSchedule",
+      "NewGamifiedLearningHub",
+      "NewInteractiveClassroom",
+      "NewLiveClassScreen",
+      "NewPeerLearningNetwork",
+      "NewProgressDetailScreen",
+      "NewScheduleScreen",
+      "NewSimpleDoubt",
+      "NewStudentDashboard",
+      "NewStudyLibraryScreen",
+      "NewVirtualClassroom",
+      "PeerDetail",
+      "Whiteboard"
+    ],
+    "missing": [],
+    "dead": []
+  },
+  "images": []
+}
