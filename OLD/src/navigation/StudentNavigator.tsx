@@ -41,7 +41,7 @@ import ActivityDetailScreen from '../screens/student/ActivityDetailScreen';
 // NEW SCREENS - Premium Minimal Design
 // ==========================================
 // Note: These imports will be uncommented as screens are created
-// import NewStudentDashboard from '../screens/student/NewStudentDashboard';
+import NewStudentDashboard from '../screens/student/NewStudentDashboard';
 // import NewScheduleScreen from '../screens/student/NewScheduleScreen';
 // import NewClassDetailScreen from '../screens/student/NewClassDetailScreen';
 // import NewAssignmentDetailScreen from '../screens/student/NewAssignmentDetailScreen';
@@ -105,11 +105,11 @@ function HomeStack() {
       />
 
       {/* NEW SCREENS - Premium Minimal Design (Uncomment as created) */}
-      {/* <Stack.Screen
+      <Stack.Screen
         name="NewStudentDashboard"
         component={NewStudentDashboard}
         options={{ headerShown: false, title: 'Dashboard (New)' }}
-      /> */}
+      />
       {/* <Stack.Screen
         name="NewActivityDetail"
         component={NewActivityDetail}
