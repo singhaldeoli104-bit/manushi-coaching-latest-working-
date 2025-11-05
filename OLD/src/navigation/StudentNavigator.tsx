@@ -44,8 +44,8 @@ import ActivityDetailScreen from '../screens/student/ActivityDetailScreen';
 import NewStudentDashboard from '../screens/student/NewStudentDashboard';
 import NewScheduleScreen from '../screens/student/NewScheduleScreen';
 import NewClassDetailScreen from '../screens/student/NewClassDetailScreen';
-// import NewAssignmentDetailScreen from '../screens/student/NewAssignmentDetailScreen';
-// import NewProgressDetailScreen from '../screens/student/NewProgressDetailScreen';
+import NewAssignmentDetailScreen from '../screens/student/NewAssignmentDetailScreen';
+import NewProgressDetailScreen from '../screens/student/NewProgressDetailScreen';
 // import NewStudyLibraryScreen from '../screens/student/NewStudyLibraryScreen';
 // import NewAIStudyScreen from '../screens/student/NewAIStudyScreen';
 // import NewAITutorChat from '../screens/student/NewAITutorChat';
@@ -269,11 +269,11 @@ function AssignmentsStack() {
       />
 
       {/* NEW SCREENS - Premium Minimal Design (Uncomment as created) */}
-      {/* <Stack.Screen
+      <Stack.Screen
         name="NewAssignmentDetailScreen"
         component={NewAssignmentDetailScreen}
-        options={{ title: 'Assignment (New)' }}
-      /> */}
+        options={{ headerShown: false, title: 'Assignment (New)' }}
+      />
       {/* <Stack.Screen
         name="NewCollaborativeAssignment"
         component={NewCollaborativeAssignment}
@@ -326,11 +326,11 @@ function PerformanceStack() {
       />
 
       {/* NEW SCREENS - Premium Minimal Design (Uncomment as created) */}
-      {/* <Stack.Screen
+      <Stack.Screen
         name="NewProgressDetailScreen"
         component={NewProgressDetailScreen}
-        options={{ title: 'Progress (New)' }}
-      /> */}
+        options={{ headerShown: false, title: 'Progress (New)' }}
+      />
       {/* <Stack.Screen
         name="NewGamifiedLearningHub"
         component={NewGamifiedLearningHub}
