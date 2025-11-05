@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Share, Alert } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BaseScreen } from '../../shared/components/BaseScreen';
@@ -158,6 +158,36 @@ export default function NewProgressDetailScreen({ navigation }: Props) {
     return 'F';
   };
 
+  // FEATURE: Share Progress
+  const handleShareProgress = async () => {
+    if (!progress) return;
+
+    trackAction('share_progress', 'NewProgressDetailScreen');
+
+    const message = `📊 My Academic Progress Report
+
+🎓 Overall Grade: ${getGradeLetter(progress.overall_grade)} (${progress.overall_grade.toFixed(1)}%)
+📚 Assignments Completed: ${progress.assignments_completed}/${progress.assignments_total}
+📅 Attendance Rate: ${progress.attendance_rate.toFixed(1)}%
+
+Subject Performance:
+${progress.subjects.map(s => `• ${s.name}: ${getGradeLetter(s.average_grade)} (${s.average_grade.toFixed(1)}%)`).join('\n')}
+
+Recent Grades:
+${progress.recent_grades.slice(0, 3).map(g => `• ${g.assignment_title}: ${g.grade}/${g.total_points}`).join('\n')}
+
+Keep learning! 🚀`;
+
+    try {
+      await Share.share({
+        message,
+        title: 'My Progress Report',
+      });
+    } catch (error) {
+      Alert.alert('Error', 'Failed to share progress report');
+    }
+  };
+
   return (
     <BaseScreen
       scrollable={true}
@@ -226,6 +256,18 @@ export default function NewProgressDetailScreen({ navigation }: Props) {
                 </T>
               </View>
             </View>
+
+            {/* Share Button */}
+            <TouchableOpacity
+              style={styles.shareButton}
+              onPress={handleShareProgress}
+              accessibilityRole="button"
+              accessibilityLabel="Share progress report"
+            >
+              <T variant="body" weight="semiBold" style={styles.shareButtonText}>
+                📤 Share Progress
+              </T>
+            </TouchableOpacity>
           </Card>
 
           {/* Subject Performance */}
@@ -355,6 +397,17 @@ const styles = StyleSheet.create({
   },
   statPercentage: {
     color: '#111827',
+  },
+  shareButton: {
+    backgroundColor: '#3B82F6',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  shareButtonText: {
+    color: '#FFFFFF',
   },
   subjectsCard: {
     padding: 16,
