@@ -83,6 +83,24 @@ export default function NewCollaborativeAssignment({ route, navigation }: Props)
     enabled: !!assignmentId,
   });
 
+  // Fetch assignment tasks/progress
+  const { data: progress, isLoading: progressLoading } = useQuery({
+    queryKey: ['assignment-progress', assignmentId],
+    queryFn: async () => {
+      if (!assignmentId) throw new Error('No assignment ID');
+
+      const { data, error } = await supabase
+        .from('assignment_tasks')
+        .select('*')
+        .eq('assignment_id', assignmentId)
+        .order('order', { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!assignmentId,
+  });
+
   const getDaysRemaining = () => {
     if (!assignment?.due_date) return 0;
     const dueDate = new Date(assignment.due_date);
@@ -91,7 +109,20 @@ export default function NewCollaborativeAssignment({ route, navigation }: Props)
     return Math.ceil(diff / (1000 * 60 * 60 * 24));
   };
 
-  const isLoading = assignmentLoading || teamLoading;
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return '✅';
+      case 'in_progress':
+        return '🔄';
+      case 'pending':
+        return '⏳';
+      default:
+        return '⏳';
+    }
+  };
+
+  const isLoading = assignmentLoading || teamLoading || progressLoading;
   const daysRemaining = getDaysRemaining();
 
   return (
@@ -144,9 +175,19 @@ export default function NewCollaborativeAssignment({ route, navigation }: Props)
             <T variant="title" weight="semiBold" style={styles.sectionTitle}>
               Progress
             </T>
-            <T variant="body">Research: ✅ Complete</T>
-            <T variant="body">Draft: 🔄 In Progress</T>
-            <T variant="body">Review: ⏳ Pending</T>
+            {progress && progress.length > 0 ? (
+              progress.map((task: any) => (
+                <T key={task.id} variant="body">
+                  {task.name}: {getStatusIcon(task.status)} {task.status.replace('_', ' ')}
+                </T>
+              ))
+            ) : (
+              <>
+                <T variant="body">Research: ⏳ Pending</T>
+                <T variant="body">Draft: ⏳ Pending</T>
+                <T variant="body">Review: ⏳ Pending</T>
+              </>
+            )}
           </Card>
         </ScrollView>
       )}
