@@ -15,11 +15,13 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { ScrollView, View, TouchableOpacity, RefreshControl, StyleSheet } from 'react-native';
+import { ScrollView, View, TouchableOpacity, RefreshControl, StyleSheet, Alert } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BaseScreen } from '../../shared/components/BaseScreen';
 import { Col, T, Spacer, Row, Button } from '../../ui';
+import { Badge } from '../../ui/data-display/Badge';
+import { Card } from '../../ui/surfaces/Card';
 import { trackScreenView, trackAction } from '../../utils/navigationAnalytics';
 import { safeNavigate } from '../../utils/navigationService';
 import { supabase } from '../../lib/supabase';
@@ -228,6 +230,160 @@ const NewStudentDashboard: React.FC<Props> = ({ navigation }) => {
       }
     },
   });
+
+  // ========================================
+  // NEW FEATURE 1: Performance Chart Data
+  // ========================================
+  const { data: performanceData } = useQuery({
+    queryKey: ['performance-chart', studentId],
+    queryFn: async () => {
+      try {
+        // Get last 7 days of test scores
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+        const { data, error } = await supabase
+          .from('test_results')
+          .select('score, created_at, subjects(name)')
+          .eq('student_id', studentId)
+          .gte('created_at', sevenDaysAgo.toISOString())
+          .order('created_at', { ascending: true });
+
+        if (error) throw error;
+
+        // Calculate average by day
+        const dailyAverages = (data || []).reduce((acc: any[], result: any) => {
+          const date = new Date(result.created_at).toLocaleDateString('en-US', { weekday: 'short' });
+          const existing = acc.find(item => item.day === date);
+          if (existing) {
+            existing.scores.push(result.score);
+          } else {
+            acc.push({ day: date, scores: [result.score] });
+          }
+          return acc;
+        }, []);
+
+        return dailyAverages.map(item => ({
+          day: item.day,
+          average: Math.round(item.scores.reduce((a: number, b: number) => a + b, 0) / item.scores.length),
+        }));
+      } catch (error) {
+        console.error('Error fetching performance data:', error);
+        return [];
+      }
+    },
+  });
+
+  // ========================================
+  // NEW FEATURE 2: Upcoming Events Calendar
+  // ========================================
+  const { data: upcomingEvents } = useQuery({
+    queryKey: ['upcoming-events', studentId],
+    queryFn: async () => {
+      try {
+        const today = new Date();
+        const fiveDaysLater = new Date(today);
+        fiveDaysLater.setDate(fiveDaysLater.getDate() + 5);
+
+        const { data, error } = await supabase
+          .from('calendar_events')
+          .select('*, subjects(name)')
+          .eq('student_id', studentId)
+          .gte('event_date', today.toISOString())
+          .lte('event_date', fiveDaysLater.toISOString())
+          .order('event_date', { ascending: true })
+          .limit(5);
+
+        if (error) throw error;
+        return data || [];
+      } catch (error) {
+        console.error('Error fetching upcoming events:', error);
+        return [];
+      }
+    },
+  });
+
+  // ========================================
+  // NEW FEATURE 3: Notifications Panel
+  // ========================================
+  const { data: notifications } = useQuery({
+    queryKey: ['notifications', studentId],
+    queryFn: async () => {
+      try {
+        const { data, error } = await supabase
+          .from('notifications')
+          .select('*')
+          .eq('student_id', studentId)
+          .eq('read', false)
+          .order('created_at', { ascending: false })
+          .limit(3);
+
+        if (error) throw error;
+        return data || [];
+      } catch (error) {
+        console.error('Error fetching notifications:', error);
+        return [];
+      }
+    },
+  });
+
+  // ========================================
+  // NEW FEATURE 4: Teacher Announcements
+  // ========================================
+  const { data: announcements } = useQuery({
+    queryKey: ['teacher-announcements', studentId],
+    queryFn: async () => {
+      try {
+        const { data, error } = await supabase
+          .from('announcements')
+          .select('*, teachers(name)')
+          .eq('target_audience', 'students')
+          .order('created_at', { ascending: false })
+          .limit(2);
+
+        if (error) throw error;
+        return data || [];
+      } catch (error) {
+        console.error('Error fetching announcements:', error);
+        return [];
+      }
+    },
+  });
+
+  // ========================================
+  // NEW FEATURE 5: Study Goals Tracker
+  // ========================================
+  const { data: studyGoals } = useQuery({
+    queryKey: ['study-goals', studentId],
+    queryFn: async () => {
+      try {
+        const { data, error } = await supabase
+          .from('student_goals')
+          .select('*')
+          .eq('student_id', studentId)
+          .eq('status', 'active')
+          .order('deadline', { ascending: true })
+          .limit(3);
+
+        if (error) throw error;
+        return data || [];
+      } catch (error) {
+        console.error('Error fetching study goals:', error);
+        return [];
+      }
+    },
+  });
+
+  // Handlers for new features
+  const handleMarkNotificationRead = (notificationId: string) => {
+    trackAction('mark_notification_read', 'NewStudentDashboard', { notificationId });
+    Alert.alert('Notification', 'Marked as read');
+  };
+
+  const handleCompleteGoal = (goalId: string) => {
+    trackAction('complete_study_goal', 'NewStudentDashboard', { goalId });
+    Alert.alert('Goal Complete', 'Congratulations on completing your goal!');
+  };
 
   // Combined loading state
   const isLoading = summaryLoading || classesLoading || assignmentsLoading;
@@ -499,6 +655,166 @@ const NewStudentDashboard: React.FC<Props> = ({ navigation }) => {
               </T>
             </TouchableOpacity>
           ) : null}
+
+          {/* ========================================
+              NEW FEATURE 1: Performance Chart
+              ======================================== */}
+          {performanceData && performanceData.length > 0 ? (
+            <Card style={styles.performanceCard}>
+              <T variant="body" weight="semiBold">📊 Weekly Performance</T>
+              <Spacer size="sm" />
+              <View style={styles.chartContainer}>
+                {performanceData.map((data, index) => (
+                  <View key={index} style={styles.chartBar}>
+                    <View style={styles.barContainer}>
+                      <View style={[styles.bar, { height: `${data.average}%` }]} />
+                    </View>
+                    <T variant="caption" style={styles.chartLabel}>{data.day}</T>
+                    <T variant="caption" style={styles.chartValue}>{data.average}%</T>
+                  </View>
+                ))}
+              </View>
+            </Card>
+          ) : null}
+
+          {/* ========================================
+              NEW FEATURE 2: Upcoming Events Calendar
+              ======================================== */}
+          {upcomingEvents && upcomingEvents.length > 0 ? (
+            <View>
+              <T variant="body" weight="semiBold">📅 Upcoming Events (Next 5 Days)</T>
+              <Spacer size="sm" />
+              {upcomingEvents.map((event) => (
+                <Card key={event.id} style={styles.eventCard}>
+                  <Row sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                    <View style={{ flex: 1 }}>
+                      <T variant="body" weight="semiBold">{event.title}</T>
+                      <T variant="caption" style={styles.eventSubject}>
+                        {event.subjects?.name || 'General'}
+                      </T>
+                    </View>
+                    <Badge
+                      variant="info"
+                      label={new Date(event.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    />
+                  </Row>
+                  {event.description ? (
+                    <T variant="caption" style={styles.eventDescription}>{event.description}</T>
+                  ) : null}
+                </Card>
+              ))}
+            </View>
+          ) : null}
+
+          {/* ========================================
+              NEW FEATURE 3: Notifications Panel
+              ======================================== */}
+          {notifications && notifications.length > 0 ? (
+            <Card style={styles.notificationsCard}>
+              <Row sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                <T variant="body" weight="semiBold">🔔 Notifications</T>
+                <Badge variant="error" label={`${notifications.length} new`} />
+              </Row>
+              <Spacer size="sm" />
+              {notifications.map((notification) => (
+                <TouchableOpacity
+                  key={notification.id}
+                  style={styles.notificationItem}
+                  onPress={() => handleMarkNotificationRead(notification.id)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Notification: ${notification.title}`}
+                >
+                  <View style={styles.notificationDot} />
+                  <View style={{ flex: 1 }}>
+                    <T variant="body" weight="semiBold">{notification.title}</T>
+                    <T variant="caption" style={styles.notificationMessage}>
+                      {notification.message}
+                    </T>
+                    <T variant="caption" style={styles.notificationTime}>
+                      {new Date(notification.created_at).toLocaleTimeString()}
+                    </T>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </Card>
+          ) : null}
+
+          {/* ========================================
+              NEW FEATURE 4: Teacher Announcements
+              ======================================== */}
+          {announcements && announcements.length > 0 ? (
+            <View>
+              <T variant="body" weight="semiBold">📢 Teacher Announcements</T>
+              <Spacer size="sm" />
+              {announcements.map((announcement) => (
+                <Card key={announcement.id} style={styles.announcementCard}>
+                  <Row sx={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <View style={{ flex: 1 }}>
+                      <T variant="body" weight="semiBold">{announcement.title}</T>
+                      <T variant="caption" style={styles.announcementTeacher}>
+                        By {announcement.teachers?.name || 'Teacher'}
+                      </T>
+                    </View>
+                    <Badge
+                      variant="warning"
+                      label={new Date(announcement.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    />
+                  </Row>
+                  <Spacer size="xs" />
+                  <T variant="caption" style={styles.announcementContent}>
+                    {announcement.content}
+                  </T>
+                </Card>
+              ))}
+            </View>
+          ) : null}
+
+          {/* ========================================
+              NEW FEATURE 5: Study Goals Tracker
+              ======================================== */}
+          {studyGoals && studyGoals.length > 0 ? (
+            <Card style={styles.goalsCard}>
+              <T variant="body" weight="semiBold">🎯 Study Goals</T>
+              <Spacer size="sm" />
+              {studyGoals.map((goal) => {
+                const progress = Math.round((goal.current_value / goal.target_value) * 100);
+                return (
+                  <View key={goal.id} style={styles.goalItem}>
+                    <Row sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                      <View style={{ flex: 1 }}>
+                        <T variant="body" weight="semiBold">{goal.title}</T>
+                        <T variant="caption" style={styles.goalDeadline}>
+                          Due: {new Date(goal.deadline).toLocaleDateString()}
+                        </T>
+                      </View>
+                      <Badge
+                        variant={progress >= 100 ? 'success' : progress >= 50 ? 'info' : 'warning'}
+                        label={`${progress}%`}
+                      />
+                    </Row>
+                    <Spacer size="xs" />
+                    <View style={styles.goalProgressBar}>
+                      <View style={[styles.goalProgressFill, { width: `${Math.min(progress, 100)}%` }]} />
+                    </View>
+                    <Row sx={{ justifyContent: 'space-between' }}>
+                      <T variant="caption" style={styles.goalProgress}>
+                        {goal.current_value} / {goal.target_value} {goal.unit}
+                      </T>
+                      {progress >= 100 ? (
+                        <TouchableOpacity
+                          onPress={() => handleCompleteGoal(goal.id)}
+                          accessibilityRole="button"
+                          accessibilityLabel="Mark goal as complete"
+                        >
+                          <T variant="caption" style={styles.completeGoalText}>✓ Complete</T>
+                        </TouchableOpacity>
+                      ) : null}
+                    </Row>
+                  </View>
+                );
+              })}
+            </Card>
+          ) : null}
         </Col>
       </ScrollView>
     </BaseScreen>
@@ -581,6 +897,151 @@ const styles = StyleSheet.create({
   progressText: {
     color: '#6B7280',
     marginTop: 4,
+  },
+  // NEW FEATURE 1: Performance Chart Styles
+  performanceCard: {
+    padding: 16,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  chartContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'flex-end',
+    height: 120,
+    paddingTop: 10,
+  },
+  chartBar: {
+    alignItems: 'center',
+    flex: 1,
+    gap: 4,
+  },
+  barContainer: {
+    height: 80,
+    width: '80%',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+  },
+  bar: {
+    width: '100%',
+    backgroundColor: '#3B82F6',
+    borderTopLeftRadius: 4,
+    borderTopRightRadius: 4,
+    minHeight: 4,
+  },
+  chartLabel: {
+    color: '#6B7280',
+    fontSize: 10,
+  },
+  chartValue: {
+    color: '#3B82F6',
+    fontWeight: '600',
+    fontSize: 10,
+  },
+  // NEW FEATURE 2: Events Calendar Styles
+  eventCard: {
+    padding: 12,
+    marginBottom: 8,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  eventSubject: {
+    color: '#6B7280',
+    marginTop: 2,
+  },
+  eventDescription: {
+    color: '#9CA3AF',
+    marginTop: 4,
+  },
+  // NEW FEATURE 3: Notifications Panel Styles
+  notificationsCard: {
+    padding: 16,
+    backgroundColor: '#FFF7ED',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#FDBA74',
+  },
+  notificationItem: {
+    flexDirection: 'row',
+    gap: 12,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#FED7AA',
+    minHeight: 48,
+    alignItems: 'flex-start',
+  },
+  notificationDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#EF4444',
+    marginTop: 6,
+  },
+  notificationMessage: {
+    color: '#6B7280',
+    marginTop: 2,
+  },
+  notificationTime: {
+    color: '#9CA3AF',
+    marginTop: 4,
+    fontSize: 10,
+  },
+  // NEW FEATURE 4: Teacher Announcements Styles
+  announcementCard: {
+    padding: 12,
+    marginBottom: 8,
+    backgroundColor: '#EFF6FF',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+  },
+  announcementTeacher: {
+    color: '#6B7280',
+    marginTop: 2,
+  },
+  announcementContent: {
+    color: '#4B5563',
+    lineHeight: 18,
+  },
+  // NEW FEATURE 5: Study Goals Tracker Styles
+  goalsCard: {
+    padding: 16,
+    backgroundColor: '#F0FDF4',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#86EFAC',
+  },
+  goalItem: {
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#BBF7D0',
+  },
+  goalDeadline: {
+    color: '#6B7280',
+    marginTop: 2,
+  },
+  goalProgressBar: {
+    height: 6,
+    backgroundColor: '#D1FAE5',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  goalProgressFill: {
+    height: '100%',
+    backgroundColor: '#10B981',
+    borderRadius: 3,
+  },
+  goalProgress: {
+    color: '#6B7280',
+    marginTop: 4,
+  },
+  completeGoalText: {
+    color: '#10B981',
+    fontWeight: '600',
   },
 });
 
