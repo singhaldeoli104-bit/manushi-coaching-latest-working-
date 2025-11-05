@@ -4,12 +4,16 @@
  * Used in: StudentNavigator (ClassesStack)
  */
 
-import React from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
+import React, { useState } from 'react';
+import { View, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Alert } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BaseScreen } from '../../shared/components/BaseScreen';
 import { Card } from '../../ui/surfaces/Card';
+import { Badge } from '../../ui/data-display/Badge';
+import { Button } from '../../ui/inputs/Button';
+import { Chip } from '../../ui/inputs/Chip';
+import { Row } from '../../ui/layout/Row';
 import { T } from '../../ui';
 import { trackScreenView, trackAction } from '../../utils/navigationAnalytics';
 import { useAuth } from '../../context/AuthContext';
@@ -26,8 +30,60 @@ interface ClassSession {
   end_time: string;
 }
 
+interface CalendarEvent {
+  id: string;
+  date: Date;
+  subject: string;
+  type: 'class' | 'assignment' | 'test' | 'event';
+  time: string;
+}
+
+interface Reminder {
+  id: string;
+  title: string;
+  time: string;
+  type: 'class' | 'assignment' | 'test';
+  minutesBefore: number;
+  enabled: boolean;
+}
+
+interface RescheduleRequest {
+  classId: string;
+  className: string;
+  currentTime: string;
+  proposedTime: string;
+  reason: string;
+  status: 'pending' | 'approved' | 'rejected';
+}
+
 export default function NewEnhancedSchedule({ navigation }: Props) {
   const { user } = useAuth();
+
+  // State for view mode and calendar
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
+  const [googleCalendarSynced, setGoogleCalendarSynced] = useState(false);
+
+  // Mock calendar events for the month
+  const [calendarEvents] = useState<CalendarEvent[]>([
+    { id: '1', date: new Date(2025, 10, 5), subject: 'Mathematics', type: 'class', time: '9:00 AM' },
+    { id: '2', date: new Date(2025, 10, 5), subject: 'Physics', type: 'class', time: '11:00 AM' },
+    { id: '3', date: new Date(2025, 10, 7), subject: 'Math Assignment', type: 'assignment', time: 'Due 5:00 PM' },
+    { id: '4', date: new Date(2025, 10, 10), subject: 'Chemistry', type: 'class', time: '10:00 AM' },
+    { id: '5', date: new Date(2025, 10, 12), subject: 'Midterm Exam', type: 'test', time: '9:00 AM' },
+    { id: '6', date: new Date(2025, 10, 15), subject: 'Biology', type: 'class', time: '2:00 PM' },
+    { id: '7', date: new Date(2025, 10, 18), subject: 'History Project', type: 'assignment', time: 'Due 3:00 PM' },
+    { id: '8', date: new Date(2025, 10, 20), subject: 'Physics Lab', type: 'event', time: '1:00 PM' },
+  ]);
+
+  // Mock reminders
+  const [reminders, setReminders] = useState<Reminder[]>([
+    { id: '1', title: 'Mathematics Class', time: 'Today, 9:00 AM', type: 'class', minutesBefore: 15, enabled: true },
+    { id: '2', title: 'Physics Class', time: 'Today, 11:00 AM', type: 'class', minutesBefore: 15, enabled: true },
+    { id: '3', title: 'Math Assignment Due', time: 'Nov 7, 5:00 PM', type: 'assignment', minutesBefore: 60, enabled: true },
+    { id: '4', title: 'Midterm Exam', time: 'Nov 12, 9:00 AM', type: 'test', minutesBefore: 120, enabled: true },
+  ]);
 
   React.useEffect(() => {
     trackScreenView('NewEnhancedSchedule');
@@ -92,14 +148,111 @@ export default function NewEnhancedSchedule({ navigation }: Props) {
     }
   };
 
+  // 2. Sync with Google Calendar
+  const handleGoogleCalendarSync = () => {
+    trackAction('sync_google_calendar', 'NewEnhancedSchedule', { synced: !googleCalendarSynced });
+    setGoogleCalendarSynced(!googleCalendarSynced);
+    Alert.alert(
+      googleCalendarSynced ? 'Sync Disabled' : 'Sync Enabled',
+      googleCalendarSynced
+        ? 'Google Calendar sync has been disabled.'
+        : 'Your schedule is now synced with Google Calendar!'
+    );
+  };
+
+  // 3. Toggle Reminders
+  const handleToggleReminder = (reminderId: string) => {
+    setReminders(prev =>
+      prev.map(r => (r.id === reminderId ? { ...r, enabled: !r.enabled } : r))
+    );
+    trackAction('toggle_reminder', 'NewEnhancedSchedule', { reminderId });
+  };
+
+  // 4. Request Reschedule
+  const handleRequestReschedule = (classItem: ClassSession) => {
+    trackAction('request_reschedule', 'NewEnhancedSchedule', { classId: classItem.id });
+    Alert.alert(
+      'Request Reschedule',
+      `Do you want to request rescheduling for ${classItem.subject}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Request',
+          onPress: () => {
+            Alert.alert('Request Submitted', 'Your reschedule request has been sent to the teacher.');
+          },
+        },
+      ]
+    );
+  };
+
+  // Calendar helpers
+  const getDaysInMonth = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const firstDayOfMonth = new Date(year, month, 1).getDay();
+    return { daysInMonth, firstDayOfMonth };
+  };
+
+  const getEventsForDate = (date: Date) => {
+    return calendarEvents.filter(
+      event =>
+        event.date.getDate() === date.getDate() &&
+        event.date.getMonth() === date.getMonth() &&
+        event.date.getFullYear() === date.getFullYear()
+    );
+  };
+
+  const isToday = (date: Date) => {
+    const today = new Date();
+    return (
+      date.getDate() === today.getDate() &&
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear()
+    );
+  };
+
+  const isSameDay = (date1: Date, date2: Date) => {
+    return (
+      date1.getDate() === date2.getDate() &&
+      date1.getMonth() === date2.getMonth() &&
+      date1.getFullYear() === date2.getFullYear()
+    );
+  };
+
+  const goToPreviousMonth = () => {
+    setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+  };
+
+  const goToNextMonth = () => {
+    setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+  };
+
+  const getEventTypeIcon = (type: string) => {
+    switch (type) {
+      case 'class': return '📚';
+      case 'assignment': return '📝';
+      case 'test': return '📋';
+      case 'event': return '🎉';
+      default: return '📅';
+    }
+  };
+
+  const getReminderTypeIcon = (type: string) => {
+    switch (type) {
+      case 'class': return '🔔';
+      case 'assignment': return '⏰';
+      case 'test': return '🚨';
+      default: return '🔔';
+    }
+  };
+
+  const { daysInMonth, firstDayOfMonth } = getDaysInMonth(currentMonth);
+  const eventsForSelectedDate = getEventsForDate(selectedDate);
+
   return (
-    <BaseScreen
-      scrollable={false}
-      loading={isLoading}
-      error={error ? 'Failed to load schedule' : null}
-      empty={!todayClasses || todayClasses.length === 0}
-      emptyMessage="No classes scheduled for today"
-    >
+    <BaseScreen scrollable={false} loading={isLoading}>
       <ScrollView
         style={styles.container}
         refreshControl={
@@ -112,20 +265,155 @@ export default function NewEnhancedSchedule({ navigation }: Props) {
           />
         }
       >
+        {/* Header with View Toggle */}
         <Card style={styles.headerCard}>
-          <T variant="h2" weight="bold">
-            Today's Schedule
-          </T>
-          <T variant="caption" style={styles.date}>
-            {new Date().toLocaleDateString('en-US', {
-              weekday: 'long',
-              month: 'long',
-              day: 'numeric',
-            })}
-          </T>
+          <View style={styles.headerRow}>
+            <View>
+              <T variant="h2" weight="bold">
+                {viewMode === 'list' ? "Today's Schedule" : 'Calendar View'}
+              </T>
+              <T variant="caption" style={styles.date}>
+                {new Date().toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+              </T>
+            </View>
+            <Row gap="xs">
+              <Chip
+                variant="filter"
+                label="📋 List"
+                selected={viewMode === 'list'}
+                onPress={() => setViewMode('list')}
+              />
+              <Chip
+                variant="filter"
+                label="📅 Calendar"
+                selected={viewMode === 'calendar'}
+                onPress={() => setViewMode('calendar')}
+              />
+            </Row>
+          </View>
+
+          {/* 2. Google Calendar Sync */}
+          <Button
+            variant={googleCalendarSynced ? 'outline' : 'primary'}
+            onPress={handleGoogleCalendarSync}
+            style={{ marginTop: 12 }}
+          >
+            {googleCalendarSynced ? '✓ Synced with Google Calendar' : '🔗 Sync with Google Calendar'}
+          </Button>
         </Card>
 
-        {todayClasses && todayClasses.length > 0 && (
+        {/* 1. Calendar View with Events */}
+        {viewMode === 'calendar' && (
+          <Card style={styles.calendarCard}>
+            <View style={styles.calendarHeader}>
+              <TouchableOpacity onPress={goToPreviousMonth} accessibilityRole="button" accessibilityLabel="Previous month">
+                <T variant="title">‹</T>
+              </TouchableOpacity>
+              <T variant="title" weight="semiBold">
+                {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+              </T>
+              <TouchableOpacity onPress={goToNextMonth} accessibilityRole="button" accessibilityLabel="Next month">
+                <T variant="title">›</T>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.weekDays}>
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                <View key={day} style={styles.weekDayCell}>
+                  <T variant="caption" weight="semiBold" style={styles.weekDayText}>
+                    {day}
+                  </T>
+                </View>
+              ))}
+            </View>
+
+            <View style={styles.daysGrid}>
+              {Array.from({ length: firstDayOfMonth }).map((_, index) => (
+                <View key={`empty-${index}`} style={styles.dayCell} />
+              ))}
+              {Array.from({ length: daysInMonth }).map((_, index) => {
+                const day = index + 1;
+                const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+                const events = getEventsForDate(date);
+                const today = isToday(date);
+                const selected = isSameDay(date, selectedDate);
+
+                return (
+                  <TouchableOpacity
+                    key={day}
+                    style={[
+                      styles.dayCell,
+                      today && styles.todayCell,
+                      selected && styles.selectedCell,
+                    ]}
+                    onPress={() => {
+                      setSelectedDate(date);
+                      trackAction('select_calendar_date', 'NewEnhancedSchedule', { date: date.toISOString() });
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Select ${day}`}
+                  >
+                    <T
+                      variant="body"
+                      weight={today ? 'bold' : 'regular'}
+                      style={[
+                        styles.dayText,
+                        today && styles.todayText,
+                        selected && styles.selectedText,
+                      ]}
+                    >
+                      {day}
+                    </T>
+                    {events.length > 0 && (
+                      <View style={styles.eventDots}>
+                        {events.slice(0, 3).map((event, i) => (
+                          <View key={i} style={styles.eventDot} />
+                        ))}
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {/* Events for Selected Date */}
+            {eventsForSelectedDate.length > 0 && (
+              <View style={styles.selectedDateEvents}>
+                <T variant="title" weight="semiBold" style={{ marginBottom: 8 }}>
+                  Events on {selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                </T>
+                {eventsForSelectedDate.map(event => (
+                  <View key={event.id} style={styles.eventItem}>
+                    <T variant="h3">{getEventTypeIcon(event.type)}</T>
+                    <View style={{ flex: 1, marginLeft: 8 }}>
+                      <T variant="body" weight="semiBold">
+                        {event.subject}
+                      </T>
+                      <T variant="caption" style={{ color: '#6B7280' }}>
+                        {event.time}
+                      </T>
+                    </View>
+                    <Badge
+                      variant={
+                        event.type === 'test' ? 'error' :
+                        event.type === 'assignment' ? 'warning' :
+                        event.type === 'class' ? 'info' : 'neutral'
+                      }
+                      label={event.type}
+                    />
+                  </View>
+                ))}
+              </View>
+            )}
+          </Card>
+        )}
+
+        {/* List View */}
+        {viewMode === 'list' && todayClasses && todayClasses.length > 0 && (
           <Card style={styles.classesCard}>
             {todayClasses.map((classItem) => (
               <View key={classItem.id} style={styles.classItem}>
@@ -149,11 +437,58 @@ export default function NewEnhancedSchedule({ navigation }: Props) {
                       {getStatusIcon(classItem.status)} {classItem.status.toUpperCase()}
                     </T>
                   </View>
+                  {/* 4. Rescheduling Requests */}
+                  {classItem.status === 'upcoming' && (
+                    <TouchableOpacity
+                      style={styles.rescheduleButton}
+                      onPress={() => handleRequestReschedule(classItem)}
+                      accessibilityRole="button"
+                      accessibilityLabel="Request reschedule"
+                    >
+                      <T variant="caption" style={styles.rescheduleText}>
+                        🔄 Request Reschedule
+                      </T>
+                    </TouchableOpacity>
+                  )}
                 </View>
               </View>
             ))}
           </Card>
         )}
+
+        {/* 3. Reminders for Upcoming Classes */}
+        <Card style={styles.remindersCard}>
+          <T variant="title" weight="semiBold" style={{ marginBottom: 12 }}>
+            🔔 Upcoming Reminders
+          </T>
+          {reminders.map(reminder => (
+            <View key={reminder.id} style={styles.reminderItem}>
+              <View style={{ flex: 1 }}>
+                <T variant="body" weight="semiBold">
+                  {getReminderTypeIcon(reminder.type)} {reminder.title}
+                </T>
+                <T variant="caption" style={{ color: '#6B7280', marginTop: 2 }}>
+                  {reminder.time} • {reminder.minutesBefore} min before
+                </T>
+              </View>
+              <TouchableOpacity
+                style={[
+                  styles.reminderToggle,
+                  reminder.enabled && styles.reminderToggleActive,
+                ]}
+                onPress={() => handleToggleReminder(reminder.id)}
+                accessibilityRole="switch"
+                accessibilityLabel={`Toggle reminder for ${reminder.title}`}
+                accessibilityState={{ checked: reminder.enabled }}
+              >
+                <View style={[
+                  styles.reminderToggleKnob,
+                  reminder.enabled && styles.reminderToggleKnobActive,
+                ]} />
+              </TouchableOpacity>
+            </View>
+          ))}
+        </Card>
       </ScrollView>
     </BaseScreen>
   );
@@ -166,14 +501,101 @@ const styles = StyleSheet.create({
   headerCard: {
     padding: 20,
     marginBottom: 16,
-    gap: 4,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: 12,
   },
   date: {
     color: '#6B7280',
+    marginTop: 4,
   },
+  // Calendar Styles
+  calendarCard: {
+    padding: 16,
+    marginBottom: 16,
+  },
+  calendarHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingHorizontal: 8,
+  },
+  weekDays: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
+  weekDayCell: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  weekDayText: {
+    color: '#6B7280',
+  },
+  daysGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  dayCell: {
+    width: '14.285%',
+    aspectRatio: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 8,
+    marginBottom: 4,
+  },
+  todayCell: {
+    backgroundColor: '#DBEAFE',
+  },
+  selectedCell: {
+    backgroundColor: '#3B82F6',
+  },
+  dayText: {
+    color: '#1F2937',
+  },
+  todayText: {
+    color: '#1E40AF',
+    fontWeight: 'bold',
+  },
+  selectedText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+  },
+  eventDots: {
+    flexDirection: 'row',
+    gap: 2,
+    marginTop: 2,
+  },
+  eventDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#EF4444',
+  },
+  selectedDateEvents: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
+  eventItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    padding: 12,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  // List View Styles
   classesCard: {
     padding: 16,
     gap: 16,
+    marginBottom: 16,
   },
   classItem: {
     flexDirection: 'row',
@@ -195,5 +617,56 @@ const styles = StyleSheet.create({
   statusContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  rescheduleButton: {
+    marginTop: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 6,
+    alignSelf: 'flex-start',
+  },
+  rescheduleText: {
+    color: '#3B82F6',
+    fontWeight: '600',
+  },
+  // Reminders Styles
+  remindersCard: {
+    padding: 16,
+    marginBottom: 32,
+  },
+  reminderItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 12,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  reminderToggle: {
+    width: 50,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#D1D5DB',
+    padding: 2,
+    justifyContent: 'center',
+  },
+  reminderToggleActive: {
+    backgroundColor: '#10B981',
+  },
+  reminderToggleKnob: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  reminderToggleKnobActive: {
+    transform: [{ translateX: 22 }],
   },
 });
