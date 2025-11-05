@@ -13,6 +13,7 @@ import { Card } from '../../ui/surfaces/Card';
 import { T } from '../../ui';
 import { trackScreenView, trackAction } from '../../utils/navigationAnalytics';
 import { safeNavigate } from '../../utils/navigationService';
+import { getAvatarEmoji } from '../../utils/avatarUtils';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../config/supabase';
 
@@ -58,11 +59,11 @@ export default function NewPeerLearningNetwork({ navigation }: Props) {
 
       if (error) throw error;
 
-      return (data || []).map((student, index) => ({
+      return (data || []).map((student) => ({
         id: student.id,
         name: student.name || 'Unknown Student',
         subjects: student.subjects || 'Various subjects',
-        avatar: index % 3 === 0 ? '👩' : index % 3 === 1 ? '👨' : '👧',
+        avatar: getAvatarEmoji(student.id),
         student_id: student.id,
       })) as Peer[];
     },

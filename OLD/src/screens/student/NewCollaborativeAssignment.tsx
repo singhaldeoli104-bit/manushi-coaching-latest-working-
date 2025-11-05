@@ -12,6 +12,7 @@ import { BaseScreen } from '../../shared/components/BaseScreen';
 import { Card } from '../../ui/surfaces/Card';
 import { T } from '../../ui';
 import { trackScreenView } from '../../utils/navigationAnalytics';
+import { getAvatarEmoji } from '../../utils/avatarUtils';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../config/supabase';
 
@@ -76,7 +77,7 @@ export default function NewCollaborativeAssignment({ route, navigation }: Props)
         id: member.id,
         name: (member.students as any)?.name || 'Unknown',
         role: member.role || 'Member',
-        avatar: member.student_id === user?.id ? '👤' : '👨',
+        avatar: getAvatarEmoji(member.student_id || member.id),
         is_current_user: member.student_id === user?.id,
       })) as TeamMember[];
     },
