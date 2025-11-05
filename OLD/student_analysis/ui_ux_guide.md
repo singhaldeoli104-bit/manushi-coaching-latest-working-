@@ -2973,3 +2973,649 @@ Title · Status · Time (one line)
 **Estimated Total Implementation:** 12 weeks (3 months)
 
 This comprehensive guide provides everything needed to implement Premium Minimal design across all 21 student screens, ensuring a fast, accessible, and student-friendly experience throughout the entire application.
+
+---
+
+# 🛠️ IMPLEMENTATION STRATEGY
+
+## ❓ Answering Key Questions
+
+### Question 1: Should we use the skill to implement screens?
+**Answer: ✅ YES - Use `screen-recreator` skill**
+
+**Why:**
+- Enforces best practices automatically
+- Prevents common mistakes (mock data, missing BaseScreen, hardcoded colors)
+- Applies acceptance checklist
+- Follows project patterns (safeNavigate, analytics, validation)
+- References PROJECT_MEMORY.md automatically
+
+### Question 2: Should we delete old screens?
+**Answer: ❌ NO - Keep old screens working**
+
+**Why:**
+- App will break if screens deleted
+- Students actively using the app
+- Need gradual rollout for testing
+- Ability to rollback if issues found
+- Compare old vs new side-by-side
+
+**Strategy: Gradual Replacement**
+```
+OLD screens (keep working)          NEW screens (create alongside)
+├── StudentDashboard.tsx     →      ├── NewStudentDashboard.tsx
+├── ScheduleScreen.tsx       →      ├── NewScheduleScreen.tsx
+├── ClassDetail.tsx          →      ├── NewClassDetail.tsx
+└── ... (keep all 21)               └── ... (create all 21)
+```
+
+### Question 3: Should we recreate screens?
+**Answer: ✅ YES - Recreate with Premium Minimal design**
+
+**Why:**
+- Current screens average 180dp frozen UI (target: 71dp)
+- Current screens have 0% accessibility labels (target: 100%)
+- Current screens lack analytics tracking
+- Current screens may have mock data
+- Cannot achieve 61% UI reduction with small edits
+
+---
+
+## 📋 COMPLETE IMPLEMENTATION ROADMAP
+
+### Phase 0: Foundation Setup (Week 1)
+
+#### Step 1: Create Shared Components Library
+**Location:** `src/components/student/shared/`
+
+**Components to create:**
+```typescript
+// 1. CompactHeader.tsx (48-56dp frozen UI)
+interface CompactHeaderProps {
+  title: string;
+  onBack?: () => void;
+  rightActions?: Array<{ icon: string; label: string; onPress: () => void }>;
+  showMenu?: boolean;
+}
+
+// 2. BottomSheetFilter.tsx
+interface BottomSheetFilterProps {
+  filters: FilterOption[];
+  activeFilters: string[];
+  onApply: (filters: string[]) => void;
+}
+
+// 3. HorizontalCarousel.tsx
+interface HorizontalCarouselProps<T> {
+  data: T[];
+  renderItem: (item: T) => React.ReactNode;
+  snapToInterval?: number;
+  accessibilityLabel: string;
+}
+
+// 4. StatusBadge.tsx
+interface StatusBadgeProps {
+  status: 'active' | 'upcoming' | 'completed' | 'overdue';
+  label: string;
+  size?: 'small' | 'medium';
+}
+
+// 5. EventCard.tsx
+interface EventCardProps {
+  title: string;
+  time: Date;
+  status: 'live' | 'upcoming' | 'ended';
+  onPress: () => void;
+  accessibilityLabel: string;
+}
+
+// 6. AssignmentCard.tsx
+interface AssignmentCardProps {
+  title: string;
+  subject: string;
+  dueDate: Date;
+  status: 'pending' | 'submitted' | 'graded';
+  onPress: () => void;
+}
+
+// 7. PremiumFAB.tsx (Floating Action Button)
+interface PremiumFABProps {
+  icon: string;
+  label: string;
+  onPress: () => void;
+  hideOnScroll?: boolean;
+}
+```
+
+**Estimated time:** 3-4 days
+
+#### Step 2: Set Up Design Tokens
+**Location:** `src/config/designTokens.ts`
+
+```typescript
+export const PREMIUM_TOKENS = {
+  // Heights (frozen UI constraints)
+  heights: {
+    compactHeader: 48,
+    standardHeader: 56,
+    largeHeader: 64,
+    tabBar: 72,
+    maxFrozenUI: 128,
+  },
+
+  // Spacing (consistent throughout)
+  spacing: {
+    xs: 4,
+    sm: 8,
+    md: 16,
+    lg: 24,
+    xl: 32,
+  },
+
+  // Typography (Material Design 3)
+  typography: {
+    caption: 13,
+    body2: 14,
+    body1: 16,
+    subtitle: 18,
+    title: 20,
+    headline: 22,
+  },
+
+  // Touch targets (WCAG AAA)
+  minTouchTarget: 48,
+
+  // Content area target
+  minContentArea: 0.80, // 80% minimum
+  targetContentArea: 0.89, // 89% target
+};
+```
+
+**Estimated time:** 1 day
+
+#### Step 3: Update Navigation Config
+**Location:** `src/config/navigationConfig.ts`
+
+Add new screen routes without removing old ones:
+```typescript
+export const StudentRoutes = {
+  // OLD SCREENS (keep working)
+  StudentDashboard: 'StudentDashboard',
+  ScheduleScreen: 'ScheduleScreen',
+  ClassDetail: 'ClassDetail',
+  // ... keep all 21 old routes
+
+  // NEW SCREENS (add alongside)
+  NewStudentDashboard: 'NewStudentDashboard',
+  NewScheduleScreen: 'NewScheduleScreen',
+  NewClassDetail: 'NewClassDetail',
+  // ... add all 21 new routes
+};
+```
+
+**Estimated time:** 1 day
+
+---
+
+### Phase 1: Core Screens (Weeks 2-4)
+
+#### 🎯 Priority 1: Student Dashboard (Week 2)
+
+**Current file:** `src/screens/student/StudentDashboard.tsx` (1,638 lines)
+**New file:** `src/screens/student/NewStudentDashboard.tsx` (target: ~800 lines)
+
+**Using screen-recreator skill:**
+
+```bash
+# Step 1: Read this UI/UX guide section
+# Section: "1. STUDENT DASHBOARD - Premium Minimal Design"
+
+# Step 2: Invoke skill
+Use skill: screen-recreator
+
+# Step 3: Provide to skill:
+Target: NewStudentDashboard.tsx
+Reference analysis: OLD/student_analysis/StudentDashboard_ANALYSIS.md
+Design spec: OLD/student_analysis/ui_ux_guide.md (lines 1-400)
+Requirements:
+- 56dp frozen UI (header only)
+- 92% content area
+- All 40+ features from analysis
+- Real Supabase queries (no mock data)
+- 100% accessibility labels
+- Analytics tracking (trackScreenView, trackAction)
+- Safe navigation (safeNavigate)
+- BaseScreen wrapper with loading/error/empty states
+```
+
+**Skill will:**
+1. Read StudentDashboard_ANALYSIS.md to extract all 40+ features
+2. Read ui_ux_guide.md design specification
+3. Create NewStudentDashboard.tsx following Premium Minimal design
+4. Use CompactHeader component (56dp)
+5. Implement 4 sections: Welcome, Classes, Assignments, Communications
+6. Add real Supabase queries
+7. Add accessibility labels
+8. Add analytics tracking
+9. Apply acceptance checklist
+
+**Testing the new screen:**
+
+```typescript
+// Temporarily update navigation in StudentNavigator.tsx
+<Stack.Screen
+  name="NewStudentDashboard"
+  component={NewStudentDashboard}
+/>
+
+// In your test build, navigate to it:
+safeNavigate('NewStudentDashboard');
+```
+
+**Validation checklist:**
+- [ ] Frozen UI ≤ 56dp ✅
+- [ ] Content area ≥ 90% ✅
+- [ ] All 40+ features present ✅
+- [ ] No mock data ✅
+- [ ] All buttons have accessibilityLabel ✅
+- [ ] Analytics tracked (screen view + actions) ✅
+- [ ] Safe navigation used ✅
+- [ ] TypeScript errors: 0 ✅
+- [ ] Tested on real device ✅
+- [ ] No console errors ✅
+
+**Estimated time:** 3-4 days
+
+---
+
+#### 🎯 Priority 2: Schedule Screen (Week 3)
+
+**Current file:** `src/screens/student/ScheduleScreen.tsx` (2,141 lines)
+**New file:** `src/screens/student/NewScheduleScreen.tsx` (target: ~900 lines)
+
+**Using screen-recreator skill:**
+
+```bash
+Use skill: screen-recreator
+
+Target: NewScheduleScreen.tsx
+Reference analysis: OLD/student_analysis/ScheduleScreen_ANALYSIS.md
+Design spec: OLD/student_analysis/ui_ux_guide.md (lines 401-800)
+Requirements:
+- 48dp frozen UI (header only, filters in bottom sheet)
+- 94% content area
+- All 50+ features (calendar, timetable, sync, filters)
+- Real Supabase queries
+- Calendar integration (permissions, sync)
+- Bottom sheet filters (instead of top bar)
+- Horizontal swipe between views
+- FAB for adding events
+```
+
+**Skill will create:**
+1. Compact header (48dp) - title + filter icon + menu
+2. Horizontal tab swiper (day/week/month views)
+3. Calendar view with event markers
+4. Timetable view with class cards
+5. Bottom sheet for advanced filters
+6. FAB for quick actions
+7. Real Supabase queries for classes/events
+8. Analytics tracking
+9. Accessibility labels
+
+**Estimated time:** 4-5 days
+
+---
+
+#### 🎯 Priority 3: Class Detail Screen (Week 4)
+
+**Current file:** `src/screens/student/ClassDetail.tsx` (861 lines)
+**New file:** `src/screens/student/NewClassDetail.tsx` (target: ~500 lines)
+
+**Using screen-recreator skill:**
+
+```bash
+Use skill: screen-recreator
+
+Target: NewClassDetail.tsx
+Reference analysis: OLD/student_analysis/ClassDetail_ANALYSIS.md
+Design spec: OLD/student_analysis/ui_ux_guide.md (lines 801-1200)
+Requirements:
+- 48dp frozen UI (header only)
+- 94% content area
+- All class detail features (materials, recordings, attendance)
+- Join button (if live/upcoming)
+- Horizontal carousel for materials
+- Real Supabase queries
+```
+
+**Estimated time:** 3 days
+
+---
+
+### Phase 2: Academic Screens (Weeks 5-7)
+
+Use same pattern for:
+1. **Assignment Detail** (Week 5) - `NewAssignmentDetail.tsx`
+2. **Progress Detail** (Week 6) - `NewProgressDetail.tsx`
+3. **Study Library** (Week 7) - `NewStudyLibrary.tsx`
+
+**Each screen follows:**
+- Use screen-recreator skill
+- Reference corresponding ANALYSIS.md file
+- Follow ui_ux_guide.md design spec
+- Apply acceptance checklist
+- Test on real device
+
+---
+
+### Phase 3: AI & Collaboration Screens (Weeks 8-10)
+
+1. **AI Study Screen** (Week 8)
+2. **AI Tutor Chat** (Week 8)
+3. **AI Learning Dashboard** (Week 9)
+4. **Collaborative Assignment** (Week 9)
+5. **Peer Learning Network** (Week 10)
+6. **Virtual Classroom** (Week 10)
+
+---
+
+### Phase 4: Advanced Features (Weeks 11-12)
+
+1. **Live Class Screen** (Week 11) - Most complex, 2,703 lines → ~1,200
+2. **Interactive Classroom** (Week 11)
+3. **Gamified Learning Hub** (Week 12)
+4. **Remaining screens** (Week 12)
+
+---
+
+### Phase 5: Gradual Migration (Week 13)
+
+**Switch navigation one screen at a time:**
+
+```typescript
+// Week 13, Day 1: Switch Dashboard
+<Stack.Screen
+  name="StudentDashboard"
+  component={NewStudentDashboard}  // ← Changed from StudentDashboard
+/>
+
+// Week 13, Day 2: Monitor analytics, check error logs
+// If issues: rollback by reverting to old component
+// If stable: proceed to next screen
+
+// Week 13, Day 3: Switch Schedule
+<Stack.Screen
+  name="ScheduleScreen"
+  component={NewScheduleScreen}  // ← Changed
+/>
+
+// Continue one screen per day...
+```
+
+**Monitoring during migration:**
+- Check Sentry/error logs daily
+- Monitor analytics for drop-offs
+- Watch support tickets for issues
+- Get student feedback
+- A/B test if possible (50% old, 50% new)
+
+---
+
+### Phase 6: Cleanup (Week 14)
+
+**Once all 21 screens switched and stable for 1 week:**
+
+```bash
+# Move old screens to backup
+mkdir src/screens/student/OLD_BACKUP
+mv src/screens/student/StudentDashboard.tsx src/screens/student/OLD_BACKUP/
+mv src/screens/student/ScheduleScreen.tsx src/screens/student/OLD_BACKUP/
+# ... move all 21 old screens
+
+# Rename new screens to replace old
+mv src/screens/student/NewStudentDashboard.tsx src/screens/student/StudentDashboard.tsx
+mv src/screens/student/NewScheduleScreen.tsx src/screens/student/ScheduleScreen.tsx
+# ... rename all 21 new screens
+
+# Update navigation config (remove "New" prefix)
+# Update all imports throughout codebase
+```
+
+**Final verification:**
+- [ ] All 21 screens switched
+- [ ] No references to old screen components
+- [ ] Analytics showing normal usage
+- [ ] Error rates same or lower
+- [ ] Student feedback positive
+- [ ] Support tickets same or fewer
+- [ ] Create backup branch with old screens
+- [ ] Document the migration
+
+---
+
+## 🎯 CONCRETE EXAMPLE: First Screen Implementation
+
+### Example: Implementing NewStudentDashboard.tsx
+
+#### Step 1: Prepare (5 minutes)
+```bash
+# Navigate to project directory
+cd /home/user/manushi-coaching-latest-working-
+
+# Ensure you're on the correct branch
+git checkout claude/student-011CUoMZR7Rdvb6tk5FHWuAL
+
+# Read the analysis and design spec
+# - StudentDashboard_ANALYSIS.md (know all 40+ features)
+# - ui_ux_guide.md lines 1-400 (know the design)
+```
+
+#### Step 2: Invoke screen-recreator skill
+```bash
+Use Skill tool with command: "screen-recreator"
+
+# The skill will ask for:
+Screen name: NewStudentDashboard
+Analysis file: OLD/student_analysis/StudentDashboard_ANALYSIS.md
+Design spec: OLD/student_analysis/ui_ux_guide.md (Section 1)
+Target file: src/screens/student/NewStudentDashboard.tsx
+```
+
+#### Step 3: Skill creates the screen (automated)
+
+The skill will:
+1. Read StudentDashboard_ANALYSIS.md → extract all 40+ features
+2. Read ui_ux_guide.md Section 1 → get Premium Minimal design
+3. Create NewStudentDashboard.tsx with:
+   - CompactHeader component (56dp)
+   - Welcome section with streak
+   - Today's classes horizontal carousel
+   - Assignments due section
+   - Recent communications section
+   - Real Supabase queries (useQuery hooks)
+   - Analytics tracking (trackScreenView, trackAction)
+   - Accessibility labels on all buttons
+   - Safe navigation (safeNavigate)
+   - BaseScreen wrapper
+4. Apply acceptance checklist
+5. Run TypeScript check
+6. Report any issues
+
+#### Step 4: Test the new screen (30 minutes)
+```bash
+# Update navigation temporarily
+# In src/navigation/StudentNavigator.tsx:
+
+import NewStudentDashboard from '../screens/student/NewStudentDashboard';
+
+<Stack.Screen
+  name="NewStudentDashboard"
+  component={NewStudentDashboard}
+  options={{ title: 'Dashboard (New)' }}
+/>
+
+# Run the app
+npm start
+
+# In the app, navigate to:
+safeNavigate('NewStudentDashboard');
+
+# Test:
+# ✅ Header is compact (visually ~56dp)
+# ✅ Content area is large (90%+ viewport)
+# ✅ All sections render (Welcome, Classes, Assignments, Comms)
+# ✅ Real data loads from Supabase
+# ✅ Buttons are tappable and respond
+# ✅ Navigation works (tap class → goes to ClassDetail)
+# ✅ Analytics fire (check console logs)
+# ✅ No TypeScript errors
+# ✅ No console errors
+```
+
+#### Step 5: Validate against checklist (10 minutes)
+
+Go through ACCEPTANCE_CHECKLIST.md:
+- [ ] Real Supabase data (no mock arrays) ✅
+- [ ] BaseScreen wrapper with all states ✅
+- [ ] All icon buttons have accessibilityLabel ✅
+- [ ] FlatList optimized (if list screen) ✅
+- [ ] Components memoized ✅
+- [ ] Analytics events tracked ✅
+- [ ] Safe navigation used ✅
+- [ ] TypeScript errors: 0 ✅
+- [ ] ESLint warnings: 0 ✅
+- [ ] Tested on real device ✅
+- [ ] No console errors ✅
+
+#### Step 6: Commit (5 minutes)
+```bash
+git add src/screens/student/NewStudentDashboard.tsx
+git add src/navigation/StudentNavigator.tsx  # if updated
+
+git commit -m "$(cat <<'EOF'
+feat(student): Add NewStudentDashboard with Premium Minimal design
+
+- Compact header (56dp frozen UI)
+- 92% content area (vs 65% before)
+- 4 sections: Welcome, Classes, Assignments, Communications
+- Real Supabase queries (no mock data)
+- 100% accessibility labels
+- Analytics tracking (screen view + actions)
+- Safe navigation throughout
+- BaseScreen wrapper with loading/error/empty states
+- All 40+ features from original dashboard
+
+Target: ~800 lines (vs 1,638 original)
+Follows: ui_ux_guide.md Section 1
+Refs: StudentDashboard_ANALYSIS.md
+EOF
+)"
+
+git push -u origin claude/student-011CUoMZR7Rdvb6tk5FHWuAL
+```
+
+---
+
+## ⚡ Quick Reference: Screen-by-Screen Plan
+
+| Week | Screen | Current Lines | Target Lines | Priority | Complexity |
+|------|--------|--------------|--------------|----------|------------|
+| 2 | Student Dashboard | 1,638 | ~800 | **CRITICAL** | Medium |
+| 3 | Schedule Screen | 2,141 | ~900 | **CRITICAL** | High |
+| 4 | Class Detail | 861 | ~500 | **CRITICAL** | Medium |
+| 5 | Assignment Detail | 782 | ~400 | High | Low |
+| 6 | Progress Detail | 1,901 | ~800 | High | Medium |
+| 7 | Study Library | 1,400 | ~650 | High | Medium |
+| 8 | AI Study Screen | 1,278 | ~600 | Medium | Medium |
+| 8 | AI Tutor Chat | 724 | ~400 | Medium | Low |
+| 9 | AI Learning Dashboard | 1,057 | ~550 | Medium | Medium |
+| 9 | Collaborative Assignment | N/A | ~900 | Medium | High |
+| 10 | Peer Learning Network | 1,526 | ~750 | Medium | High |
+| 10 | Virtual Classroom | 1,040 | ~600 | Low | High |
+| 11 | Live Class Screen | 2,703 | ~1,200 | **CRITICAL** | **Very High** |
+| 11 | Interactive Classroom | 986 | ~550 | Low | High |
+| 12 | Gamified Learning Hub | 1,445 | ~700 | Low | Medium |
+| 12 | Remaining 6 screens | ~7,500 | ~3,600 | Low | Medium |
+
+**Total:** 21 screens, ~27,000 current lines → ~14,000 target lines (48% reduction)
+
+---
+
+## ✅ FINAL RECOMMENDATIONS
+
+### DO ✅
+1. **Use screen-recreator skill** for every screen (enforces best practices)
+2. **Keep old screens working** during implementation (gradual replacement)
+3. **Create new screens alongside old** (NewStudentDashboard.tsx, etc.)
+4. **Test each screen individually** before moving to next
+5. **Apply acceptance checklist** before marking screen complete
+6. **Switch navigation gradually** (one screen per day during migration)
+7. **Monitor analytics and errors** during migration week
+8. **Keep backup branch** with old screens for rollback
+
+### DON'T ❌
+1. **Delete old screens** during implementation (app will break)
+2. **Try to edit existing screens** to achieve Premium Minimal (too complex, won't achieve 61% reduction)
+3. **Skip the skill** and code manually (will miss best practices, forget acceptance checklist)
+4. **Switch all navigation at once** (too risky, can't rollback easily)
+5. **Skip testing on real device** (emulator doesn't show real performance/UX)
+6. **Forget analytics tracking** (lose visibility into student behavior)
+7. **Rush the migration** (take time to validate each screen)
+
+---
+
+## 📊 ESTIMATED TIMELINE
+
+**Total duration:** 14 weeks (3.5 months)
+
+- **Weeks 1:** Foundation (shared components, design tokens)
+- **Weeks 2-4:** Core screens (Dashboard, Schedule, Class Detail)
+- **Weeks 5-7:** Academic screens (Assignments, Progress, Library)
+- **Weeks 8-10:** AI & Collaboration screens
+- **Weeks 11-12:** Advanced features (Live Class, Interactive, Gamified)
+- **Week 13:** Gradual migration (switch navigation one screen per day)
+- **Week 14:** Cleanup and documentation
+
+**With 1 developer:** 3.5 months full-time
+**With 2 developers:** 2 months (parallel implementation)
+**With 3 developers:** 1.5 months (3 screens in parallel)
+
+---
+
+## 🎯 SUCCESS CRITERIA
+
+### After Implementation (All 21 Screens)
+
+**Technical:**
+- [ ] Average frozen UI: ≤71dp (61% reduction) ✅
+- [ ] Average content area: ≥89% (37% increase) ✅
+- [ ] TypeScript errors: 0 across all screens ✅
+- [ ] ESLint warnings: 0 across all screens ✅
+- [ ] 100% WCAG 2.1 AAA compliance ✅
+- [ ] 100% analytics coverage ✅
+- [ ] <1s load time for all screens ✅
+- [ ] 60fps scrolling performance ✅
+
+**Student Experience:**
+- [ ] 50% faster task completion ✅
+- [ ] 70% less scrolling needed ✅
+- [ ] 30% fewer taps to complete tasks ✅
+- [ ] 90%+ student satisfaction score ✅
+- [ ] 95%+ one-handed usability ✅
+
+**Business:**
+- [ ] 40% reduction in support tickets ✅
+- [ ] 25% increase in engagement ✅
+- [ ] Same or lower error rates ✅
+- [ ] Successful migration with no major incidents ✅
+
+---
+
+**Implementation Strategy Status:** Complete
+**Ready to Start:** Yes - Begin with Phase 0 (Foundation Setup)
+**First Task:** Create shared components library (CompactHeader, BottomSheetFilter, etc.)
+**Estimated Start Date:** Week 1
+**Estimated Completion Date:** Week 14 (3.5 months)
+
+This roadmap provides a clear, step-by-step path to implementing all 21 Premium Minimal screens while keeping the app stable and students happy throughout the process.
