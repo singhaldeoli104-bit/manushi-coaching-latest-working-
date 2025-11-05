@@ -42,7 +42,7 @@ import ActivityDetailScreen from '../screens/student/ActivityDetailScreen';
 // ==========================================
 // Note: These imports will be uncommented as screens are created
 import NewStudentDashboard from '../screens/student/NewStudentDashboard';
-// import NewScheduleScreen from '../screens/student/NewScheduleScreen';
+import NewScheduleScreen from '../screens/student/NewScheduleScreen';
 // import NewClassDetailScreen from '../screens/student/NewClassDetailScreen';
 // import NewAssignmentDetailScreen from '../screens/student/NewAssignmentDetailScreen';
 // import NewProgressDetailScreen from '../screens/student/NewProgressDetailScreen';
@@ -187,11 +187,11 @@ function ClassesStack() {
       />
 
       {/* NEW SCREENS - Premium Minimal Design (Uncomment as created) */}
-      {/* <Stack.Screen
+      <Stack.Screen
         name="NewScheduleScreen"
         component={NewScheduleScreen}
-        options={{ title: 'Schedule (New)' }}
-      /> */}
+        options={{ headerShown: false, title: 'Schedule (New)' }}
+      />
       {/* <Stack.Screen
         name="NewEnhancedSchedule"
         component={NewEnhancedSchedule}
