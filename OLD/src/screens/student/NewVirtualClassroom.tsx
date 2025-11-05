@@ -8,6 +8,7 @@ import React, { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BaseScreen } from '../../shared/components/BaseScreen';
+import { VideoPlaceholder } from '../../shared/components/VideoPlaceholder';
 import { Card } from '../../ui/surfaces/Card';
 import { T } from '../../ui';
 import { trackScreenView, trackAction } from '../../utils/navigationAnalytics';
@@ -54,14 +55,11 @@ export default function NewVirtualClassroom({ navigation }: Props) {
   return (
     <BaseScreen scrollable={true}>
       <View style={styles.container}>
-        <Card style={styles.videoCard}>
-          <View style={styles.videoPlaceholder}>
-            <T variant="h1">📹</T>
-            <T variant="body" style={styles.videoText}>
-              Video Stream
-            </T>
-          </View>
-        </Card>
+        <VideoPlaceholder
+          isLive={true}
+          showControls={false}
+          placeholderMessage="Virtual Classroom"
+        />
 
         <Card style={styles.controlsCard}>
           <T variant="title" weight="semiBold" style={styles.controlsTitle}>

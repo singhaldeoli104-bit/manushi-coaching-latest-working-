@@ -9,6 +9,7 @@ import { View, StyleSheet } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BaseScreen } from '../../shared/components/BaseScreen';
+import { VideoPlaceholder } from '../../shared/components/VideoPlaceholder';
 import { Card } from '../../ui/surfaces/Card';
 import { Badge } from '../../ui/data-display/Badge';
 import { T } from '../../ui';
@@ -93,14 +94,12 @@ export default function NewLiveClassScreen({ route, navigation }: Props) {
             </View>
           </Card>
 
-          <Card style={styles.videoCard}>
-            <View style={styles.videoPlaceholder}>
-              <T variant="h1">📹</T>
-              <T variant="body" style={styles.liveText}>
-                Class in Progress
-              </T>
-            </View>
-          </Card>
+          <VideoPlaceholder
+            streamId={classId}
+            isLive={true}
+            showControls={true}
+            placeholderMessage="Live Class in Progress"
+          />
         </View>
       )}
     </BaseScreen>

@@ -9,6 +9,7 @@ import { View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BaseScreen } from '../../shared/components/BaseScreen';
+import { VideoPlaceholder } from '../../shared/components/VideoPlaceholder';
 import { Card } from '../../ui/surfaces/Card';
 import { Badge } from '../../ui/data-display/Badge';
 import { T } from '../../ui';
@@ -123,14 +124,12 @@ export default function NewEnhancedLiveClass({ route, navigation }: Props) {
             </T>
           </Card>
 
-          <Card style={styles.videoCard}>
-            <View style={styles.videoPlaceholder}>
-              <T variant="h1">📹</T>
-              <T variant="body" style={styles.videoText}>
-                Live Stream
-              </T>
-            </View>
-          </Card>
+          <VideoPlaceholder
+            streamId={classId}
+            isLive={true}
+            showControls={true}
+            placeholderMessage="Enhanced Live Stream"
+          />
 
           <Card style={styles.featuresCard}>
             <T variant="title" weight="semiBold" style={styles.featuresTitle}>
