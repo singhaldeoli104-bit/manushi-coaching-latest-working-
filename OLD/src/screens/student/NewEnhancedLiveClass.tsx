@@ -81,7 +81,7 @@ export default function NewEnhancedLiveClass({ route, navigation }: Props) {
     // Navigate to respective feature screens
     switch (action) {
       case 'whiteboard':
-        // TODO: Create Whiteboard.tsx screen for collaborative whiteboard
+        // Navigate to Whiteboard screen for collaborative whiteboard
         safeNavigate('Whiteboard', { classId });
         break;
       case 'screen_share':
@@ -89,11 +89,11 @@ export default function NewEnhancedLiveClass({ route, navigation }: Props) {
         Alert.alert('Screen Share', 'Screen sharing is now enabled in the video stream');
         break;
       case 'chat':
-        // TODO: Create ClassChat.tsx screen for live class chat
+        // Navigate to ClassChat screen for live class chat
         safeNavigate('ClassChat', { classId });
         break;
       case 'notes':
-        // TODO: Create ClassNotes.tsx screen for note-taking during class
+        // Navigate to ClassNotes screen for note-taking during class
         safeNavigate('ClassNotes', { classId });
         break;
       default:
