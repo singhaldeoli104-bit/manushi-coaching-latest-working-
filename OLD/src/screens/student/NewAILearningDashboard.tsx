@@ -6,33 +6,97 @@
 
 import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BaseScreen } from '../../shared/components/BaseScreen';
 import { Card } from '../../ui/surfaces/Card';
 import { T } from '../../ui';
 import { trackScreenView } from '../../utils/navigationAnalytics';
+import { useAuth } from '../../context/AuthContext';
+import { supabase } from '../../config/supabase';
 
 type Props = NativeStackScreenProps<any, 'NewAILearningDashboard'>;
 
+interface Insight {
+  id: string;
+  icon: string;
+  title: string;
+  detail: string;
+  type: 'progress' | 'warning' | 'achievement';
+}
+
+interface Recommendation {
+  id: string;
+  text: string;
+  priority: number;
+}
+
 export default function NewAILearningDashboard({ navigation }: Props) {
+  const { user } = useAuth();
+
   React.useEffect(() => {
     trackScreenView('NewAILearningDashboard');
   }, []);
 
-  const insights = [
-    { icon: '📈', title: 'Strong Progress', detail: 'You\'re performing well in Mathematics' },
-    { icon: '⚠️', title: 'Needs Attention', detail: 'Chemistry concepts need review' },
-    { icon: '🎯', title: 'On Track', detail: 'Assignment completion rate: 95%' },
-  ];
+  // Fetch AI insights from Supabase
+  const { data: insightsData, isLoading: insightsLoading } = useQuery({
+    queryKey: ['ai-insights', user?.id],
+    queryFn: async () => {
+      if (!user?.id) throw new Error('No user ID');
 
-  const recommendations = [
-    'Review Chapter 5: Chemical Reactions',
-    'Practice more Calculus problems',
-    'Complete pending Physics assignment',
-  ];
+      const { data, error } = await supabase
+        .from('ai_insights')
+        .select('*')
+        .eq('student_id', user.id)
+        .eq('insight_type', 'performance')
+        .order('priority', { ascending: false })
+        .limit(3);
+
+      if (error) throw error;
+
+      return (data || []).map(item => ({
+        id: item.id,
+        icon: item.icon || '📊',
+        title: item.title,
+        detail: item.message,
+        type: item.category as 'progress' | 'warning' | 'achievement',
+      })) as Insight[];
+    },
+    enabled: !!user?.id,
+  });
+
+  // Fetch AI recommendations from Supabase
+  const { data: recommendationsData, isLoading: recommendationsLoading } = useQuery({
+    queryKey: ['ai-recommendations', user?.id],
+    queryFn: async () => {
+      if (!user?.id) throw new Error('No user ID');
+
+      const { data, error } = await supabase
+        .from('ai_insights')
+        .select('*')
+        .eq('student_id', user.id)
+        .eq('insight_type', 'recommendation')
+        .order('priority', { ascending: false })
+        .limit(5);
+
+      if (error) throw error;
+
+      return (data || []).map(item => ({
+        id: item.id,
+        text: item.message,
+        priority: item.priority,
+      })) as Recommendation[];
+    },
+    enabled: !!user?.id,
+  });
+
+  const insights = insightsData || [];
+  const recommendations = recommendationsData || [];
+
+  const isLoading = insightsLoading || recommendationsLoading;
 
   return (
-    <BaseScreen scrollable={false}>
+    <BaseScreen scrollable={false} loading={isLoading}>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <Card style={styles.headerCard}>
           <T variant="h1" weight="bold">
@@ -47,30 +111,42 @@ export default function NewAILearningDashboard({ navigation }: Props) {
           <T variant="title" weight="semiBold" style={styles.sectionTitle}>
             Performance Insights
           </T>
-          {insights.map((insight, index) => (
-            <View key={index} style={styles.insightItem}>
-              <T variant="h2">{insight.icon}</T>
-              <View style={styles.insightText}>
-                <T variant="body" weight="semiBold">
-                  {insight.title}
-                </T>
-                <T variant="caption" style={styles.insightDetail}>
-                  {insight.detail}
-                </T>
+          {insights.length > 0 ? (
+            insights.map((insight) => (
+              <View key={insight.id} style={styles.insightItem}>
+                <T variant="h2">{insight.icon}</T>
+                <View style={styles.insightText}>
+                  <T variant="body" weight="semiBold">
+                    {insight.title}
+                  </T>
+                  <T variant="caption" style={styles.insightDetail}>
+                    {insight.detail}
+                  </T>
+                </View>
               </View>
-            </View>
-          ))}
+            ))
+          ) : (
+            <T variant="body" style={styles.emptyText}>
+              No insights available yet
+            </T>
+          )}
         </Card>
 
         <Card style={styles.recommendationsCard}>
           <T variant="title" weight="semiBold" style={styles.sectionTitle}>
             Recommended Actions
           </T>
-          {recommendations.map((rec, index) => (
-            <View key={index} style={styles.recommendationItem}>
-              <T variant="body">• {rec}</T>
-            </View>
-          ))}
+          {recommendations.length > 0 ? (
+            recommendations.map((rec) => (
+              <View key={rec.id} style={styles.recommendationItem}>
+                <T variant="body">• {rec.text}</T>
+              </View>
+            ))
+          ) : (
+            <T variant="body" style={styles.emptyText}>
+              No recommendations available yet
+            </T>
+          )}
         </Card>
       </ScrollView>
     </BaseScreen>
@@ -119,5 +195,11 @@ const styles = StyleSheet.create({
   },
   recommendationItem: {
     paddingVertical: 8,
+  },
+  emptyText: {
+    color: '#9CA3AF',
+    fontStyle: 'italic',
+    textAlign: 'center',
+    paddingVertical: 16,
   },
 });

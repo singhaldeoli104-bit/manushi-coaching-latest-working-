@@ -6,32 +6,54 @@
 
 import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BaseScreen } from '../../shared/components/BaseScreen';
 import { Card } from '../../ui/surfaces/Card';
 import { Badge } from '../../ui/data-display/Badge';
 import { T } from '../../ui';
 import { trackScreenView } from '../../utils/navigationAnalytics';
+import { useAuth } from '../../context/AuthContext';
+import { supabase } from '../../config/supabase';
 
 type Props = NativeStackScreenProps<any, 'NewActivityDetail'>;
 
+interface Activity {
+  id: string;
+  title: string;
+  description: string;
+  type: 'assignment' | 'grade' | 'class' | 'announcement' | 'general';
+  created_at: string;
+  related_subject?: string;
+  priority: 'high' | 'medium' | 'low';
+  student_id: string;
+}
+
 export default function NewActivityDetail({ route }: Props) {
+  const { user } = useAuth();
   const activityId = route.params?.activityId;
 
   React.useEffect(() => {
     trackScreenView('NewActivityDetail', { activityId });
   }, [activityId]);
 
-  // Mock activity data
-  const activity = {
-    id: activityId || '1',
-    title: 'New Assignment Posted',
-    description: 'Your teacher has posted a new assignment for Mathematics. Due date is next Monday.',
-    type: 'assignment',
-    timestamp: new Date(),
-    relatedSubject: 'Mathematics',
-    priority: 'high',
-  };
+  // Fetch activity from Supabase
+  const { data: activity, isLoading, error } = useQuery({
+    queryKey: ['activity-detail', activityId],
+    queryFn: async () => {
+      if (!activityId) throw new Error('No activity ID provided');
+
+      const { data, error } = await supabase
+        .from('student_activities')
+        .select('*')
+        .eq('id', activityId)
+        .single();
+
+      if (error) throw error;
+      return data as Activity;
+    },
+    enabled: !!activityId,
+  });
 
   const getTypeIcon = (type: string) => {
     switch (type) {
@@ -44,47 +66,55 @@ export default function NewActivityDetail({ route }: Props) {
   };
 
   return (
-    <BaseScreen scrollable={true}>
-      <View style={styles.container}>
-        <Card style={styles.headerCard}>
-          <View style={styles.header}>
-            <View style={styles.iconContainer}>
-              <T variant="h1">{getTypeIcon(activity.type)}</T>
+    <BaseScreen
+      scrollable={true}
+      loading={isLoading}
+      error={error ? 'Failed to load activity details' : null}
+      empty={!activity}
+      emptyMessage="Activity not found"
+    >
+      {activity && (
+        <View style={styles.container}>
+          <Card style={styles.headerCard}>
+            <View style={styles.header}>
+              <View style={styles.iconContainer}>
+                <T variant="h1">{getTypeIcon(activity.type)}</T>
+              </View>
+              <View style={styles.headerInfo}>
+                <T variant="h2" weight="bold">
+                  {activity.title}
+                </T>
+                <T variant="caption" style={styles.timestamp}>
+                  {new Date(activity.created_at).toLocaleString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                  })}
+                </T>
+              </View>
+              <Badge
+                variant={activity.priority === 'high' ? 'error' : activity.priority === 'medium' ? 'warning' : 'info'}
+                label={activity.priority.toUpperCase()}
+              />
             </View>
-            <View style={styles.headerInfo}>
-              <T variant="h2" weight="bold">
-                {activity.title}
-              </T>
-              <T variant="caption" style={styles.timestamp}>
-                {activity.timestamp.toLocaleString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  hour: 'numeric',
-                  minute: '2-digit',
-                })}
-              </T>
-            </View>
-            <Badge
-              variant={activity.priority === 'high' ? 'error' : 'info'}
-              label={activity.priority.toUpperCase()}
-            />
-          </View>
-        </Card>
+          </Card>
 
-        <Card style={styles.contentCard}>
-          <T variant="body" style={styles.description}>
-            {activity.description}
-          </T>
+          <Card style={styles.contentCard}>
+            <T variant="body" style={styles.description}>
+              {activity.description}
+            </T>
 
-          {activity.relatedSubject && (
-            <View style={styles.subjectTag}>
-              <T variant="caption" weight="semiBold" style={styles.subjectText}>
-                📚 {activity.relatedSubject}
-              </T>
-            </View>
-          )}
-        </Card>
-      </View>
+            {activity.related_subject && (
+              <View style={styles.subjectTag}>
+                <T variant="caption" weight="semiBold" style={styles.subjectText}>
+                  📚 {activity.related_subject}
+                </T>
+              </View>
+            )}
+          </Card>
+        </View>
+      )}
     </BaseScreen>
   );
 }

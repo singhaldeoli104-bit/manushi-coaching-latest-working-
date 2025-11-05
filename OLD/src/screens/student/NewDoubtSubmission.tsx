@@ -12,6 +12,7 @@ import { Card } from '../../ui/surfaces/Card';
 import { T } from '../../ui';
 import { trackAction, trackScreenView } from '../../utils/navigationAnalytics';
 import { useAuth } from '../../context/AuthContext';
+import { supabase } from '../../config/supabase';
 
 type Props = NativeStackScreenProps<any, 'NewDoubtSubmission'>;
 
@@ -37,13 +38,27 @@ export default function NewDoubtSubmission({ navigation }: Props) {
     setIsSubmitting(true);
     trackAction('submit_detailed_doubt', 'NewDoubtSubmission');
 
-    // Simulate submission
-    setTimeout(() => {
+    try {
+      const { error } = await supabase.from('doubts').insert({
+        student_id: user?.id,
+        subject: selectedSubject,
+        title: title.trim(),
+        question: description.trim(),
+        status: 'pending',
+        created_at: new Date().toISOString(),
+      });
+
+      if (error) throw error;
+
       Alert.alert('Success', 'Your doubt has been submitted successfully!', [
         { text: 'OK', onPress: () => navigation.goBack() },
       ]);
+    } catch (err) {
+      console.error('Error submitting doubt:', err);
+      Alert.alert('Error', 'Failed to submit doubt. Please try again.');
+    } finally {
       setIsSubmitting(false);
-    }, 1000);
+    }
   };
 
   return (

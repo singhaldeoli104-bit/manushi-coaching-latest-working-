@@ -6,63 +6,131 @@
 
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BaseScreen } from '../../shared/components/BaseScreen';
 import { Card } from '../../ui/surfaces/Card';
 import { Badge } from '../../ui/data-display/Badge';
 import { T } from '../../ui';
-import { trackScreenView } from '../../utils/navigationAnalytics';
+import { trackScreenView, trackAction } from '../../utils/navigationAnalytics';
+import { useAuth } from '../../context/AuthContext';
+import { supabase } from '../../config/supabase';
 
 type Props = NativeStackScreenProps<any, 'NewEnhancedLiveClass'>;
 
-export default function NewEnhancedLiveClass({ navigation }: Props) {
+interface LiveClassDetails {
+  id: string;
+  subject: string;
+  teacher_name: string;
+  start_time: string;
+  status: 'live' | 'scheduled' | 'ended';
+  duration_minutes: number;
+}
+
+export default function NewEnhancedLiveClass({ route, navigation }: Props) {
+  const { user } = useAuth();
+  const classId = route.params?.classId;
+
   React.useEffect(() => {
-    trackScreenView('NewEnhancedLiveClass');
-  }, []);
+    trackScreenView('NewEnhancedLiveClass', { classId });
+  }, [classId]);
+
+  // Fetch live class details
+  const { data: liveClass, isLoading, error } = useQuery({
+    queryKey: ['enhanced-live-class', classId],
+    queryFn: async () => {
+      if (!classId) throw new Error('No class ID provided');
+
+      const { data, error } = await supabase
+        .from('class_sessions')
+        .select('*, teachers(name)')
+        .eq('id', classId)
+        .single();
+
+      if (error) throw error;
+
+      // Calculate elapsed time
+      const start = new Date(data.start_time);
+      const now = new Date();
+      const elapsedMinutes = Math.floor((now.getTime() - start.getTime()) / (1000 * 60));
+
+      return {
+        id: data.id,
+        subject: data.subject || 'Class',
+        teacher_name: (data.teachers as any)?.name || 'Teacher',
+        start_time: data.start_time,
+        status: data.status || 'live',
+        duration_minutes: elapsedMinutes,
+      } as LiveClassDetails;
+    },
+    enabled: !!classId,
+  });
 
   const features = [
-    { icon: '✍️', label: 'Whiteboard' },
-    { icon: '📊', label: 'Screen Share' },
-    { icon: '💬', label: 'Chat' },
-    { icon: '📝', label: 'Notes' },
+    { icon: '✍️', label: 'Whiteboard', action: 'whiteboard' },
+    { icon: '📊', label: 'Screen Share', action: 'screen_share' },
+    { icon: '💬', label: 'Chat', action: 'chat' },
+    { icon: '📝', label: 'Notes', action: 'notes' },
   ];
 
+  const handleFeaturePress = (action: string) => {
+    trackAction('use_live_feature', 'NewEnhancedLiveClass', { feature: action, classId });
+    // Feature actions would be implemented here
+  };
+
   return (
-    <BaseScreen scrollable={true}>
-      <View style={styles.container}>
-        <Card style={styles.statusCard}>
-          <Badge variant="error" label="🔴 LIVE" />
-          <T variant="h2" weight="bold" style={styles.className}>
-            Advanced Physics
-          </T>
-          <T variant="caption" style={styles.time}>
-            Started 15 minutes ago
-          </T>
-        </Card>
-
-        <Card style={styles.videoCard}>
-          <View style={styles.videoPlaceholder}>
-            <T variant="h1">📹</T>
-            <T variant="body" style={styles.videoText}>
-              Live Stream
+    <BaseScreen
+      scrollable={true}
+      loading={isLoading}
+      error={error ? 'Failed to load live class' : null}
+      empty={!liveClass}
+      emptyMessage="Live class not found"
+    >
+      {liveClass && (
+        <View style={styles.container}>
+          <Card style={styles.statusCard}>
+            <Badge variant="error" label="🔴 LIVE" />
+            <T variant="h2" weight="bold" style={styles.className}>
+              {liveClass.subject}
             </T>
-          </View>
-        </Card>
+            <T variant="body" style={styles.teacher}>
+              {liveClass.teacher_name}
+            </T>
+            <T variant="caption" style={styles.time}>
+              Started {liveClass.duration_minutes} {liveClass.duration_minutes === 1 ? 'minute' : 'minutes'} ago
+            </T>
+          </Card>
 
-        <Card style={styles.featuresCard}>
-          <T variant="title" weight="semiBold" style={styles.featuresTitle}>
-            Interactive Features
-          </T>
-          <View style={styles.featuresGrid}>
-            {features.map((feature, index) => (
-              <TouchableOpacity key={index} style={styles.featureButton}>
-                <T variant="h2">{feature.icon}</T>
-                <T variant="caption">{feature.label}</T>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </Card>
-      </View>
+          <Card style={styles.videoCard}>
+            <View style={styles.videoPlaceholder}>
+              <T variant="h1">📹</T>
+              <T variant="body" style={styles.videoText}>
+                Live Stream
+              </T>
+            </View>
+          </Card>
+
+          <Card style={styles.featuresCard}>
+            <T variant="title" weight="semiBold" style={styles.featuresTitle}>
+              Interactive Features
+            </T>
+            <View style={styles.featuresGrid}>
+              {features.map((feature, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.featureButton}
+                  onPress={() => handleFeaturePress(feature.action)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open ${feature.label}`}
+                >
+                  <T variant="h2">{feature.icon}</T>
+                  <T variant="caption">{feature.label}</T>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </Card>
+        </View>
+      )}
     </BaseScreen>
   );
 }
@@ -78,6 +146,9 @@ const styles = StyleSheet.create({
   },
   className: {
     marginTop: 4,
+  },
+  teacher: {
+    color: '#6B7280',
   },
   time: {
     color: '#6B7280',

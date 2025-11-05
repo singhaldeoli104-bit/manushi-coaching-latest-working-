@@ -5,25 +5,76 @@
  */
 
 import React from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BaseScreen } from '../../shared/components/BaseScreen';
 import { Card } from '../../ui/surfaces/Card';
 import { T } from '../../ui';
-import { trackScreenView } from '../../utils/navigationAnalytics';
+import { trackScreenView, trackAction } from '../../utils/navigationAnalytics';
+import { useAuth } from '../../context/AuthContext';
+import { supabase } from '../../config/supabase';
 
 type Props = NativeStackScreenProps<any, 'NewEnhancedSchedule'>;
 
+interface ClassSession {
+  id: string;
+  time: string;
+  subject: string;
+  status: 'completed' | 'live' | 'upcoming';
+  start_time: string;
+  end_time: string;
+}
+
 export default function NewEnhancedSchedule({ navigation }: Props) {
+  const { user } = useAuth();
+
   React.useEffect(() => {
     trackScreenView('NewEnhancedSchedule');
   }, []);
 
-  const todayClasses = [
-    { time: '09:00 AM', subject: 'Mathematics', status: 'completed' },
-    { time: '11:00 AM', subject: 'Physics', status: 'live' },
-    { time: '02:00 PM', subject: 'Chemistry', status: 'upcoming' },
-  ];
+  // Fetch today's classes
+  const { data: todayClasses, isLoading, error, refetch } = useQuery({
+    queryKey: ['today-schedule', user?.id],
+    queryFn: async () => {
+      if (!user?.id) throw new Error('No user ID');
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      const { data, error } = await supabase
+        .from('class_sessions')
+        .select('*')
+        .eq('student_id', user.id)
+        .gte('start_time', today.toISOString())
+        .lt('start_time', tomorrow.toISOString())
+        .order('start_time', { ascending: true });
+
+      if (error) throw error;
+
+      return (data || []).map(cls => {
+        const now = new Date();
+        const start = new Date(cls.start_time);
+        const end = new Date(cls.end_time);
+
+        let status: 'completed' | 'live' | 'upcoming' = 'upcoming';
+        if (now >= start && now <= end) status = 'live';
+        else if (now > end) status = 'completed';
+
+        return {
+          id: cls.id,
+          time: start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
+          subject: cls.subject || 'Class',
+          status,
+          start_time: cls.start_time,
+          end_time: cls.end_time,
+        };
+      }) as ClassSession[];
+    },
+    enabled: !!user?.id,
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -42,8 +93,25 @@ export default function NewEnhancedSchedule({ navigation }: Props) {
   };
 
   return (
-    <BaseScreen scrollable={false}>
-      <ScrollView style={styles.container}>
+    <BaseScreen
+      scrollable={false}
+      loading={isLoading}
+      error={error ? 'Failed to load schedule' : null}
+      empty={!todayClasses || todayClasses.length === 0}
+      emptyMessage="No classes scheduled for today"
+    >
+      <ScrollView
+        style={styles.container}
+        refreshControl={
+          <RefreshControl
+            refreshing={false}
+            onRefresh={() => {
+              trackAction('refresh_enhanced_schedule', 'NewEnhancedSchedule');
+              refetch();
+            }}
+          />
+        }
+      >
         <Card style={styles.headerCard}>
           <T variant="h2" weight="bold">
             Today's Schedule
@@ -57,33 +125,35 @@ export default function NewEnhancedSchedule({ navigation }: Props) {
           </T>
         </Card>
 
-        <Card style={styles.classesCard}>
-          {todayClasses.map((classItem, index) => (
-            <View key={index} style={styles.classItem}>
-              <View style={styles.timeContainer}>
-                <T variant="caption" weight="semiBold">
-                  {classItem.time}
-                </T>
-              </View>
-              <View
-                style={[
-                  styles.classBar,
-                  { backgroundColor: getStatusColor(classItem.status) },
-                ]}
-              />
-              <View style={styles.classInfo}>
-                <T variant="body" weight="semiBold">
-                  {classItem.subject}
-                </T>
-                <View style={styles.statusContainer}>
-                  <T variant="caption">
-                    {getStatusIcon(classItem.status)} {classItem.status.toUpperCase()}
+        {todayClasses && todayClasses.length > 0 && (
+          <Card style={styles.classesCard}>
+            {todayClasses.map((classItem) => (
+              <View key={classItem.id} style={styles.classItem}>
+                <View style={styles.timeContainer}>
+                  <T variant="caption" weight="semiBold">
+                    {classItem.time}
                   </T>
                 </View>
+                <View
+                  style={[
+                    styles.classBar,
+                    { backgroundColor: getStatusColor(classItem.status) },
+                  ]}
+                />
+                <View style={styles.classInfo}>
+                  <T variant="body" weight="semiBold">
+                    {classItem.subject}
+                  </T>
+                  <View style={styles.statusContainer}>
+                    <T variant="caption">
+                      {getStatusIcon(classItem.status)} {classItem.status.toUpperCase()}
+                    </T>
+                  </View>
+                </View>
               </View>
-            </View>
-          ))}
-        </Card>
+            ))}
+          </Card>
+        )}
       </ScrollView>
     </BaseScreen>
   );

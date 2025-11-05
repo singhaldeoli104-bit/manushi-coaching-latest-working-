@@ -6,27 +6,76 @@
 
 import React from 'react';
 import { View, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BaseScreen } from '../../shared/components/BaseScreen';
 import { Card } from '../../ui/surfaces/Card';
 import { T } from '../../ui';
-import { trackScreenView } from '../../utils/navigationAnalytics';
+import { trackScreenView, trackAction } from '../../utils/navigationAnalytics';
+import { useAuth } from '../../context/AuthContext';
+import { supabase } from '../../config/supabase';
 
 type Props = NativeStackScreenProps<any, 'NewPeerLearningNetwork'>;
 
+interface Peer {
+  id: string;
+  name: string;
+  subjects: string;
+  avatar: string;
+  student_id: string;
+}
+
 export default function NewPeerLearningNetwork({ navigation }: Props) {
+  const { user } = useAuth();
+
   React.useEffect(() => {
     trackScreenView('NewPeerLearningNetwork');
   }, []);
 
-  const peers = [
-    { id: '1', name: 'Alice Johnson', subjects: 'Math, Physics', avatar: '👩' },
-    { id: '2', name: 'Bob Smith', subjects: 'Chemistry, Biology', avatar: '👨' },
-    { id: '3', name: 'Carol Lee', subjects: 'English, History', avatar: '👧' },
-  ];
+  // Fetch peers from same class/batch
+  const { data: peers, isLoading, error, refetch } = useQuery({
+    queryKey: ['peer-network', user?.id],
+    queryFn: async () => {
+      if (!user?.id) throw new Error('No user ID');
+
+      // First, get current user's class/batch
+      const { data: studentData, error: studentError } = await supabase
+        .from('students')
+        .select('class_id, batch_id')
+        .eq('id', user.id)
+        .single();
+
+      if (studentError) throw studentError;
+
+      // Then fetch peers from same class
+      const { data, error } = await supabase
+        .from('students')
+        .select('id, name, email, subjects')
+        .eq('class_id', studentData.class_id)
+        .neq('id', user.id)
+        .limit(10);
+
+      if (error) throw error;
+
+      return (data || []).map((student, index) => ({
+        id: student.id,
+        name: student.name || 'Unknown Student',
+        subjects: student.subjects || 'Various subjects',
+        avatar: index % 3 === 0 ? '👩' : index % 3 === 1 ? '👨' : '👧',
+        student_id: student.id,
+      })) as Peer[];
+    },
+    enabled: !!user?.id,
+  });
 
   return (
-    <BaseScreen scrollable={false}>
+    <BaseScreen
+      scrollable={false}
+      loading={isLoading}
+      error={error ? 'Failed to load peers' : null}
+      empty={!peers || peers.length === 0}
+      emptyMessage="No peers found"
+    >
       <View style={styles.container}>
         <Card style={styles.headerCard}>
           <T variant="h2" weight="bold">
@@ -41,8 +90,18 @@ export default function NewPeerLearningNetwork({ navigation }: Props) {
           data={peers}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.peersList}
+          onRefresh={() => {
+            trackAction('refresh_peers', 'NewPeerLearningNetwork');
+            refetch();
+          }}
+          refreshing={false}
           renderItem={({ item }) => (
-            <TouchableOpacity style={styles.peerCard}>
+            <TouchableOpacity
+              style={styles.peerCard}
+              onPress={() => trackAction('view_peer', 'NewPeerLearningNetwork', { peerId: item.id })}
+              accessibilityRole="button"
+              accessibilityLabel={`Connect with ${item.name}`}
+            >
               <View style={styles.peerAvatar}>
                 <T variant="h2">{item.avatar}</T>
               </View>
