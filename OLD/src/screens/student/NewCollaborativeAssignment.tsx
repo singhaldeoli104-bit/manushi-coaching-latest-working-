@@ -4,14 +4,18 @@
  * Used in: StudentNavigator (AssignmentsStack)
  */
 
-import React from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BaseScreen } from '../../shared/components/BaseScreen';
 import { Card } from '../../ui/surfaces/Card';
+import { Badge } from '../../ui/data-display/Badge';
+import { Button } from '../../ui/inputs/Button';
+import { Chip } from '../../ui/inputs/Chip';
+import { Row } from '../../ui/layout/Row';
 import { T } from '../../ui';
-import { trackScreenView } from '../../utils/navigationAnalytics';
+import { trackScreenView, trackAction } from '../../utils/navigationAnalytics';
 import { getAvatarEmoji } from '../../utils/avatarUtils';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../config/supabase';
@@ -33,13 +37,67 @@ interface Assignment {
   due_date: string;
 }
 
+interface ActiveEditor {
+  id: string;
+  name: string;
+  avatar: string;
+  section: string;
+  cursorPosition: { x: number; y: number };
+}
+
+interface Version {
+  id: string;
+  version: number;
+  timestamp: string;
+  author: string;
+  changes: string;
+}
+
+interface Contribution {
+  memberId: string;
+  memberName: string;
+  avatar: string;
+  linesAdded: number;
+  editsCount: number;
+  percentage: number;
+}
+
 export default function NewCollaborativeAssignment({ route, navigation }: Props) {
   const { user } = useAuth();
   const assignmentId = route.params?.assignmentId;
 
+  // State for new features
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
+  const [showContributions, setShowContributions] = useState(false);
+
+  const [activeEditors, setActiveEditors] = useState<ActiveEditor[]>([
+    { id: '1', name: 'Sarah J.', avatar: '👩‍🎓', section: 'Introduction', cursorPosition: { x: 120, y: 80 } },
+    { id: '2', name: 'Mike C.', avatar: '👨‍🎓', section: 'Analysis', cursorPosition: { x: 200, y: 150 } },
+  ]);
+
+  const [versionHistory, setVersionHistory] = useState<Version[]>([
+    { id: '1', version: 5, timestamp: '10 min ago', author: 'Sarah J.', changes: 'Updated introduction section' },
+    { id: '2', version: 4, timestamp: '1 hour ago', author: 'Mike C.', changes: 'Added data analysis' },
+    { id: '3', version: 3, timestamp: '3 hours ago', author: 'You', changes: 'Fixed methodology' },
+    { id: '4', version: 2, timestamp: '1 day ago', author: 'Emma D.', changes: 'Initial draft' },
+  ]);
+
+  const [contributions, setContributions] = useState<Contribution[]>([
+    { memberId: '1', memberName: 'Sarah J.', avatar: '👩‍🎓', linesAdded: 180, editsCount: 45, percentage: 35 },
+    { memberId: '2', memberName: 'You', avatar: '👤', linesAdded: 150, editsCount: 38, percentage: 30 },
+    { memberId: '3', memberName: 'Mike C.', avatar: '👨‍🎓', linesAdded: 120, editsCount: 30, percentage: 25 },
+    { memberId: '4', memberName: 'Emma D.', avatar: '👧', linesAdded: 50, editsCount: 12, percentage: 10 },
+  ]);
+
   React.useEffect(() => {
     trackScreenView('NewCollaborativeAssignment', { assignmentId });
   }, [assignmentId]);
+
+  // Handlers for new features
+  const handleRestoreVersion = (versionId: string, version: number) => {
+    trackAction('restore_version', 'NewCollaborativeAssignment', { versionId, version });
+    Alert.alert('Restore Version', `Restoring to version ${version}...`);
+  };
 
   // Fetch assignment details
   const { data: assignment, isLoading: assignmentLoading } = useQuery({
@@ -172,6 +230,108 @@ export default function NewCollaborativeAssignment({ route, navigation }: Props)
             )}
           </Card>
 
+          {/* 1. Real-time Collaboration & 4. Live Cursors */}
+          {activeEditors.length > 0 && (
+            <Card style={styles.activeEditorsCard}>
+              <View style={styles.cardHeader}>
+                <T variant="title" weight="semiBold">
+                  🟢 Active Now ({activeEditors.length})
+                </T>
+              </View>
+              {activeEditors.map((editor) => (
+                <View key={editor.id} style={styles.editorItem}>
+                  <T variant="body">{editor.avatar}</T>
+                  <View style={{ flex: 1, marginLeft: 12 }}>
+                    <T variant="body" weight="semiBold">{editor.name}</T>
+                    <T variant="caption" style={{ color: '#6B7280' }}>
+                      Editing: {editor.section}
+                    </T>
+                  </View>
+                  <View style={styles.liveCursor}>
+                    <T variant="caption" style={{ color: '#10B981' }}>✎</T>
+                  </View>
+                </View>
+              ))}
+            </Card>
+          )}
+
+          {/* 2. Version History */}
+          <Card style={styles.versionCard}>
+            <View style={styles.cardHeader}>
+              <T variant="title" weight="semiBold">
+                📜 Version History
+              </T>
+              <Button
+                variant="ghost"
+                onPress={() => setShowVersionHistory(!showVersionHistory)}
+              >
+                {showVersionHistory ? 'Hide' : 'Show'}
+              </Button>
+            </View>
+            {showVersionHistory && (
+              <View style={styles.versionsContainer}>
+                {versionHistory.map((version) => (
+                  <View key={version.id} style={styles.versionItem}>
+                    <View style={{ flex: 1 }}>
+                      <Row gap="xs" style={{ marginBottom: 4 }}>
+                        <Badge variant="info" label={`v${version.version}`} />
+                        <T variant="caption" style={{ color: '#6B7280' }}>
+                          {version.timestamp}
+                        </T>
+                      </Row>
+                      <T variant="body">{version.changes}</T>
+                      <T variant="caption" style={{ color: '#9CA3AF', marginTop: 4 }}>
+                        by {version.author}
+                      </T>
+                    </View>
+                    <Button
+                      variant="outline"
+                      onPress={() => handleRestoreVersion(version.id, version.version)}
+                    >
+                      Restore
+                    </Button>
+                  </View>
+                ))}
+              </View>
+            )}
+          </Card>
+
+          {/* 3. Member Contributions Tracking */}
+          <Card style={styles.contributionsCard}>
+            <View style={styles.cardHeader}>
+              <T variant="title" weight="semiBold">
+                📊 Contributions
+              </T>
+              <Button
+                variant="ghost"
+                onPress={() => setShowContributions(!showContributions)}
+              >
+                {showContributions ? 'Hide' : 'Show'}
+              </Button>
+            </View>
+            {showContributions && (
+              <View style={styles.contributionsContainer}>
+                {contributions.map((contribution) => (
+                  <View key={contribution.memberId} style={styles.contributionItem}>
+                    <T variant="h3">{contribution.avatar}</T>
+                    <View style={{ flex: 1, marginLeft: 12 }}>
+                      <T variant="body" weight="semiBold">{contribution.memberName}</T>
+                      <T variant="caption" style={{ color: '#6B7280' }}>
+                        {contribution.linesAdded} lines • {contribution.editsCount} edits
+                      </T>
+                      <View style={styles.progressBar}>
+                        <View style={[styles.progressFill, { width: `${contribution.percentage}%` }]} />
+                      </View>
+                    </View>
+                    <T variant="body" weight="bold" style={{ color: '#3B82F6' }}>
+                      {contribution.percentage}%
+                    </T>
+                  </View>
+                ))}
+              </View>
+            )}
+          </Card>
+
           <Card style={styles.progressCard}>
             <T variant="title" weight="semiBold" style={styles.sectionTitle}>
               Progress
@@ -248,5 +408,68 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     textAlign: 'center',
     paddingVertical: 16,
+  },
+  activeEditorsCard: {
+    padding: 16,
+    marginBottom: 16,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  editorItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  liveCursor: {
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  versionCard: {
+    padding: 16,
+    marginBottom: 16,
+  },
+  versionsContainer: {
+    gap: 12,
+    marginTop: 8,
+  },
+  versionItem: {
+    flexDirection: 'row',
+    gap: 12,
+    padding: 12,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 8,
+  },
+  contributionsCard: {
+    padding: 16,
+    marginBottom: 16,
+  },
+  contributionsContainer: {
+    gap: 12,
+    marginTop: 8,
+  },
+  contributionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  progressBar: {
+    height: 6,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 3,
+    marginTop: 6,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#3B82F6',
+    borderRadius: 3,
   },
 });
