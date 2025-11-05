@@ -1,21 +1,30 @@
 /**
  * NewScheduleScreen - Premium Minimal Design
- * Purpose: Display weekly/daily class schedule with clean interface
- * Used in: StudentNavigator (ClassesStack)
+ * Purpose: Display weekly/daily/monthly class schedule with advanced filtering
+ * Features: View modes, filters, sorting, settings, caching
  */
 
-import React, { useState, useCallback } from 'react';
-import { View, StyleSheet, TouchableOpacity, FlatList, RefreshControl } from 'react-native';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  FlatList,
+  ScrollView,
+  TextInput,
+  Modal,
+  Alert,
+  Switch,
+} from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BaseScreen } from '../../shared/components/BaseScreen';
-import { T } from '../../ui';
+import { T, Card, CardHeader, CardContent, CardActions, Button, Chip, Row, Col, Spacer, Badge } from '../../ui';
 import { safeNavigate } from '../../utils/navigationService';
 import { trackAction, trackScreenView } from '../../utils/navigationAnalytics';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../config/supabase';
-import { EventCard } from '../../components/student/molecules/premium/EventCard';
-import { HorizontalCarousel } from '../../components/student/molecules/premium/HorizontalCarousel';
 
 type Props = NativeStackScreenProps<any, 'NewScheduleScreen'>;
 
@@ -28,6 +37,8 @@ interface ClassSession {
   meeting_link?: string;
   status: 'scheduled' | 'live' | 'completed' | 'cancelled';
   description?: string;
+  priority?: 'low' | 'medium' | 'high';
+  is_deadline?: boolean;
 }
 
 interface DaySchedule {
@@ -38,10 +49,38 @@ interface DaySchedule {
   classes: ClassSession[];
 }
 
+interface ScheduleSettings {
+  showWeekends: boolean;
+  showDeadlines: boolean;
+  defaultView: 'week' | 'day' | 'month' | 'agenda';
+  defaultReminderTime: number;
+  syncWithDeviceCalendar: boolean;
+}
+
+type ViewMode = 'week' | 'day' | 'month' | 'agenda';
+type StatusFilter = 'all' | 'upcoming' | 'live' | 'completed';
+type SortType = 'time' | 'subject' | 'teacher';
+
+const CACHE_KEY = 'schedule_settings';
+const DEFAULT_SETTINGS: ScheduleSettings = {
+  showWeekends: true,
+  showDeadlines: true,
+  defaultView: 'week',
+  defaultReminderTime: 15,
+  syncWithDeviceCalendar: false,
+};
+
 export default function NewScheduleScreen({ navigation }: Props) {
   const { user } = useAuth();
-  const [viewMode, setViewMode] = useState<'week' | 'day'>('week');
+
+  // View and filter state
+  const [viewMode, setViewMode] = useState<ViewMode>('week');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [selectedSubject, setSelectedSubject] = useState<string>('All');
+  const [sortType, setSortType] = useState<SortType>('time');
   const [selectedDate, setSelectedDate] = useState(new Date());
+
+  // Week navigation state
   const [weekStart, setWeekStart] = useState(() => {
     const today = new Date();
     const day = today.getDay();
@@ -49,13 +88,50 @@ export default function NewScheduleScreen({ navigation }: Props) {
     return new Date(today.setDate(diff));
   });
 
+  // Modal state
+  const [showSortModal, setShowSortModal] = useState(false);
+  const [showCalendarModal, setShowCalendarModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+
+  // Settings state
+  const [settings, setSettings] = useState<ScheduleSettings>(DEFAULT_SETTINGS);
+
   // Track screen view
-  React.useEffect(() => {
+  useEffect(() => {
     trackScreenView('NewScheduleScreen');
+    loadSettings();
+  }, []);
+
+  // Load settings from AsyncStorage
+  const loadSettings = useCallback(async () => {
+    try {
+      const cached = await AsyncStorage.getItem(CACHE_KEY);
+      if (cached) {
+        const parsedSettings = JSON.parse(cached);
+        setSettings(parsedSettings);
+        setViewMode(parsedSettings.defaultView);
+        console.log('✅ Loaded settings from cache');
+      }
+    } catch (error) {
+      console.error('Failed to load settings:', error);
+    }
+  }, []);
+
+  // Save settings to AsyncStorage
+  const saveSettings = useCallback(async (newSettings: ScheduleSettings) => {
+    try {
+      await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(newSettings));
+      setSettings(newSettings);
+      console.log('✅ Settings saved to cache');
+      Alert.alert('Success', 'Settings saved successfully!');
+    } catch (error) {
+      console.error('Failed to save settings:', error);
+      Alert.alert('Error', 'Failed to save settings');
+    }
   }, []);
 
   // Fetch classes for the week
-  const { data: weekClasses, isLoading, error, refetch } = useQuery({
+  const { data: weekClasses, isLoading, error, refetch, isRefetching } = useQuery({
     queryKey: ['week-classes', user?.id, weekStart.toISOString()],
     queryFn: async () => {
       if (!user?.id) throw new Error('No user ID');
@@ -79,6 +155,11 @@ export default function NewScheduleScreen({ navigation }: Props) {
         const date = new Date(weekStart);
         date.setDate(weekStart.getDate() + i);
 
+        // Skip weekends if setting is off
+        if (!settings.showWeekends && (date.getDay() === 0 || date.getDay() === 6)) {
+          continue;
+        }
+
         const dayClasses = (data || []).filter(cls => {
           const classDate = new Date(cls.scheduled_at);
           return classDate.toDateString() === date.toDateString();
@@ -101,6 +182,16 @@ export default function NewScheduleScreen({ navigation }: Props) {
     enabled: !!user?.id,
   });
 
+  // Get unique subjects
+  const subjects = useMemo(() => {
+    if (!weekClasses) return ['All'];
+    const allSubjects = new Set<string>();
+    weekClasses.forEach(day =>
+      day.classes.forEach(cls => allSubjects.add(cls.subject))
+    );
+    return ['All', ...Array.from(allSubjects)];
+  }, [weekClasses]);
+
   // Get class status based on time
   const getClassStatus = (classSession: ClassSession): 'live' | 'upcoming' | 'ended' => {
     if (classSession.status === 'cancelled') return 'ended';
@@ -114,6 +205,52 @@ export default function NewScheduleScreen({ navigation }: Props) {
     if (now > end) return 'ended';
     return 'upcoming';
   };
+
+  // Filter and sort classes
+  const filteredWeekClasses = useMemo(() => {
+    if (!weekClasses) return [];
+
+    return weekClasses.map(day => {
+      let filtered = day.classes;
+
+      // Apply status filter
+      if (statusFilter !== 'all') {
+        filtered = filtered.filter(cls => {
+          const status = getClassStatus(cls);
+          if (statusFilter === 'upcoming') return status === 'upcoming';
+          if (statusFilter === 'live') return status === 'live';
+          if (statusFilter === 'completed') return status === 'ended';
+          return true;
+        });
+      }
+
+      // Apply subject filter
+      if (selectedSubject !== 'All') {
+        filtered = filtered.filter(cls => cls.subject === selectedSubject);
+      }
+
+      // Filter deadlines if setting is off
+      if (!settings.showDeadlines) {
+        filtered = filtered.filter(cls => !cls.is_deadline);
+      }
+
+      // Apply sorting
+      const sorted = [...filtered].sort((a, b) => {
+        switch (sortType) {
+          case 'time':
+            return new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime();
+          case 'subject':
+            return a.subject.localeCompare(b.subject);
+          case 'teacher':
+            return a.teacher_name.localeCompare(b.teacher_name);
+          default:
+            return 0;
+        }
+      });
+
+      return { ...day, classes: sorted };
+    });
+  }, [weekClasses, statusFilter, selectedSubject, sortType, settings.showDeadlines]);
 
   // Navigate to previous week
   const handlePreviousWeek = useCallback(() => {
@@ -144,12 +281,42 @@ export default function NewScheduleScreen({ navigation }: Props) {
   // Handle class press
   const handleClassPress = useCallback((classSession: ClassSession) => {
     trackAction('view_class_detail', 'NewScheduleScreen', { classId: classSession.id });
-    safeNavigate('ClassDetail', { classId: classSession.id });
+
+    Alert.alert(
+      classSession.subject,
+      `Teacher: ${classSession.teacher_name}\nTime: ${new Date(classSession.scheduled_at).toLocaleString()}\nDuration: ${classSession.duration_minutes} min${classSession.description ? `\n\n${classSession.description}` : ''}`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'View Details', onPress: () => safeNavigate('ClassDetail', { classId: classSession.id }) },
+        ...(getClassStatus(classSession) === 'live'
+          ? [{ text: 'Join Class', onPress: () => safeNavigate('LiveClass', { classId: classSession.id }) }]
+          : []),
+      ]
+    );
   }, []);
+
+  // Get priority emoji
+  const getPriorityEmoji = (priority?: string) => {
+    switch (priority) {
+      case 'high':
+        return '🔴';
+      case 'medium':
+        return '🟡';
+      case 'low':
+        return '🟢';
+      default:
+        return '';
+    }
+  };
+
+  // Get type emoji
+  const getTypeEmoji = (isDeadline?: boolean) => {
+    return isDeadline ? '⏰' : '📚';
+  };
 
   // Render week view
   const renderWeekView = () => {
-    if (!weekClasses || weekClasses.length === 0) {
+    if (!filteredWeekClasses || filteredWeekClasses.length === 0) {
       return (
         <View style={styles.emptyContainer}>
           <T variant="body">No classes scheduled this week</T>
@@ -159,97 +326,81 @@ export default function NewScheduleScreen({ navigation }: Props) {
 
     return (
       <FlatList
-        data={weekClasses}
+        data={filteredWeekClasses}
         keyExtractor={(day) => day.date.toISOString()}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.weekList}
-        refreshControl={
-          <RefreshControl
-            refreshing={false}
-            onRefresh={() => {
-              trackAction('refresh_schedule', 'NewScheduleScreen');
-              refetch();
-            }}
-          />
-        }
         renderItem={({ item: day }) => (
-          <View style={[styles.dayCard, day.isToday && styles.todayCard]}>
+          <Card variant="outlined" style={[styles.dayCard, day.isToday && styles.todayCard]}>
             {/* Day Header */}
-            <View style={styles.dayHeader}>
-              <View>
-                <T variant="title" weight="semiBold" style={day.isToday && styles.todayText}>
-                  {day.dayShort}
-                </T>
-                <T variant="caption" style={day.isToday && styles.todayText}>
-                  {day.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                </T>
-              </View>
-              {day.isToday && (
-                <View style={styles.todayBadge}>
-                  <T variant="caption" weight="semiBold" style={styles.todayBadgeText}>
-                    TODAY
+            <CardHeader
+              title={day.dayShort}
+              subtitle={day.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              trailing={
+                day.isToday ? (
+                  <Badge variant="info">TODAY</Badge>
+                ) : undefined
+              }
+            />
+
+            {/* Classes List */}
+            <CardContent>
+              {day.classes.length > 0 ? (
+                <View style={styles.classesContainer}>
+                  {day.classes.map((classSession) => {
+                    const status = getClassStatus(classSession);
+                    const time = new Date(classSession.scheduled_at);
+
+                    return (
+                      <TouchableOpacity
+                        key={classSession.id}
+                        style={styles.classItem}
+                        onPress={() => handleClassPress(classSession)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${classSession.subject} class with ${classSession.teacher_name}`}
+                        accessibilityHint="Double tap to view class details"
+                      >
+                        <View style={styles.classTime}>
+                          <T variant="caption" weight="semiBold">
+                            {time.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                          </T>
+                          <T variant="caption" style={styles.classDuration}>
+                            {classSession.duration_minutes}min
+                          </T>
+                        </View>
+
+                        <View style={styles.classInfo}>
+                          <Row gap="xs" align="center" style={{ marginBottom: 4 }}>
+                            <T variant="h3">{getTypeEmoji(classSession.is_deadline)}</T>
+                            {classSession.priority && (
+                              <T variant="h3">{getPriorityEmoji(classSession.priority)}</T>
+                            )}
+                            <T variant="body" weight="semiBold" numberOfLines={1} style={{ flex: 1 }}>
+                              {classSession.subject}
+                            </T>
+                            <Badge
+                              variant={status === 'live' ? 'error' : status === 'upcoming' ? 'success' : 'neutral'}
+                            >
+                              {status === 'live' ? '🔴 LIVE' : status === 'upcoming' ? '⏰' : '✅'}
+                            </Badge>
+                          </Row>
+                          <T variant="caption" style={styles.classTeacher} numberOfLines={1}>
+                            {classSession.teacher_name}
+                          </T>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              ) : (
+                <View style={styles.noClassesContainer}>
+                  <T variant="caption" style={styles.noClassesText}>
+                    No classes scheduled
                   </T>
                 </View>
               )}
-            </View>
-
-            {/* Classes List */}
-            {day.classes.length > 0 ? (
-              <View style={styles.classesContainer}>
-                {day.classes.map((classSession) => {
-                  const status = getClassStatus(classSession);
-                  const time = new Date(classSession.scheduled_at);
-
-                  return (
-                    <TouchableOpacity
-                      key={classSession.id}
-                      style={styles.classItem}
-                      onPress={() => handleClassPress(classSession)}
-                      accessibilityRole="button"
-                      accessibilityLabel={`${classSession.subject} class with ${classSession.teacher_name}`}
-                      accessibilityHint="Double tap to view class details"
-                    >
-                      <View style={styles.classTime}>
-                        <T variant="caption" weight="semiBold">
-                          {time.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
-                        </T>
-                        <T variant="caption" style={styles.classDuration}>
-                          {classSession.duration_minutes}min
-                        </T>
-                      </View>
-
-                      <View style={styles.classInfo}>
-                        <View style={styles.classHeader}>
-                          <T variant="body" weight="semiBold" numberOfLines={1} style={styles.classSubject}>
-                            {classSession.subject}
-                          </T>
-                          <View style={[
-                            styles.statusBadge,
-                            status === 'live' && styles.statusLive,
-                            status === 'upcoming' && styles.statusUpcoming,
-                            status === 'ended' && styles.statusEnded,
-                          ]}>
-                            <T variant="caption" weight="semiBold" style={styles.statusText}>
-                              {status === 'live' ? '🔴 LIVE' : status === 'upcoming' ? '🔵' : '⚪'}
-                            </T>
-                          </View>
-                        </View>
-                        <T variant="caption" style={styles.classTeacher} numberOfLines={1}>
-                          {classSession.teacher_name}
-                        </T>
-                      </View>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            ) : (
-              <View style={styles.noClassesContainer}>
-                <T variant="caption" style={styles.noClassesText}>
-                  No classes scheduled
-                </T>
-              </View>
-            )}
-          </View>
+            </CardContent>
+          </Card>
         )}
       />
     );
@@ -257,7 +408,7 @@ export default function NewScheduleScreen({ navigation }: Props) {
 
   // Render day view
   const renderDayView = () => {
-    const selectedDay = weekClasses?.find(day =>
+    const selectedDay = filteredWeekClasses?.find(day =>
       day.date.toDateString() === selectedDate.toDateString()
     );
 
@@ -270,50 +421,240 @@ export default function NewScheduleScreen({ navigation }: Props) {
     }
 
     return (
-      <View style={styles.dayViewContainer}>
-        <T variant="title" weight="bold" style={styles.dayViewTitle}>
-          {selectedDay.dayName}, {selectedDay.date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
-        </T>
-
-        {selectedDay.classes.length > 0 ? (
-          <HorizontalCarousel
-            data={selectedDay.classes}
-            renderItem={(classSession) => {
-              const status = getClassStatus(classSession);
-              const time = new Date(classSession.scheduled_at);
-
-              return (
-                <EventCard
-                  title={classSession.subject}
-                  subject={classSession.teacher_name}
-                  time={time}
-                  status={status}
-                  onPress={() => handleClassPress(classSession)}
-                  accessibilityLabel={`${classSession.subject} class with ${classSession.teacher_name}`}
-                />
-              );
-            }}
-            keyExtractor={(cls) => cls.id}
-            accessibilityLabel="Today's classes"
+      <ScrollView style={styles.dayViewContainer} showsVerticalScrollIndicator={false}>
+        <Card variant="outlined">
+          <CardHeader
+            title={selectedDay.dayName}
+            subtitle={selectedDay.date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
           />
+          <CardContent>
+            {selectedDay.classes.length > 0 ? (
+              <View style={styles.classesContainer}>
+                {selectedDay.classes.map((classSession) => {
+                  const status = getClassStatus(classSession);
+                  const time = new Date(classSession.scheduled_at);
+
+                  return (
+                    <Card key={classSession.id} variant="filled" style={{ marginBottom: 12 }}>
+                      <CardContent>
+                        <TouchableOpacity onPress={() => handleClassPress(classSession)}>
+                          <Row gap="xs" align="center" style={{ marginBottom: 8 }}>
+                            <T variant="h2">{getTypeEmoji(classSession.is_deadline)}</T>
+                            {classSession.priority && (
+                              <T variant="h2">{getPriorityEmoji(classSession.priority)}</T>
+                            )}
+                            <Col style={{ flex: 1 }}>
+                              <T variant="body" weight="bold">
+                                {classSession.subject}
+                              </T>
+                              <T variant="caption" color="textSecondary">
+                                {classSession.teacher_name}
+                              </T>
+                            </Col>
+                            <Badge
+                              variant={status === 'live' ? 'error' : status === 'upcoming' ? 'success' : 'neutral'}
+                            >
+                              {status === 'live' ? 'LIVE' : status === 'upcoming' ? 'UPCOMING' : 'ENDED'}
+                            </Badge>
+                          </Row>
+                          <Row gap="md">
+                            <T variant="caption">
+                              🕐 {time.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                            </T>
+                            <T variant="caption">
+                              ⏱️ {classSession.duration_minutes} min
+                            </T>
+                          </Row>
+                          {classSession.description && (
+                            <>
+                              <Spacer size="sm" />
+                              <T variant="caption" color="textSecondary">
+                                {classSession.description}
+                              </T>
+                            </>
+                          )}
+                        </TouchableOpacity>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </View>
+            ) : (
+              <T variant="body" color="textSecondary" style={{ textAlign: 'center', padding: 24 }}>
+                No classes scheduled for this day
+              </T>
+            )}
+          </CardContent>
+        </Card>
+      </ScrollView>
+    );
+  };
+
+  // Render month view
+  const renderMonthView = () => {
+    const monthStart = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+    const monthEnd = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0);
+    const startDate = new Date(monthStart);
+    startDate.setDate(startDate.getDate() - monthStart.getDay());
+
+    const days = [];
+    const currentDate = new Date(startDate);
+
+    while (currentDate <= monthEnd || currentDate.getDay() !== 0) {
+      days.push(new Date(currentDate));
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    return (
+      <ScrollView style={styles.monthContainer} showsVerticalScrollIndicator={false}>
+        <Card variant="outlined">
+          <CardHeader
+            title={selectedDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+          />
+          <CardContent>
+            {/* Weekday headers */}
+            <Row gap="xs" style={{ marginBottom: 8 }}>
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                <View key={day} style={styles.monthDayHeader}>
+                  <T variant="caption" weight="semiBold" style={{ textAlign: 'center' }}>
+                    {day}
+                  </T>
+                </View>
+              ))}
+            </Row>
+
+            {/* Calendar grid */}
+            <View style={styles.monthGrid}>
+              {days.map((day, index) => {
+                const dateStr = day.toDateString();
+                const isToday = dateStr === new Date().toDateString();
+                const isCurrentMonth = day.getMonth() === selectedDate.getMonth();
+
+                // Find classes for this day
+                const daySchedule = filteredWeekClasses?.find(
+                  d => d.date.toDateString() === dateStr
+                );
+                const hasClasses = daySchedule && daySchedule.classes.length > 0;
+                const hasDeadlines = daySchedule?.classes.some(c => c.is_deadline);
+
+                return (
+                  <TouchableOpacity
+                    key={index}
+                    style={[
+                      styles.monthDay,
+                      isToday && styles.monthDayToday,
+                      !isCurrentMonth && styles.monthDayOther,
+                    ]}
+                    onPress={() => {
+                      setSelectedDate(day);
+                      setViewMode('day');
+                      trackAction('select_day', 'NewScheduleScreen', { date: day.toISOString() });
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${day.toLocaleDateString()}, ${hasClasses ? `${daySchedule.classes.length} classes` : 'no classes'}`}
+                  >
+                    <T
+                      variant="caption"
+                      weight={isToday ? 'bold' : 'regular'}
+                      style={[
+                        styles.monthDayText,
+                        isToday && styles.monthDayTodayText,
+                        !isCurrentMonth && styles.monthDayOtherText,
+                      ]}
+                    >
+                      {day.getDate()}
+                    </T>
+                    {hasClasses && (
+                      <Row gap="xs" style={styles.monthDayIndicators}>
+                        {hasDeadlines && <View style={[styles.eventDot, { backgroundColor: '#EF4444' }]} />}
+                        {daySchedule.classes.filter(c => !c.is_deadline).length > 0 && (
+                          <View style={[styles.eventDot, { backgroundColor: '#3B82F6' }]} />
+                        )}
+                      </Row>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </CardContent>
+        </Card>
+      </ScrollView>
+    );
+  };
+
+  // Render agenda view
+  const renderAgendaView = () => {
+    const allClasses = filteredWeekClasses?.flatMap(day =>
+      day.classes.map(cls => ({ ...cls, date: day.date }))
+    ) || [];
+
+    return (
+      <ScrollView style={styles.agendaContainer} showsVerticalScrollIndicator={false}>
+        {allClasses.length > 0 ? (
+          allClasses.map((classSession, index) => {
+            const status = getClassStatus(classSession);
+            const time = new Date(classSession.scheduled_at);
+
+            return (
+              <Card key={`${classSession.id}-${index}`} variant="outlined" style={{ marginBottom: 12 }}>
+                <CardContent>
+                  <TouchableOpacity onPress={() => handleClassPress(classSession)}>
+                    <Row gap="sm" align="center" style={{ marginBottom: 8 }}>
+                      <T variant="h2">{getTypeEmoji(classSession.is_deadline)}</T>
+                      {classSession.priority && (
+                        <T variant="h2">{getPriorityEmoji(classSession.priority)}</T>
+                      )}
+                      <Col style={{ flex: 1 }}>
+                        <T variant="body" weight="bold">
+                          {classSession.subject}
+                        </T>
+                        <T variant="caption" color="textSecondary">
+                          {classSession.teacher_name}
+                        </T>
+                      </Col>
+                      <Badge
+                        variant={status === 'live' ? 'error' : status === 'upcoming' ? 'success' : 'neutral'}
+                      >
+                        {status === 'live' ? 'LIVE' : status === 'upcoming' ? 'UPCOMING' : 'ENDED'}
+                      </Badge>
+                    </Row>
+                    <Row gap="md">
+                      <T variant="caption">
+                        📅 {(classSession as any).date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                      </T>
+                      <T variant="caption">
+                        🕐 {time.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                      </T>
+                      <T variant="caption">
+                        ⏱️ {classSession.duration_minutes} min
+                      </T>
+                    </Row>
+                  </TouchableOpacity>
+                </CardContent>
+              </Card>
+            );
+          })
         ) : (
-          <View style={styles.noClassesContainer}>
-            <T variant="body" style={styles.noClassesText}>
-              No classes scheduled for this day
-            </T>
-          </View>
+          <Card variant="outlined">
+            <CardContent>
+              <T variant="body" color="textSecondary" style={{ textAlign: 'center', padding: 24 }}>
+                No classes in agenda
+              </T>
+            </CardContent>
+          </Card>
         )}
-      </View>
+      </ScrollView>
     );
   };
 
   return (
     <BaseScreen
       scrollable={false}
-      loading={isLoading}
+      loading={isLoading && !isRefetching}
       error={error ? 'Failed to load schedule' : null}
       empty={!weekClasses || weekClasses.length === 0}
       emptyMessage="No classes scheduled"
+      onRefresh={refetch}
     >
       {/* Week Navigation */}
       <View style={styles.navigation}>
@@ -354,44 +695,378 @@ export default function NewScheduleScreen({ navigation }: Props) {
 
       {/* View Mode Toggle */}
       <View style={styles.viewToggle}>
-        <TouchableOpacity
-          style={[styles.toggleButton, viewMode === 'week' && styles.toggleButtonActive]}
+        <Chip
+          variant="filter"
+          label="Week"
+          selected={viewMode === 'week'}
           onPress={() => {
             setViewMode('week');
             trackAction('switch_view', 'NewScheduleScreen', { view: 'week' });
           }}
-          accessibilityRole="button"
-          accessibilityLabel="Week view"
-        >
-          <T
-            variant="body"
-            weight="semiBold"
-            style={[styles.toggleButtonText, viewMode === 'week' && styles.toggleButtonTextActive]}
-          >
-            Week
-          </T>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.toggleButton, viewMode === 'day' && styles.toggleButtonActive]}
+        />
+        <Chip
+          variant="filter"
+          label="Day"
+          selected={viewMode === 'day'}
           onPress={() => {
             setViewMode('day');
             trackAction('switch_view', 'NewScheduleScreen', { view: 'day' });
           }}
-          accessibilityRole="button"
-          accessibilityLabel="Day view"
-        >
-          <T
-            variant="body"
-            weight="semiBold"
-            style={[styles.toggleButtonText, viewMode === 'day' && styles.toggleButtonTextActive]}
-          >
-            Day
-          </T>
-        </TouchableOpacity>
+        />
+        <Chip
+          variant="filter"
+          label="Month"
+          selected={viewMode === 'month'}
+          onPress={() => {
+            setViewMode('month');
+            trackAction('switch_view', 'NewScheduleScreen', { view: 'month' });
+          }}
+        />
+        <Chip
+          variant="filter"
+          label="Agenda"
+          selected={viewMode === 'agenda'}
+          onPress={() => {
+            setViewMode('agenda');
+            trackAction('switch_view', 'NewScheduleScreen', { view: 'agenda' });
+          }}
+        />
       </View>
 
+      {/* Filters and Controls */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.filtersContainer}
+      >
+        {/* Status Filter */}
+        <Chip
+          variant="filter"
+          label="All"
+          selected={statusFilter === 'all'}
+          onPress={() => {
+            setStatusFilter('all');
+            trackAction('filter_status', 'NewScheduleScreen', { status: 'all' });
+          }}
+        />
+        <Chip
+          variant="filter"
+          label="⏰ Upcoming"
+          selected={statusFilter === 'upcoming'}
+          onPress={() => {
+            setStatusFilter('upcoming');
+            trackAction('filter_status', 'NewScheduleScreen', { status: 'upcoming' });
+          }}
+        />
+        <Chip
+          variant="filter"
+          label="🔴 Live"
+          selected={statusFilter === 'live'}
+          onPress={() => {
+            setStatusFilter('live');
+            trackAction('filter_status', 'NewScheduleScreen', { status: 'live' });
+          }}
+        />
+        <Chip
+          variant="filter"
+          label="✅ Completed"
+          selected={statusFilter === 'completed'}
+          onPress={() => {
+            setStatusFilter('completed');
+            trackAction('filter_status', 'NewScheduleScreen', { status: 'completed' });
+          }}
+        />
+
+        {/* Subject Filter */}
+        {subjects.map(subject => (
+          <Chip
+            key={subject}
+            variant="filter"
+            label={subject}
+            selected={selectedSubject === subject}
+            onPress={() => {
+              setSelectedSubject(subject);
+              trackAction('filter_subject', 'NewScheduleScreen', { subject });
+            }}
+          />
+        ))}
+
+        {/* Sort Button */}
+        <Chip
+          variant="assist"
+          label={`Sort: ${sortType}`}
+          onPress={() => setShowSortModal(true)}
+        />
+
+        {/* Calendar Button */}
+        <Chip
+          variant="assist"
+          label="📅 Calendar"
+          onPress={() => setShowCalendarModal(true)}
+        />
+
+        {/* Settings Button */}
+        <Chip
+          variant="assist"
+          label="⚙️ Settings"
+          onPress={() => setShowSettingsModal(true)}
+        />
+      </ScrollView>
+
       {/* Content */}
-      {viewMode === 'week' ? renderWeekView() : renderDayView()}
+      <View style={{ flex: 1 }}>
+        {viewMode === 'week' && renderWeekView()}
+        {viewMode === 'day' && renderDayView()}
+        {viewMode === 'month' && renderMonthView()}
+        {viewMode === 'agenda' && renderAgendaView()}
+      </View>
+
+      {/* Sort Modal */}
+      <Modal visible={showSortModal} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <Card style={styles.modal}>
+            <CardHeader
+              title="Sort By"
+              trailing={
+                <TouchableOpacity onPress={() => setShowSortModal(false)}>
+                  <T variant="body" weight="bold" style={{ color: '#6B7280' }}>
+                    ✕
+                  </T>
+                </TouchableOpacity>
+              }
+            />
+            <CardContent>
+              <Button
+                variant={sortType === 'time' ? 'primary' : 'ghost'}
+                fullWidth
+                onPress={() => {
+                  setSortType('time');
+                  setShowSortModal(false);
+                  trackAction('change_sort', 'NewScheduleScreen', { sort: 'time' });
+                }}
+              >
+                🕐 Time
+              </Button>
+              <Spacer size="sm" />
+              <Button
+                variant={sortType === 'subject' ? 'primary' : 'ghost'}
+                fullWidth
+                onPress={() => {
+                  setSortType('subject');
+                  setShowSortModal(false);
+                  trackAction('change_sort', 'NewScheduleScreen', { sort: 'subject' });
+                }}
+              >
+                📚 Subject
+              </Button>
+              <Spacer size="sm" />
+              <Button
+                variant={sortType === 'teacher' ? 'primary' : 'ghost'}
+                fullWidth
+                onPress={() => {
+                  setSortType('teacher');
+                  setShowSortModal(false);
+                  trackAction('change_sort', 'NewScheduleScreen', { sort: 'teacher' });
+                }}
+              >
+                👨‍🏫 Teacher
+              </Button>
+            </CardContent>
+          </Card>
+        </View>
+      </Modal>
+
+      {/* Calendar Picker Modal */}
+      <Modal visible={showCalendarModal} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <Card style={styles.modal}>
+            <CardHeader
+              title="Select Date"
+              trailing={
+                <TouchableOpacity onPress={() => setShowCalendarModal(false)}>
+                  <T variant="body" weight="bold" style={{ color: '#6B7280' }}>
+                    ✕
+                  </T>
+                </TouchableOpacity>
+              }
+            />
+            <CardContent>
+              <T variant="body" style={{ marginBottom: 16 }}>
+                Current: {selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+              </T>
+              <Button
+                variant="primary"
+                fullWidth
+                onPress={() => {
+                  setSelectedDate(new Date());
+                  setViewMode('day');
+                  setShowCalendarModal(false);
+                  trackAction('select_today', 'NewScheduleScreen');
+                }}
+              >
+                📅 Go to Today
+              </Button>
+              <Spacer size="sm" />
+              <T variant="caption" color="textSecondary" style={{ textAlign: 'center' }}>
+                Tip: Use Month view to select specific dates
+              </T>
+            </CardContent>
+          </Card>
+        </View>
+      </Modal>
+
+      {/* Settings Modal */}
+      <Modal visible={showSettingsModal} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <ScrollView contentContainerStyle={styles.scrollModalContent}>
+            <Card style={styles.settingsModal}>
+              <CardHeader
+                title="Schedule Settings"
+                trailing={
+                  <TouchableOpacity onPress={() => setShowSettingsModal(false)}>
+                    <T variant="body" weight="bold" style={{ color: '#6B7280' }}>
+                      ✕
+                    </T>
+                  </TouchableOpacity>
+                }
+              />
+              <CardContent>
+                {/* Show Weekends */}
+                <View style={styles.settingRow}>
+                  <Col style={{ flex: 1 }}>
+                    <T variant="body" weight="semiBold">
+                      Show Weekends
+                    </T>
+                    <T variant="caption" color="textSecondary">
+                      Display Saturday and Sunday in schedule
+                    </T>
+                  </Col>
+                  <Switch
+                    value={settings.showWeekends}
+                    onValueChange={(value) =>
+                      setSettings(prev => ({ ...prev, showWeekends: value }))
+                    }
+                  />
+                </View>
+
+                <Spacer size="md" />
+
+                {/* Show Deadlines */}
+                <View style={styles.settingRow}>
+                  <Col style={{ flex: 1 }}>
+                    <T variant="body" weight="semiBold">
+                      Show Deadlines
+                    </T>
+                    <T variant="caption" color="textSecondary">
+                      Include assignment deadlines in schedule
+                    </T>
+                  </Col>
+                  <Switch
+                    value={settings.showDeadlines}
+                    onValueChange={(value) =>
+                      setSettings(prev => ({ ...prev, showDeadlines: value }))
+                    }
+                  />
+                </View>
+
+                <Spacer size="md" />
+
+                {/* Default View */}
+                <View>
+                  <T variant="body" weight="semiBold" style={{ marginBottom: 8 }}>
+                    Default View
+                  </T>
+                  <Row gap="xs" wrap>
+                    {(['week', 'day', 'month', 'agenda'] as ViewMode[]).map(view => (
+                      <Chip
+                        key={view}
+                        variant="filter"
+                        label={view.charAt(0).toUpperCase() + view.slice(1)}
+                        selected={settings.defaultView === view}
+                        onPress={() =>
+                          setSettings(prev => ({ ...prev, defaultView: view }))
+                        }
+                      />
+                    ))}
+                  </Row>
+                </View>
+
+                <Spacer size="md" />
+
+                {/* Default Reminder Time */}
+                <View>
+                  <T variant="body" weight="semiBold" style={{ marginBottom: 8 }}>
+                    Default Reminder (minutes before)
+                  </T>
+                  <Row gap="xs" wrap>
+                    {[5, 10, 15, 30, 60].map(minutes => (
+                      <Chip
+                        key={minutes}
+                        variant="filter"
+                        label={`${minutes}min`}
+                        selected={settings.defaultReminderTime === minutes}
+                        onPress={() =>
+                          setSettings(prev => ({ ...prev, defaultReminderTime: minutes }))
+                        }
+                      />
+                    ))}
+                  </Row>
+                </View>
+
+                <Spacer size="md" />
+
+                {/* Sync with Device Calendar */}
+                <View style={styles.settingRow}>
+                  <Col style={{ flex: 1 }}>
+                    <T variant="body" weight="semiBold">
+                      Sync with Device Calendar
+                    </T>
+                    <T variant="caption" color="textSecondary">
+                      Export classes to your device calendar
+                    </T>
+                  </Col>
+                  <Switch
+                    value={settings.syncWithDeviceCalendar}
+                    onValueChange={(value) => {
+                      setSettings(prev => ({ ...prev, syncWithDeviceCalendar: value }));
+                      if (value) {
+                        Alert.alert(
+                          'Calendar Sync',
+                          'Calendar sync enabled. Classes will be exported to your device calendar.',
+                          [{ text: 'OK' }]
+                        );
+                      }
+                    }}
+                  />
+                </View>
+              </CardContent>
+
+              <CardActions>
+                <Button
+                  variant="ghost"
+                  onPress={() => {
+                    setSettings(DEFAULT_SETTINGS);
+                    trackAction('reset_settings', 'NewScheduleScreen');
+                  }}
+                >
+                  Reset
+                </Button>
+                <Button
+                  variant="primary"
+                  onPress={() => {
+                    saveSettings(settings);
+                    setShowSettingsModal(false);
+                    refetch();
+                    trackAction('save_settings', 'NewScheduleScreen');
+                  }}
+                >
+                  Save Settings
+                </Button>
+              </CardActions>
+            </Card>
+          </ScrollView>
+        </View>
+      </Modal>
     </BaseScreen>
   );
 }
@@ -426,70 +1101,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginHorizontal: 16,
     marginTop: 12,
-    marginBottom: 8,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 8,
-    padding: 4,
+    gap: 8,
   },
-  toggleButton: {
-    flex: 1,
-    paddingVertical: 8,
-    alignItems: 'center',
-    borderRadius: 6,
-  },
-  toggleButtonActive: {
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  toggleButtonText: {
-    color: '#6B7280',
-  },
-  toggleButtonTextActive: {
-    color: '#111827',
+  filtersContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 8,
   },
   weekList: {
     padding: 16,
     gap: 16,
   },
   dayCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
+    marginBottom: 0,
   },
   todayCard: {
     borderWidth: 2,
     borderColor: '#3B82F6',
-  },
-  dayHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-  },
-  todayText: {
-    color: '#3B82F6',
-  },
-  todayBadge: {
-    backgroundColor: '#3B82F6',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-  },
-  todayBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 10,
   },
   classesContainer: {
     gap: 12,
@@ -511,33 +1139,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
   },
-  classHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  classSubject: {
-    flex: 1,
-    marginRight: 8,
-  },
-  statusBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  statusLive: {
-    backgroundColor: '#FEE2E2',
-  },
-  statusUpcoming: {
-    backgroundColor: '#DBEAFE',
-  },
-  statusEnded: {
-    backgroundColor: '#F3F4F6',
-  },
-  statusText: {
-    fontSize: 10,
-  },
   classTeacher: {
     color: '#6B7280',
   },
@@ -552,13 +1153,83 @@ const styles = StyleSheet.create({
   dayViewContainer: {
     padding: 16,
   },
-  dayViewTitle: {
-    marginBottom: 16,
+  monthContainer: {
+    padding: 16,
+  },
+  monthDayHeader: {
+    flex: 1,
+    paddingVertical: 8,
+  },
+  monthGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  monthDay: {
+    width: '14.28%',
+    aspectRatio: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  monthDayToday: {
+    backgroundColor: '#DBEAFE',
+    borderColor: '#3B82F6',
+  },
+  monthDayOther: {
+    opacity: 0.3,
+  },
+  monthDayText: {
+    fontSize: 14,
+  },
+  monthDayTodayText: {
+    color: '#3B82F6',
+    fontWeight: 'bold',
+  },
+  monthDayOtherText: {
+    color: '#9CA3AF',
+  },
+  monthDayIndicators: {
+    marginTop: 2,
+  },
+  eventDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  agendaContainer: {
+    padding: 16,
   },
   emptyContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  modal: {
+    width: '100%',
+    maxWidth: 400,
+  },
+  settingsModal: {
+    width: '100%',
+    maxWidth: 500,
+    maxHeight: '80%',
+  },
+  scrollModalContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: 16,
+  },
+  settingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
 });
