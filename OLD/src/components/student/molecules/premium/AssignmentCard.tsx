@@ -6,9 +6,7 @@
 
 import React from 'react';
 import { TouchableOpacity, View, StyleSheet } from 'react-native';
-import { Card } from '../../../ui/surfaces/Card';
-import { Badge } from '../../../ui/data-display/Badge';
-import { T } from '../../../../ui';
+import { Card, Badge, T } from '../../../../ui';
 
 interface AssignmentCardProps {
   title: string;

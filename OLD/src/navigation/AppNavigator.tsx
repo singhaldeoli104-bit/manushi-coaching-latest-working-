@@ -27,7 +27,8 @@ import { useAuth } from '../context/AuthContext';
 import ModernWelcomeScreen from '../screens/auth/ModernWelcomeScreen';
 import UltraModernLoginScreen from '../screens/auth/UltraModernLoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
-import StudentDashboard from '../screens/dashboard/StudentDashboard';
+// import StudentDashboard from '../screens/dashboard/StudentDashboard'; // OLD - Using StudentNavigator instead
+import StudentNavigator from './StudentNavigator'; // NEW - All 27 student screens with bottom tabs
 import TeacherDashboard from '../screens/dashboard/TeacherDashboard';
 import ParentDashboard from '../screens/dashboard/ParentDashboard';
 import AdminDashboard from '../screens/dashboard/AdminDashboard';
@@ -55,15 +56,17 @@ import AutomatedAdminTasksScreen from '../screens/teacher/AutomatedAdminTasksScr
 import QuestionBankManagerScreen from '../screens/teacher/QuestionBankManagerScreen';
 
 // Phase 47: AI-Powered Learning Intelligence & Advanced Analytics
-import StudentAILearningDashboard from '../screens/student/StudentAILearningDashboard';
-import AITutorChatInterface from '../screens/student/AITutorChatInterface';
+// OLD STUDENT SCREENS - Moved to backup, using NEW screens from StudentNavigator instead
+// import StudentAILearningDashboard from '../screens/student/StudentAILearningDashboard';
+// import AITutorChatInterface from '../screens/student/AITutorChatInterface';
 import TeacherAIAnalyticsDashboard from '../screens/teacher/TeacherAIAnalyticsDashboard';
 
 // Phase 48: Immersive Learning & Advanced Collaboration
-import VirtualClassroomInterface from '../screens/student/VirtualClassroomInterface';
-import GamifiedLearningHub from '../screens/student/GamifiedLearningHub';
-import PeerLearningNetwork from '../screens/student/PeerLearningNetwork';
-import LiveCollaborationStudio from '../screens/student/LiveCollaborationStudio';
+// OLD STUDENT SCREENS - Moved to backup, using NEW screens from StudentNavigator instead
+// import VirtualClassroomInterface from '../screens/student/VirtualClassroomInterface';
+// import GamifiedLearningHub from '../screens/student/GamifiedLearningHub';
+// import PeerLearningNetwork from '../screens/student/PeerLearningNetwork';
+// import LiveCollaborationStudio from '../screens/student/LiveCollaborationStudio';
 
 // Phase 49: AI-Driven Professional Development & Certification Ecosystem
 import TeacherProfessionalDevelopment from '../screens/teacher/TeacherProfessionalDevelopment';
@@ -75,27 +78,32 @@ import PlatformScalabilityDashboard from '../screens/admin/PlatformScalabilityDa
 import AIAgentEcosystem from '../screens/admin/AIAgentEcosystem';
 
 // Import student screens
-import ClassDetailScreen from '../screens/student/ClassDetailScreen';
-import ScheduleScreen from '../screens/student/ScheduleScreen';
-import AssignmentDetailScreen from '../screens/student/AssignmentDetailScreen';
-import ProgressDetailScreen from '../screens/student/ProgressDetailScreen';
-import ActivityDetailScreen from '../screens/student/ActivityDetailScreen';
-import AIStudyScreen from '../screens/student/AIStudyScreen';
-import StudentLiveClassScreen from '../screens/student/StudentLiveClassScreen';
-import StudyLibraryScreen from '../screens/student/StudyLibraryScreen';
-import DoubtSubmissionScreen from '../screens/student/DoubtSubmissionScreen';
+// OLD STUDENT SCREENS - Moved to backup, using NEW screens from StudentNavigator instead
+// import ClassDetailScreen from '../screens/student/ClassDetailScreen';
+// import ScheduleScreen from '../screens/student/ScheduleScreen';
+// import AssignmentDetailScreen from '../screens/student/AssignmentDetailScreen';
+// import ProgressDetailScreen from '../screens/student/ProgressDetailScreen';
+// import ActivityDetailScreen from '../screens/student/ActivityDetailScreen';
+// import AIStudyScreen from '../screens/student/AIStudyScreen';
+// import StudentLiveClassScreen from '../screens/student/StudentLiveClassScreen';
+// import StudyLibraryScreen from '../screens/student/StudyLibraryScreen';
+// import DoubtSubmissionScreen from '../screens/student/DoubtSubmissionScreen';
 
 // Phase 43.1: Enhanced Student Features
-import EnhancedScheduleScreen from '../screens/student/EnhancedScheduleScreen';
+// OLD STUDENT SCREENS - Moved to backup, using NEW screens from StudentNavigator instead
+// import EnhancedScheduleScreen from '../screens/student/EnhancedScheduleScreen';
 
-// Phase 43.2: AI Study Assistant Enhancement  
-import EnhancedAIStudyAssistantScreen from '../screens/student/EnhancedAIStudyAssistantScreen';
+// Phase 43.2: AI Study Assistant Enhancement
+// OLD STUDENT SCREENS - Moved to backup, using NEW screens from StudentNavigator instead
+// import EnhancedAIStudyAssistantScreen from '../screens/student/EnhancedAIStudyAssistantScreen';
 
 // Phase 44.1: Enhanced Live Class Participation
-import EnhancedLiveClassParticipationScreen from '../screens/student/EnhancedLiveClassParticipationScreen';
+// OLD STUDENT SCREENS - Moved to backup, using NEW screens from StudentNavigator instead
+// import EnhancedLiveClassParticipationScreen from '../screens/student/EnhancedLiveClassParticipationScreen';
 
 // Phase 45: Enhanced Live Class Participation (Student Features)
-import LiveClassParticipationScreen from '../screens/student/LiveClassParticipationScreen';
+// OLD STUDENT SCREENS - Moved to backup, using NEW screens from StudentNavigator instead
+// import LiveClassParticipationScreen from '../screens/student/LiveClassParticipationScreen';
 
 // Phase 33: Child Progress Monitoring (Parent Features)
 import ChildProgressMonitoringScreen from '../screens/parent/ChildProgressMonitoringScreen';
@@ -147,8 +155,9 @@ import Phase80ValidationScreen from '../screens/admin/Phase80ValidationScreen';
 
 // Phase 77: Real-Time Collaboration & Communication Suite
 import RealTimeMonitoringDashboard from '../screens/admin/RealTimeMonitoringDashboard';
-import EnhancedInteractiveClassroomScreen from '../screens/student/EnhancedInteractiveClassroomScreen';
-import CollaborativeAssignmentWorkspace from '../screens/student/CollaborativeAssignmentWorkspace';
+// OLD STUDENT SCREENS - Moved to backup, using NEW screens from StudentNavigator instead
+// import EnhancedInteractiveClassroomScreen from '../screens/student/EnhancedInteractiveClassroomScreen';
+// import CollaborativeAssignmentWorkspace from '../screens/student/CollaborativeAssignmentWorkspace';
 
 // Import common screens
 import SettingsScreen from '../screens/common/SettingsScreen';
@@ -741,62 +750,16 @@ export const AppNavigator: React.FC<AppNavigatorProps> = ({
         );
 
       case 'student-dashboard':
-        return (
-          <StudentDashboard
-            studentName={navState.currentUser ? `${navState.currentUser.firstName} ${navState.currentUser.lastName}` : 'Alex Johnson'}
-            onNavigate={(screen) => {
-              if (screen === 'back' || screen === 'back-to-demo') {
-                navigate(navState.previousRoute || 'welcome');
-              } else if (screen === 'ClassDetail') {
-                navigate('class-detail', navState.params);
-              } else if (screen === 'Schedule') {
-                navigate('schedule', navState.params);
-              } else if (screen === 'AssignmentDetail') {
-                navigate('assignment-detail', navState.params);
-              } else if (screen === 'progress-detail') {
-                navigate('progress-detail', navState.params);
-              } else if (screen === 'activity-detail') {
-                navigate('activity-detail', navState.params);
-              } else if (screen === 'ai-study') {
-                navigate('ai-study', navState.params);
-              } else if (screen === 'student-live-class') {
-                navigate('student-live-class', navState.params);
-              } else if (screen === 'study-library') {
-                navigate('study-library', navState.params);
-              } else if (screen === 'submit-doubt') {
-                navigate('submit-doubt', navState.params);
-              } else if (screen === 'student-ai-learning') {
-                navigate('student-ai-learning', navState.params);
-              } else if (screen === 'ai-tutor-chat') {
-                navigate('ai-tutor-chat', navState.params);
-              } else if (screen === 'virtual-classroom') {
-                navigate('virtual-classroom', navState.params);
-              } else if (screen === 'gamified-learning') {
-                navigate('gamified-learning', navState.params);
-              } else if (screen === 'peer-learning') {
-                navigate('peer-learning', navState.params);
-              } else if (screen === 'live-collaboration') {
-                navigate('live-collaboration', navState.params);
-              } else if (screen === 'enhanced-interactive-classroom') {
-                navigate('enhanced-interactive-classroom', navState.params);
-              } else if (screen === 'collaborative-assignment') {
-                navigate('collaborative-assignment', navState.params);
-              } else if (screen === 'enhanced-schedule') {
-                navigate('schedule', navState.params);
-              } else if (screen === 'enhanced-ai-study-assistant') {
-                navigate('ai-study', navState.params);
-              } else if (screen === 'live-class-participation') {
-                navigate('live-class-participation', navState.params);
-              } else if (screen === 'student-profile') {
-                navigate('profile');
-              } else if (screen === 'student-settings') {
-                navigate('settings');
-              } else {
-                Alert.alert('Feature Coming Soon', `${screen} will be available in upcoming updates.`);
-              }
-            }}
-          />
-        );
+        // NEW: Using StudentNavigator with 27 screens and bottom tabs (Home, Classes, Study, Progress, Connect)
+        return <StudentNavigator />;
+
+        // OLD: StudentDashboard (single screen) - replaced with StudentNavigator
+        // return (
+        //   <StudentDashboard
+        //     studentName={navState.currentUser ? `${navState.currentUser.firstName} ${navState.currentUser.lastName}` : 'Alex Johnson'}
+        //     onNavigate={(screen) => { ... }}
+        //   />
+        // );
 
       case 'teacher-dashboard':
         return (

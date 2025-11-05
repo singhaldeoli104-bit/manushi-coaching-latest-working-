@@ -12,7 +12,7 @@ import { BaseScreen } from '../../shared/components/BaseScreen';
 import { T } from '../../ui';
 import { trackAction, trackScreenView } from '../../utils/navigationAnalytics';
 import { useAuth } from '../../context/AuthContext';
-import { supabase } from '../../config/supabase';
+import { supabase } from '../../config/supabaseClient';
 
 type Props = NativeStackScreenProps<any, 'ClassChat'>;
 

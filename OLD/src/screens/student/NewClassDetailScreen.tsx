@@ -14,7 +14,7 @@ import { Badge, Chip, T, Row, Col } from '../../ui';
 import { safeNavigate } from '../../utils/navigationService';
 import { trackAction, trackScreenView } from '../../utils/navigationAnalytics';
 import { useAuth } from '../../context/AuthContext';
-import { supabase } from '../../config/supabase';
+import { supabase } from '../../config/supabaseClient';
 
 type Props = NativeStackScreenProps<any, 'NewClassDetailScreen'>;
 

@@ -22,6 +22,12 @@ import ParentNavigator from './src/navigation/ParentNavigator';
 // Import Admin Navigator for testing
 import AdminNavigator from './src/navigation/AdminNavigator';
 
+// Import Student Navigator for testing
+import StudentNavigator from './src/navigation/StudentNavigator';
+
+// Import Teacher Navigator for testing (will use AppNavigator if not available)
+// import TeacherNavigator from './src/navigation/TeacherNavigator';
+
 // Import Role Selection Screen
 import { RoleSelectionScreen } from './src/screens/common/RoleSelectionScreen';
 
@@ -97,7 +103,7 @@ const LoadingScreen = () => (
  */
 const AppContent = ({ initialState }: { initialState?: InitialState }) => {
   const { theme, isDark } = useTheme();
-  const [selectedRole, setSelectedRole] = useState<'admin' | 'parent' | null>(null);
+  const [selectedRole, setSelectedRole] = useState<'admin' | 'parent' | 'student' | 'teacher' | null>(null);
   const hasInitialized = useRef(false);
 
   // Initialize on first mount
@@ -175,7 +181,17 @@ const AppContent = ({ initialState }: { initialState?: InitialState }) => {
             onNavigationStateChange(state);
           }}
         >
-          {selectedRole === 'admin' ? <AdminNavigator /> : <ParentNavigator />}
+          {selectedRole === 'admin' ? (
+            <AdminNavigator />
+          ) : selectedRole === 'parent' ? (
+            <ParentNavigator />
+          ) : selectedRole === 'student' ? (
+            <StudentNavigator />
+          ) : selectedRole === 'teacher' ? (
+            <AppNavigator />
+          ) : (
+            <ParentNavigator />
+          )}
         </NavigationContainer>
       ) : (
         /* PRODUCTION: Normal login flow */

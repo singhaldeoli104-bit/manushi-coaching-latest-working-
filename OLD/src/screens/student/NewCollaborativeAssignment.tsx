@@ -14,7 +14,7 @@ import { T } from '../../ui';
 import { trackScreenView } from '../../utils/navigationAnalytics';
 import { getAvatarEmoji } from '../../utils/avatarUtils';
 import { useAuth } from '../../context/AuthContext';
-import { supabase } from '../../config/supabase';
+import { supabase } from '../../config/supabaseClient';
 
 type Props = NativeStackScreenProps<any, 'NewCollaborativeAssignment'>;
 

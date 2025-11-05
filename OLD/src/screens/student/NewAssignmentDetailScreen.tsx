@@ -13,7 +13,7 @@ import { Card, CardHeader, CardContent, CardActions } from '../../ui/surfaces/Ca
 import { Badge, Button, Chip, T, Row, Col, Spacer } from '../../ui';
 import { trackAction, trackScreenView } from '../../utils/navigationAnalytics';
 import { useAuth } from '../../context/AuthContext';
-import { supabase } from '../../config/supabase';
+import { supabase } from '../../config/supabaseClient';
 
 type Props = NativeStackScreenProps<any, 'NewAssignmentDetailScreen'>;
 

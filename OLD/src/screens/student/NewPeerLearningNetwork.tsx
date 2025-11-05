@@ -15,7 +15,7 @@ import { trackScreenView, trackAction } from '../../utils/navigationAnalytics';
 import { safeNavigate } from '../../utils/navigationService';
 import { getAvatarEmoji } from '../../utils/avatarUtils';
 import { useAuth } from '../../context/AuthContext';
-import { supabase } from '../../config/supabase';
+import { supabase } from '../../config/supabaseClient';
 
 type Props = NativeStackScreenProps<any, 'NewPeerLearningNetwork'>;
 

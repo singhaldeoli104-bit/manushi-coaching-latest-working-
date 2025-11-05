@@ -7,7 +7,7 @@
 import RNFS from 'react-native-fs';
 import { SUPABASE_API } from '../../lib/supabaseRest';
 import { STORAGE_BUCKETS } from './StorageService';
-import { SUPABASE_ANON_KEY } from '@env';
+import { SUPABASE_ANON_KEY } from '../../config/env.config';
 
 export interface UploadTask {
   id: string;

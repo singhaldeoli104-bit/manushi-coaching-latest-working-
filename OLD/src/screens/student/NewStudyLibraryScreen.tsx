@@ -20,15 +20,10 @@ import {
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BaseScreen } from '../../shared/components/BaseScreen';
-import { Card, CardHeader, CardContent, CardActions } from '../../ui/surfaces/Card';
-import { T } from '../../ui';
-import { Button } from '../../ui/interactive/Button';
-import { Chip } from '../../ui/data-display/Chip';
-import { Badge } from '../../ui/data-display/Badge';
-import { Row, Col, Spacer } from '../../ui/layout';
+import { Card, CardHeader, CardContent, CardActions, T, Button, Chip, Badge, Row, Col, Spacer } from '../../ui';
 import { trackAction, trackScreenView } from '../../utils/navigationAnalytics';
 import { useAuth } from '../../context/AuthContext';
-import { supabase } from '../../config/supabase';
+import { supabase } from '../../config/supabaseClient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');
