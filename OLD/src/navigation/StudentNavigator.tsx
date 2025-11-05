@@ -46,9 +46,9 @@ import NewScheduleScreen from '../screens/student/NewScheduleScreen';
 import NewClassDetailScreen from '../screens/student/NewClassDetailScreen';
 import NewAssignmentDetailScreen from '../screens/student/NewAssignmentDetailScreen';
 import NewProgressDetailScreen from '../screens/student/NewProgressDetailScreen';
-// import NewStudyLibraryScreen from '../screens/student/NewStudyLibraryScreen';
-// import NewAIStudyScreen from '../screens/student/NewAIStudyScreen';
-// import NewAITutorChat from '../screens/student/NewAITutorChat';
+import NewStudyLibraryScreen from '../screens/student/NewStudyLibraryScreen';
+import NewAIStudyScreen from '../screens/student/NewAIStudyScreen';
+import NewAITutorChat from '../screens/student/NewAITutorChat';
 // import NewAILearningDashboard from '../screens/student/NewAILearningDashboard';
 // import NewCollaborativeAssignment from '../screens/student/NewCollaborativeAssignment';
 // import NewPeerLearningNetwork from '../screens/student/NewPeerLearningNetwork';
@@ -279,26 +279,26 @@ function AssignmentsStack() {
         component={NewCollaborativeAssignment}
         options={{ title: 'Collaborative Work (New)' }}
       /> */}
-      {/* <Stack.Screen
+      <Stack.Screen
         name="NewStudyLibraryScreen"
         component={NewStudyLibraryScreen}
-        options={{ title: 'Study Resources (New)' }}
-      /> */}
-      {/* <Stack.Screen
+        options={{ headerShown: false, title: 'Study Resources (New)' }}
+      />
+      <Stack.Screen
         name="NewAIStudyScreen"
         component={NewAIStudyScreen}
-        options={{ title: 'AI Study (New)' }}
-      /> */}
+        options={{ headerShown: false, title: 'AI Study (New)' }}
+      />
       {/* <Stack.Screen
         name="NewEnhancedAIStudy"
         component={NewEnhancedAIStudy}
         options={{ title: 'Smart Study (New)' }}
       /> */}
-      {/* <Stack.Screen
+      <Stack.Screen
         name="NewAITutorChat"
         component={NewAITutorChat}
-        options={{ title: 'AI Tutor (New)' }}
-      /> */}
+        options={{ headerShown: false, title: 'AI Tutor (New)' }}
+      />
     </Stack.Navigator>
   );
 }
