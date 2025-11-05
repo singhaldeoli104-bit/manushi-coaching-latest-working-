@@ -102,10 +102,10 @@ export default function AIPracticeProblems({ navigation }: Props) {
       difficulty: selectedDifficulty || 'all',
     });
 
-    // TODO: Implement AI problem generation via API
+    // Show instructions for AI integration
     Alert.alert(
-      'Generate Problems',
-      'AI problem generation feature coming soon. This will use AI to create personalized practice problems based on your learning progress.',
+      'AI Problem Generation',
+      'To enable automatic problem generation:\n\n1. Integrate OpenAI, Claude, or Gemini API\n2. Configure prompts for each subject\n3. Set difficulty parameters\n\nFor now, practice problems will be added manually by teachers.',
       [{ text: 'OK' }]
     );
   };

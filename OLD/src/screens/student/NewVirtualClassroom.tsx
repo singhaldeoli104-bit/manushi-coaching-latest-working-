@@ -12,6 +12,7 @@ import { VideoPlaceholder } from '../../shared/components/VideoPlaceholder';
 import { Card } from '../../ui/surfaces/Card';
 import { T } from '../../ui';
 import { trackScreenView, trackAction } from '../../utils/navigationAnalytics';
+import { safeNavigate } from '../../utils/navigationService';
 
 type Props = NativeStackScreenProps<any, 'NewVirtualClassroom'>;
 
@@ -43,8 +44,7 @@ export default function NewVirtualClassroom({ navigation }: Props) {
         Alert.alert('Audio', `Audio ${!audioEnabled ? 'enabled' : 'disabled'}`);
         break;
       case 'chat':
-        Alert.alert('Chat', 'Chat feature coming soon');
-        // TODO: Navigate to chat screen when implemented
+        safeNavigate('ClassChat', { classId: 'virtual-classroom' });
         break;
       case 'raise-hand':
         Alert.alert('Hand Raised', 'Your hand has been raised');

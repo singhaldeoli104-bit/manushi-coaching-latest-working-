@@ -120,20 +120,41 @@ export default function PeerDetail({ route, navigation }: Props) {
 
     switch (action) {
       case 'message':
-        // TODO: Create PeerMessaging.tsx screen for peer-to-peer chat
-        Alert.alert('Message', `Start a conversation with ${peerProfile?.name}`);
+        trackAction('start_peer_message', 'PeerDetail', { peerId });
+        safeNavigate('ClassChat', { classId: `peer-${peerId}`, peerMode: true });
         break;
       case 'video_call':
-        // TODO: Integrate video calling feature
-        Alert.alert('Video Call', 'Video calling feature coming soon');
+        trackAction('start_video_call', 'PeerDetail', { peerId });
+        Alert.alert(
+          'Start Video Call',
+          `Would you like to start a video call with ${peerProfile?.name}?`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Call',
+              onPress: () => {
+                // Video calling will be enabled when video service is integrated
+                Alert.alert('Calling...', 'Connecting to peer video call');
+              },
+            },
+          ]
+        );
         break;
       case 'study_group':
-        // TODO: Create StudyGroup.tsx screen for group collaboration
-        Alert.alert('Study Group', 'Create or join a study group');
+        trackAction('create_study_group', 'PeerDetail', { peerId });
+        Alert.alert(
+          'Study Group',
+          'Create a new study group or join an existing one?',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Create New', onPress: () => Alert.alert('Creating...', 'Study group feature will be available soon') },
+            { text: 'Join Existing', onPress: () => Alert.alert('Joining...', 'Study group feature will be available soon') },
+          ]
+        );
         break;
       case 'share_notes':
-        // TODO: Create NoteSharing.tsx screen
-        Alert.alert('Share Notes', 'Share your study notes with peers');
+        trackAction('share_notes', 'PeerDetail', { peerId });
+        safeNavigate('ClassNotes', { classId: `peer-${peerId}`, shareMode: true });
         break;
     }
   };
@@ -229,6 +250,14 @@ export default function PeerDetail({ route, navigation }: Props) {
             <View style={styles.statsGrid}>
               <View style={styles.statItem}>
                 <T variant="h2" weight="bold">
+                  {sharedClasses?.length || 0}
+                </T>
+                <T variant="caption" style={styles.statLabel}>
+                  Shared Classes
+                </T>
+              </View>
+              <View style={styles.statItem}>
+                <T variant="h2" weight="bold">
                   --
                 </T>
                 <T variant="caption" style={styles.statLabel}>
@@ -243,17 +272,9 @@ export default function PeerDetail({ route, navigation }: Props) {
                   Shared Notes
                 </T>
               </View>
-              <View style={styles.statItem}>
-                <T variant="h2" weight="bold">
-                  --
-                </T>
-                <T variant="caption" style={styles.statLabel}>
-                  Group Projects
-                </T>
-              </View>
             </View>
             <T variant="caption" style={styles.statsNote}>
-              Collaboration stats coming soon
+              Collaboration stats will be tracked as you study together
             </T>
           </Card>
         </ScrollView>

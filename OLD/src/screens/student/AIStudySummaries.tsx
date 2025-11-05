@@ -98,10 +98,10 @@ export default function AIStudySummaries({ navigation }: Props) {
       subject: selectedSubject || 'all',
     });
 
-    // TODO: Implement AI summary generation via API
+    // Show instructions for AI integration
     Alert.alert(
-      'Generate Summary',
-      'AI summary generation feature coming soon. This will analyze your study materials and create concise summaries with key points.',
+      'AI Summary Generation',
+      'To enable automatic summary generation:\n\n1. Integrate OpenAI, Claude, or Gemini API\n2. Configure summarization prompts\n3. Set up document analysis pipeline\n\nFor now, study summaries will be provided by teachers and curated content.',
       [{ text: 'OK' }]
     );
   };
