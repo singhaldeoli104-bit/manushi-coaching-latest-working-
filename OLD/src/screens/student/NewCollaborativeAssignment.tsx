@@ -9,11 +9,11 @@ import { View, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-nat
 import { useQuery } from '@tanstack/react-query';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BaseScreen } from '../../shared/components/BaseScreen';
-import { Card } from '../../ui/surfaces/Card';
-import { Badge } from '../../ui/data-display/Badge';
-import { Button } from '../../ui/inputs/Button';
-import { Chip } from '../../ui/inputs/Chip';
-import { Row } from '../../ui/layout/Row';
+import { Card } from '../../ui';
+import { Badge } from '../../ui';
+import { Button } from '../../ui';
+import { Chip } from '../../ui';
+import { Row } from '../../ui';
 import { T } from '../../ui';
 import { trackScreenView, trackAction } from '../../utils/navigationAnalytics';
 import { getAvatarEmoji } from '../../utils/avatarUtils';
@@ -363,7 +363,7 @@ const styles = StyleSheet.create({
   headerCard: {
     padding: 16,
     marginBottom: 16,
-    gap: 8,
+
   },
   subject: {
     color: '#6B7280',
@@ -371,14 +371,14 @@ const styles = StyleSheet.create({
   teamCard: {
     padding: 16,
     marginBottom: 16,
-    gap: 12,
+
   },
   sectionTitle: {
     marginBottom: 4,
   },
   memberItem: {
     flexDirection: 'row',
-    gap: 12,
+
     padding: 12,
     backgroundColor: '#F9FAFB',
     borderRadius: 8,
@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
   },
   memberInfo: {
     flex: 1,
-    gap: 2,
+
   },
   memberRole: {
     color: '#6B7280',
@@ -401,7 +401,7 @@ const styles = StyleSheet.create({
   progressCard: {
     padding: 16,
     marginBottom: 32,
-    gap: 12,
+
   },
   emptyText: {
     color: '#9CA3AF',
@@ -437,12 +437,12 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   versionsContainer: {
-    gap: 12,
+
     marginTop: 8,
   },
   versionItem: {
     flexDirection: 'row',
-    gap: 12,
+
     padding: 12,
     backgroundColor: '#F9FAFB',
     borderRadius: 8,
@@ -452,7 +452,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   contributionsContainer: {
-    gap: 12,
+
     marginTop: 8,
   },
   contributionItem: {

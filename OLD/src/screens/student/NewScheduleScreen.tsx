@@ -11,10 +11,10 @@ import {
   TouchableOpacity,
   FlatList,
   ScrollView,
-  TextInput,
   Modal,
   Alert,
   Switch,
+  SafeAreaView,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -25,6 +25,7 @@ import { safeNavigate } from '../../utils/navigationService';
 import { trackAction, trackScreenView } from '../../utils/navigationAnalytics';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../config/supabaseClient';
+import HamburgerMenu from './HamburgerMenu';
 
 type Props = NativeStackScreenProps<any, 'NewScheduleScreen'>;
 
@@ -70,8 +71,11 @@ const DEFAULT_SETTINGS: ScheduleSettings = {
   syncWithDeviceCalendar: false,
 };
 
-export default function NewScheduleScreen({ navigation }: Props) {
+export default function NewScheduleScreen({ navigation: _navigation }: Props) {
   const { user } = useAuth();
+
+  // Hamburger menu state
+  const [menuVisible, setMenuVisible] = useState(false);
 
   // View and filter state
   const [viewMode, setViewMode] = useState<ViewMode>('week');
@@ -134,20 +138,71 @@ export default function NewScheduleScreen({ navigation }: Props) {
   const { data: weekClasses, isLoading, error, refetch, isRefetching } = useQuery({
     queryKey: ['week-classes', user?.id, weekStart.toISOString()],
     queryFn: async () => {
+      console.log('🔍 [NewScheduleScreen] Starting query...');
+      console.log('🔍 [NewScheduleScreen] User ID:', user?.id);
+
       if (!user?.id) throw new Error('No user ID');
+
+      // First get student's batch_id
+      console.log('🔍 [NewScheduleScreen] Fetching student batch_id...');
+      const { data: student, error: studentError } = await supabase
+        .from('students')
+        .select('batch_id')
+        .eq('id', user.id)
+        .single();
+
+      console.log('🔍 [NewScheduleScreen] Student data:', student);
+      console.log('🔍 [NewScheduleScreen] Student error:', studentError);
+
+      if (studentError) {
+        console.error('❌ [NewScheduleScreen] Error fetching student:', {
+          message: studentError.message,
+          details: studentError.details,
+          hint: studentError.hint,
+          code: studentError.code,
+        });
+        return [];
+      }
+
+      if (!student?.batch_id) {
+        console.log('⚠️ [NewScheduleScreen] Student has no batch_id');
+        return [];
+      }
+
+      console.log('✅ [NewScheduleScreen] Student batch_id:', student.batch_id);
 
       const weekEnd = new Date(weekStart);
       weekEnd.setDate(weekStart.getDate() + 7);
 
+      console.log('🔍 [NewScheduleScreen] Querying class_sessions...');
+      console.log('🔍 [NewScheduleScreen] Week range:', {
+        start: weekStart.toISOString(),
+        end: weekEnd.toISOString(),
+        batch_id: student.batch_id,
+      });
+
       const { data, error } = await supabase
         .from('class_sessions')
-        .select('*, teachers(name)')
-        .eq('student_id', user.id)
-        .gte('scheduled_at', weekStart.toISOString())
-        .lt('scheduled_at', weekEnd.toISOString())
-        .order('scheduled_at', { ascending: true });
+        .select('*, teachers(first_name, last_name)')
+        .eq('batch_id', student.batch_id)
+        .gte('start_time', weekStart.toISOString())
+        .lt('start_time', weekEnd.toISOString())
+        .order('start_time', { ascending: true });
 
-      if (error) throw error;
+      console.log('🔍 [NewScheduleScreen] Query result data:', data);
+      console.log('🔍 [NewScheduleScreen] Query result error:', error);
+
+      if (error) {
+        console.error('❌ [NewScheduleScreen] Error fetching class sessions:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+        });
+        throw error;
+      }
+
+      console.log('✅ [NewScheduleScreen] Found', data?.length || 0, 'classes');
 
       // Group classes by day
       const days: DaySchedule[] = [];
@@ -161,7 +216,7 @@ export default function NewScheduleScreen({ navigation }: Props) {
         }
 
         const dayClasses = (data || []).filter(cls => {
-          const classDate = new Date(cls.scheduled_at);
+          const classDate = new Date(cls.start_time);
           return classDate.toDateString() === date.toDateString();
         });
 
@@ -172,12 +227,36 @@ export default function NewScheduleScreen({ navigation }: Props) {
           isToday: date.toDateString() === new Date().toDateString(),
           classes: dayClasses.map(cls => ({
             ...cls,
-            teacher_name: (cls.teachers as any)?.name || 'Unknown Teacher',
+            scheduled_at: cls.start_time,
+            teacher_name: cls.teachers 
+              ? `${(cls.teachers as any).first_name || ''} ${(cls.teachers as any).last_name || ''}`.trim() || 'Unknown Teacher'
+              : 'Unknown Teacher',
           })),
         });
       }
 
       return days;
+    },
+    enabled: !!user?.id,
+  });
+
+  // Fetch student profile data for HamburgerMenu
+  const { data: studentData } = useQuery({
+    queryKey: ['student-profile-menu', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+
+      const { data, error } = await supabase
+        .from('students')
+        .select('name, grade, section, student_id')
+        .eq('id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching student profile:', error);
+        return null;
+      }
+      return data;
     },
     enabled: !!user?.id,
   });
@@ -287,9 +366,9 @@ export default function NewScheduleScreen({ navigation }: Props) {
       `Teacher: ${classSession.teacher_name}\nTime: ${new Date(classSession.scheduled_at).toLocaleString()}\nDuration: ${classSession.duration_minutes} min${classSession.description ? `\n\n${classSession.description}` : ''}`,
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'View Details', onPress: () => safeNavigate('ClassDetail', { classId: classSession.id }) },
+        { text: 'View Details', onPress: () => safeNavigate('NewClassDetailScreen', { classId: classSession.id }) },
         ...(getClassStatus(classSession) === 'live'
-          ? [{ text: 'Join Class', onPress: () => safeNavigate('LiveClass', { classId: classSession.id }) }]
+          ? [{ text: 'Join Class', onPress: () => safeNavigate('NewEnhancedLiveClass', { classId: classSession.id }) }]
           : []),
       ]
     );
@@ -360,7 +439,7 @@ export default function NewScheduleScreen({ navigation }: Props) {
                         accessibilityLabel={`${classSession.subject} class with ${classSession.teacher_name}`}
                         accessibilityHint="Double tap to view class details"
                       >
-                        <View style={styles.classTime}>
+                        <View style={[styles.classTime, { marginRight: 12 }]}>
                           <T variant="caption" weight="semiBold">
                             {time.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
                           </T>
@@ -648,14 +727,51 @@ export default function NewScheduleScreen({ navigation }: Props) {
   };
 
   return (
-    <BaseScreen
-      scrollable={false}
-      loading={isLoading && !isRefetching}
-      error={error ? 'Failed to load schedule' : null}
-      empty={!weekClasses || weekClasses.length === 0}
-      emptyMessage="No classes scheduled"
-      onRefresh={refetch}
-    >
+    <SafeAreaView style={styles.safeArea}>
+      {/* Hamburger Menu */}
+      <HamburgerMenu
+        visible={menuVisible}
+        onClose={() => setMenuVisible(false)}
+        currentRoute="NewScheduleScreen"
+        studentData={studentData || undefined}
+      />
+
+      {/* Top Bar */}
+      <View style={styles.topBar}>
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={() => {
+            trackAction('open_menu', 'NewScheduleScreen');
+            setMenuVisible(true);
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Open menu"
+        >
+          <T variant="h2" style={styles.icon}>☰</T>
+        </TouchableOpacity>
+
+        <T variant="body" weight="bold" style={styles.topBarTitle}>
+          Schedule
+        </T>
+
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={() => setShowSettingsModal(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Settings"
+        >
+          <T variant="h2" style={styles.icon}>⚙️</T>
+        </TouchableOpacity>
+      </View>
+
+      <BaseScreen
+        scrollable={false}
+        loading={isLoading && !isRefetching}
+        error={error ? 'Failed to load schedule' : null}
+        empty={!weekClasses || weekClasses.length === 0}
+        emptyMessage="No classes scheduled"
+        onRefresh={refetch}
+      >
       {/* Week Navigation */}
       <View style={styles.navigation}>
         <TouchableOpacity
@@ -933,7 +1049,7 @@ export default function NewScheduleScreen({ navigation }: Props) {
               <CardContent>
                 {/* Show Weekends */}
                 <View style={styles.settingRow}>
-                  <Col style={{ flex: 1 }}>
+                  <Col style={{ flex: 1, marginRight: 12 }}>
                     <T variant="body" weight="semiBold">
                       Show Weekends
                     </T>
@@ -953,7 +1069,7 @@ export default function NewScheduleScreen({ navigation }: Props) {
 
                 {/* Show Deadlines */}
                 <View style={styles.settingRow}>
-                  <Col style={{ flex: 1 }}>
+                  <Col style={{ flex: 1, marginRight: 12 }}>
                     <T variant="body" weight="semiBold">
                       Show Deadlines
                     </T>
@@ -1017,7 +1133,7 @@ export default function NewScheduleScreen({ navigation }: Props) {
 
                 {/* Sync with Device Calendar */}
                 <View style={styles.settingRow}>
-                  <Col style={{ flex: 1 }}>
+                  <Col style={{ flex: 1, marginRight: 12 }}>
                     <T variant="body" weight="semiBold">
                       Sync with Device Calendar
                     </T>
@@ -1067,11 +1183,40 @@ export default function NewScheduleScreen({ navigation }: Props) {
           </ScrollView>
         </View>
       </Modal>
-    </BaseScreen>
+      </BaseScreen>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#F8F9FA',
+  },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  iconButton: {
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  icon: {
+    fontSize: 24,
+    color: '#111827',
+  },
+  topBarTitle: {
+    fontSize: 18,
+    color: '#111827',
+  },
   navigation: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1101,16 +1246,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginHorizontal: 16,
     marginTop: 12,
-    gap: 8,
   },
   filtersContainer: {
     paddingHorizontal: 16,
     paddingVertical: 12,
-    gap: 8,
   },
   weekList: {
     padding: 16,
-    gap: 16,
   },
   dayCard: {
     marginBottom: 0,
@@ -1120,12 +1262,12 @@ const styles = StyleSheet.create({
     borderColor: '#3B82F6',
   },
   classesContainer: {
-    gap: 12,
+    marginBottom: -12,
   },
   classItem: {
     flexDirection: 'row',
-    gap: 12,
     minHeight: 48,
+    marginBottom: 12,
   },
   classTime: {
     width: 70,
@@ -1230,6 +1372,5 @@ const styles = StyleSheet.create({
   settingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
   },
 });

@@ -7,8 +7,8 @@
  */
 
 // Supabase Configuration
-export const SUPABASE_URL = process.env.SUPABASE_URL || 'https://your-project.supabase.co';
-export const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'your-anon-key-here';
+export const SUPABASE_URL = process.env.SUPABASE_URL || 'https://qrwroibhzgywaiecbcoa.supabase.co';
+export const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyd3JvaWJoemd5d2FpZWNiY29hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0MjkwNTksImV4cCI6MjA3MjAwNTA1OX0.YwFEMqbGMraRS5xeZVqEZsqeBTYNqn0AtbL1rzjvghM';
 
 // App Configuration
 export const APP_NAME = 'Manushi Coaching';

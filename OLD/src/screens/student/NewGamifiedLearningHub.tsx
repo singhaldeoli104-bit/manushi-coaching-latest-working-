@@ -1,521 +1,920 @@
 /**
- * NewGamifiedLearningHub - Premium Minimal Design
- * Purpose: Gamification features - badges, streaks, leaderboard
- * Used in: StudentNavigator (PerformanceStack)
+ * NewGamifiedLearningHub - EXACT match to HTML reference
+ * Purpose: Gamified learning with XP, badges, leaderboard, challenges
+ * Design: Material Design with progress tracking and rewards
  */
 
-import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { useQuery } from '@tanstack/react-query';
+import React, { useEffect } from 'react';
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  SafeAreaView,
+  ScrollView,
+} from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { BaseScreen } from '../../shared/components/BaseScreen';
-import { Card } from '../../ui/surfaces/Card';
-import { Badge as BadgeComponent } from '../../ui/data-display/Badge';
-import { Chip } from '../../ui/inputs/Chip';
-import { Row } from '../../ui/layout/Row';
-import { T } from '../../ui';
-import { trackScreenView, trackAction } from '../../utils/navigationAnalytics';
-import { useAuth } from '../../context/AuthContext';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../config/supabaseClient';
+import { useAuth } from '../../context/AuthContext';
+import { T } from '../../ui';
+import { trackAction, trackScreenView } from '../../utils/navigationAnalytics';
 
 type Props = NativeStackScreenProps<any, 'NewGamifiedLearningHub'>;
 
-interface Badge {
-  id: string;
-  icon: string;
-  name: string;
-  earned: boolean;
-  rarity: 'common' | 'rare' | 'epic' | 'legendary';
-  category: string;
-  description: string;
-  earnedDate?: string;
-  progress?: number;
-  requirement?: string;
-}
-
-interface Achievement {
-  id: string;
-  title: string;
-  description: string;
-  icon: string;
-  earnedDate: string;
-  points: number;
-  category: string;
-}
-
-interface Gamification {
-  total_points: number;
-  badges: Badge[];
-  level: number;
-  streak_days: number;
-  achievements: Achievement[];
-}
-
 export default function NewGamifiedLearningHub({ navigation }: Props) {
   const { user } = useAuth();
-  const [badgeCategory, setBadgeCategory] = useState<'all' | 'academic' | 'social' | 'special'>('all');
 
-  React.useEffect(() => {
-    trackScreenView('NewGamifiedLearningHub');
-  }, []);
-
-  // Fetch gamification data
-  const { data: gamification, isLoading, error } = useQuery({
-    queryKey: ['gamification', user?.id],
+  // Fetch student stats
+  const { data: studentStats } = useQuery({
+    queryKey: ['student-stats', user?.id],
     queryFn: async () => {
-      if (!user?.id) throw new Error('No user ID');
+      if (!user?.id) return null;
 
-      // Fetch main gamification record
-      const { data: gamData, error: gamError } = await supabase
-        .from('student_gamification')
-        .select('*')
-        .eq('student_id', user.id)
+      const { data, error } = await supabase
+        .from('students')
+        .select('name, xp, level, streak_days')
+        .eq('id', user.id)
         .single();
 
-      if (gamError) throw gamError;
-
-      // Fetch earned badges with enhanced data
-      const { data: badgesData, error: badgesError } = await supabase
-        .from('student_badges')
-        .select('*, badges(id, name, icon, description)')
-        .eq('student_id', user.id);
-
-      if (badgesError) throw badgesError;
-
-      const badges = (badgesData || []).map(item => {
-        const badgeInfo = item.badges as any;
-        const name = badgeInfo?.name || 'Badge';
-
-        // Derive rarity from badge name or description
-        let rarity: 'common' | 'rare' | 'epic' | 'legendary' = 'common';
-        if (name.includes('Master') || name.includes('Champion')) rarity = 'legendary';
-        else if (name.includes('Expert') || name.includes('Pro')) rarity = 'epic';
-        else if (name.includes('Advanced') || name.includes('Skilled')) rarity = 'rare';
-
-        // Derive category from badge name
-        let category = 'Academic';
-        if (name.includes('Social') || name.includes('Team') || name.includes('Peer')) category = 'Social';
-        else if (name.includes('Special') || name.includes('Unique') || name.includes('Limited')) category = 'Special';
-
-        return {
-          id: badgeInfo?.id || item.id,
-          icon: badgeInfo?.icon || '🏆',
-          name,
-          earned: item.earned_at != null,
-          rarity,
-          category,
-          description: badgeInfo?.description || 'Complete the requirements to earn this badge',
-          earnedDate: item.earned_at ? new Date(item.earned_at).toLocaleDateString() : undefined,
-          progress: item.earned_at ? 100 : Math.floor(Math.random() * 80), // Simulate progress for locked badges
-          requirement: badgeInfo?.requirement || 'Complete specific tasks',
-        };
-      });
-
-      // Fetch achievements (recent accomplishments)
-      const { data: achievementsData, error: achievementsError } = await supabase
-        .from('student_badges')
-        .select('*, badges(id, name, icon, description)')
-        .eq('student_id', user.id)
-        .not('earned_at', 'is', null)
-        .order('earned_at', { ascending: false })
-        .limit(10);
-
-      if (achievementsError) throw achievementsError;
-
-      const achievements = (achievementsData || []).map(item => {
-        const badgeInfo = item.badges as any;
-        return {
-          id: item.id,
-          title: badgeInfo?.name || 'Achievement Unlocked',
-          description: badgeInfo?.description || 'Great work!',
-          icon: badgeInfo?.icon || '🎉',
-          earnedDate: new Date(item.earned_at).toLocaleDateString(),
-          points: Math.floor(Math.random() * 100) + 50, // Simulate points (50-150)
-          category: badgeInfo?.name?.includes('Team') ? 'Social' : 'Academic',
-        };
-      });
+      if (error) {
+        console.error('Error fetching student stats:', error);
+        return null;
+      }
 
       return {
-        total_points: gamData.total_points || 0,
-        badges,
-        level: gamData.level || 1,
-        streak_days: gamData.streak_days || 0,
-        achievements,
-      } as Gamification;
+        name: data?.name || 'Student',
+        currentXP: data?.xp || 0,
+        nextLevelXP: ((data?.level || 0) + 1) * 200, // Formula for next level
+        level: data?.level || 1,
+        streakDays: data?.streak_days || 0
+      };
     },
     enabled: !!user?.id,
   });
 
-  const filteredBadges = gamification?.badges.filter(badge =>
-    badgeCategory === 'all' || badge.category.toLowerCase() === badgeCategory
-  ) || [];
+  const currentXP = studentStats?.currentXP || 0;
+  const nextLevelXP = studentStats?.nextLevelXP || 200;
+  const level = studentStats?.level || 1;
+  const streakDays = studentStats?.streakDays || 0;
+  const progressPercent = Math.round((currentXP / nextLevelXP) * 100);
 
-  const earnedBadgesCount = gamification?.badges.filter(b => b.earned).length || 0;
-  const totalBadgesCount = gamification?.badges.length || 0;
-  const collectionProgress = totalBadgesCount > 0 ? Math.round((earnedBadgesCount / totalBadgesCount) * 100) : 0;
+  // Fetch student badges
+  const { data: badges } = useQuery({
+    queryKey: ['student-badges', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
 
-  const getRarityColor = (rarity: string) => {
-    switch (rarity) {
-      case 'legendary': return '#FFD700';
-      case 'epic': return '#9333EA';
-      case 'rare': return '#3B82F6';
-      case 'common': return '#6B7280';
-      default: return '#6B7280';
-    }
-  };
+      const { data, error } = await supabase
+        .from('student_badges')
+        .select(`
+          badge_id,
+          earned_at,
+          badges (
+            id,
+            icon,
+            label,
+            color
+          )
+        `)
+        .eq('student_id', user.id);
 
-  const getRarityLabel = (rarity: string) => {
-    return rarity.charAt(0).toUpperCase() + rarity.slice(1);
-  };
+      if (error) {
+        console.error('Error fetching badges:', error);
+        return [];
+      }
+
+      return data?.map(sb => ({
+        id: sb.badge_id,
+        icon: sb.badges?.icon || '🎓',
+        label: sb.badges?.label || 'Badge',
+        earned: !!sb.earned_at,
+        color: sb.badges?.color || '#10B981'
+      })) || [];
+    },
+    enabled: !!user?.id,
+  });
+
+  // Fetch leaderboard
+  const { data: leaderboard } = useQuery({
+    queryKey: ['leaderboard', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+
+      const { data, error } = await supabase
+        .from('students')
+        .select('id, name, xp, avatar_url')
+        .order('xp', { ascending: false })
+        .limit(10);
+
+      if (error) {
+        console.error('Error fetching leaderboard:', error);
+        return [];
+      }
+
+      return data?.map((student, index) => ({
+        rank: index + 1,
+        name: student.id === user.id ? `${student.name} (You)` : student.name,
+        xp: student.xp || 0,
+        avatar: student.avatar_url || '👤',
+        isCurrentUser: student.id === user.id
+      })) || [];
+    },
+    enabled: !!user?.id,
+  });
+
+  // Fetch challenges
+  const { data: challenges } = useQuery({
+    queryKey: ['student-challenges', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+
+      const { data, error } = await supabase
+        .from('student_challenges')
+        .select(`
+          id,
+          current_progress,
+          challenges (
+            id,
+            icon,
+            title,
+            target_value,
+            xp_reward
+          )
+        `)
+        .eq('student_id', user.id)
+        .eq('status', 'active');
+
+      if (error) {
+        console.error('Error fetching challenges:', error);
+        return [];
+      }
+
+      return data?.map(sc => ({
+        id: sc.id,
+        icon: sc.challenges?.icon || '✓',
+        title: sc.challenges?.title || 'Challenge',
+        current: sc.current_progress || 0,
+        total: sc.challenges?.target_value || 0,
+        xpReward: sc.challenges?.xp_reward || 0
+      })) || [];
+    },
+    enabled: !!user?.id,
+  });
+
+  // Fetch rewards
+  const { data: rewards } = useQuery({
+    queryKey: ['rewards'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('rewards')
+        .select('*')
+        .order('points', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching rewards:', error);
+        return [];
+      }
+
+      return data?.map(reward => ({
+        id: reward.id,
+        icon: reward.icon || '🎁',
+        title: reward.title || 'Reward',
+        points: reward.points || 0,
+        bgColor: reward.bg_color || '#EBF4FF',
+        iconColor: reward.icon_color || '#4A90E2'
+      })) || [];
+    },
+  });
+
+  // Fetch activity feed
+  const { data: activities } = useQuery({
+    queryKey: ['activity-feed', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+
+      const { data, error } = await supabase
+        .from('activity_feed')
+        .select('*')
+        .or(`student_id.eq.${user.id},is_global.eq.true`)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) {
+        console.error('Error fetching activities:', error);
+        return [];
+      }
+
+      // Helper function to format timestamp
+      const formatTimeAgo = (timestamp: string) => {
+        const now = new Date().getTime();
+        const activityTime = new Date(timestamp).getTime();
+        const diffMinutes = Math.floor((now - activityTime) / (1000 * 60));
+
+        if (diffMinutes < 60) return `${diffMinutes} minutes ago`;
+        const diffHours = Math.floor(diffMinutes / 60);
+        if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+        const diffDays = Math.floor(diffHours / 24);
+        return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+      };
+
+      return data?.map(activity => ({
+        id: activity.id,
+        type: activity.type as 'achievement' | 'user',
+        icon: activity.icon,
+        avatar: activity.avatar,
+        text: activity.text || '',
+        boldText: activity.bold_text || '',
+        timestamp: formatTimeAgo(activity.created_at)
+      })) || [];
+    },
+    enabled: !!user?.id,
+  });
+
+  useEffect(() => {
+    trackScreenView('NewGamifiedLearningHub');
+  }, []);
 
   return (
-    <BaseScreen
-      scrollable={false}
-      loading={isLoading}
-      error={error ? 'Failed to load gamification data' : null}
-      empty={!gamification}
-      emptyMessage="No gamification data available"
-    >
-      {gamification && (
-        <ScrollView style={styles.container}>
-          <Card style={styles.statsCard}>
-            <T variant="h1" weight="bold" style={styles.points}>
-              {gamification.total_points.toLocaleString()}
-            </T>
-            <T variant="body" style={styles.pointsLabel}>
-              Total Points
-            </T>
-            <T variant="caption" style={styles.levelText}>
-              Level {gamification.level} • {gamification.streak_days} day streak 🔥
-            </T>
-          </Card>
+    <SafeAreaView style={styles.safeArea}>
+      {/* Top Bar */}
+      <View style={styles.topBar}>
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={() => {
+            trackAction('back_button', 'NewGamifiedLearningHub');
+            navigation.goBack();
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <T variant="h2" style={styles.icon}>☰</T>
+        </TouchableOpacity>
 
-          {/* 1. Badge Collection Display */}
-          <Card style={styles.badgesCard}>
-            <View style={styles.badgesHeader}>
-              <View>
-                <T variant="title" weight="semiBold">
-                  🏅 Badge Collection
-                </T>
-                <T variant="caption" style={styles.collectionProgress}>
-                  {earnedBadgesCount} / {totalBadgesCount} badges collected ({collectionProgress}%)
-                </T>
-              </View>
+        <T variant="body" weight="bold" style={styles.topBarTitle}>
+          Gamified Learning Hub
+        </T>
+
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={() => trackAction('more_options', 'NewGamifiedLearningHub')}
+          accessibilityRole="button"
+          accessibilityLabel="More options"
+        >
+          <T variant="h2" style={styles.icon}>⋮</T>
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        {/* User Profile Card */}
+        <View style={styles.profileCard}>
+          <View style={styles.profileHeader}>
+            <View style={styles.avatar}>
+              <T style={styles.avatarText}>
+                {studentStats?.name
+                  ? studentStats.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+                  : '🧑'}
+              </T>
             </View>
+            <View style={styles.profileInfo}>
+              <T variant="body" weight="semiBold" style={styles.userName}>
+                {studentStats?.name || 'Student'}
+              </T>
+              <T variant="body" weight="semiBold" style={styles.userXP}>
+                {currentXP.toLocaleString()} XP
+              </T>
+              <T variant="caption" style={styles.userLevel}>
+                Level {level}
+              </T>
+            </View>
+          </View>
 
-            {/* Collection Progress Bar */}
+          <View style={styles.progressSection}>
+            <View style={styles.progressHeader}>
+              <T variant="caption" weight="medium" style={styles.progressLabel}>
+                Progress to Level {level + 1}
+              </T>
+              <T variant="caption" weight="medium" style={styles.progressValue}>
+                {currentXP} / {nextLevelXP} XP
+              </T>
+            </View>
             <View style={styles.progressBarContainer}>
-              <View style={[styles.progressBarFill, { width: `${collectionProgress}%` }]} />
+              <View style={[styles.progressBar, { width: `${progressPercent}%` }]} />
             </View>
+          </View>
+        </View>
 
-            {/* Category Filters */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
-              <Row gap="xs" style={{ paddingVertical: 8 }}>
-                <Chip
-                  variant="filter"
-                  label="All"
-                  selected={badgeCategory === 'all'}
-                  onPress={() => {
-                    setBadgeCategory('all');
-                    trackAction('filter_badges', 'NewGamifiedLearningHub', { category: 'all' });
-                  }}
-                />
-                <Chip
-                  variant="filter"
-                  label="📚 Academic"
-                  selected={badgeCategory === 'academic'}
-                  onPress={() => {
-                    setBadgeCategory('academic');
-                    trackAction('filter_badges', 'NewGamifiedLearningHub', { category: 'academic' });
-                  }}
-                />
-                <Chip
-                  variant="filter"
-                  label="👥 Social"
-                  selected={badgeCategory === 'social'}
-                  onPress={() => {
-                    setBadgeCategory('social');
-                    trackAction('filter_badges', 'NewGamifiedLearningHub', { category: 'social' });
-                  }}
-                />
-                <Chip
-                  variant="filter"
-                  label="⭐ Special"
-                  selected={badgeCategory === 'special'}
-                  onPress={() => {
-                    setBadgeCategory('special');
-                    trackAction('filter_badges', 'NewGamifiedLearningHub', { category: 'special' });
-                  }}
-                />
-              </Row>
-            </ScrollView>
-
-            {/* Badges Grid */}
-            {filteredBadges.length > 0 ? (
-              <View style={styles.badgesGrid}>
-                {filteredBadges.map((badge) => (
-                  <TouchableOpacity
-                    key={badge.id}
-                    style={[
-                      styles.badgeItem,
-                      !badge.earned && styles.badgeItemLocked,
-                      { borderColor: getRarityColor(badge.rarity) },
-                    ]}
-                    onPress={() => {
-                      trackAction('view_badge_details', 'NewGamifiedLearningHub', { badgeId: badge.id });
-                    }}
-                    accessibilityRole="button"
-                    accessibilityLabel={`${badge.name} badge`}
-                  >
-                    <T variant="h1">{badge.earned ? badge.icon : '🔒'}</T>
-                    <T variant="caption" style={styles.badgeName}>
-                      {badge.name}
-                    </T>
-                    <BadgeComponent
-                      variant={badge.rarity === 'legendary' ? 'warning' : badge.rarity === 'epic' ? 'info' : 'neutral'}
-                      label={getRarityLabel(badge.rarity)}
-                    />
-                    {badge.earned && badge.earnedDate && (
-                      <T variant="caption" style={styles.earnedDate}>
-                        {badge.earnedDate}
-                      </T>
-                    )}
-                    {!badge.earned && badge.progress !== undefined && (
-                      <View style={styles.badgeProgress}>
-                        <View style={[styles.badgeProgressFill, { width: `${badge.progress}%` }]} />
-                        <T variant="caption" style={styles.badgeProgressText}>
-                          {badge.progress}%
-                        </T>
-                      </View>
-                    )}
-                  </TouchableOpacity>
-                ))}
-              </View>
-            ) : (
-              <T variant="body" style={styles.emptyText}>
-                No badges in this category
-              </T>
-            )}
-          </Card>
-
-          {/* 2. Achievement Timeline */}
-          <Card style={styles.achievementsCard}>
-            <T variant="title" weight="semiBold" style={styles.sectionTitle}>
-              🏆 Recent Achievements
+        {/* Streak Banner */}
+        <View style={styles.streakBanner}>
+          <View style={styles.streakIcon}>
+            <T style={styles.streakIconText}>🔥</T>
+          </View>
+          <View style={styles.streakContent}>
+            <T variant="body" weight="semiBold" style={styles.streakTitle}>
+              {streakDays}-Day Streak!
             </T>
-            {gamification.achievements && gamification.achievements.length > 0 ? (
-              <View style={styles.timeline}>
-                {gamification.achievements.map((achievement, index) => (
-                  <View key={achievement.id} style={styles.timelineItem}>
-                    <View style={styles.timelineDot} />
-                    {index < gamification.achievements.length - 1 && (
-                      <View style={styles.timelineLine} />
-                    )}
-                    <View style={styles.achievementCard}>
-                      <View style={styles.achievementHeader}>
-                        <View style={styles.achievementIcon}>
-                          <T variant="h2">{achievement.icon}</T>
-                        </View>
-                        <View style={styles.achievementContent}>
-                          <T variant="body" weight="semiBold">
-                            {achievement.title}
-                          </T>
-                          <T variant="caption" style={styles.achievementDescription}>
-                            {achievement.description}
-                          </T>
-                          <Row gap="xs" style={{ marginTop: 4 }}>
-                            <BadgeComponent variant="success" label={`+${achievement.points} pts`} />
-                            <T variant="caption" style={styles.achievementDate}>
-                              {achievement.earnedDate}
-                            </T>
-                          </Row>
-                        </View>
-                      </View>
-                    </View>
-                  </View>
-                ))}
+            <T variant="caption" style={styles.streakSubtitle}>
+              Keep it up to earn more rewards!
+            </T>
+          </View>
+          <View style={styles.streakRewards}>
+            <T style={styles.rewardIcon}>🏆</T>
+            <T style={styles.rewardIcon}>💰</T>
+          </View>
+        </View>
+
+        {/* My Badges */}
+        <View style={styles.section}>
+          <T variant="h2" weight="bold" style={styles.sectionTitle}>
+            My Badges
+          </T>
+          <View style={styles.badgesGrid}>
+            {(badges || []).map((badge) => (
+              <View
+                key={badge.id}
+                style={[
+                  styles.badgeItem,
+                  !badge.earned && styles.badgeItemLocked,
+                ]}
+              >
+                <View
+                  style={[
+                    styles.badgeIcon,
+                    badge.earned
+                      ? { backgroundColor: '#D1FAE5' }
+                      : styles.badgeIconLocked,
+                  ]}
+                >
+                  <T style={styles.badgeIconText}>{badge.icon}</T>
+                </View>
+                <T
+                  variant="caption"
+                  weight="medium"
+                  style={[
+                    styles.badgeLabel,
+                    !badge.earned && styles.badgeLabelLocked,
+                  ]}
+                >
+                  {badge.label}
+                </T>
               </View>
-            ) : (
-              <T variant="body" style={styles.emptyText}>
-                Complete tasks and assignments to unlock achievements!
-              </T>
-            )}
-          </Card>
-        </ScrollView>
-      )}
-    </BaseScreen>
+            ))}
+          </View>
+        </View>
+
+        {/* Weekly Leaderboard */}
+        <View style={styles.section}>
+          <T variant="h2" weight="bold" style={styles.sectionTitle}>
+            Weekly Leaderboard
+          </T>
+          <View style={styles.leaderboardList}>
+            {(leaderboard || []).map((entry) => (
+              <View
+                key={entry.rank}
+                style={[
+                  styles.leaderboardItem,
+                  entry.isCurrentUser && styles.leaderboardItemCurrent,
+                ]}
+              >
+                <T
+                  variant="body"
+                  weight="bold"
+                  style={[
+                    styles.leaderboardRank,
+                    entry.isCurrentUser && styles.leaderboardRankCurrent,
+                  ]}
+                >
+                  {entry.rank}
+                </T>
+                <View
+                  style={[
+                    styles.leaderboardAvatar,
+                    entry.isCurrentUser && styles.leaderboardAvatarCurrent,
+                  ]}
+                >
+                  <T style={styles.leaderboardAvatarText}>{entry.avatar}</T>
+                </View>
+                <T
+                  variant="body"
+                  weight={entry.isCurrentUser ? 'bold' : 'medium'}
+                  style={styles.leaderboardName}
+                >
+                  {entry.name}
+                </T>
+                <T variant="body" weight="semiBold" style={styles.leaderboardXP}>
+                  {entry.xp.toLocaleString()} XP
+                </T>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Active Challenges */}
+        <View style={styles.section}>
+          <T variant="h2" weight="bold" style={styles.sectionTitle}>
+            Active Challenges
+          </T>
+          <View style={styles.challengesList}>
+            {(challenges || []).map((challenge) => (
+              <View key={challenge.id} style={styles.challengeCard}>
+                <View style={styles.challengeIcon}>
+                  <T style={styles.challengeIconText}>{challenge.icon}</T>
+                </View>
+                <View style={styles.challengeContent}>
+                  <T variant="body" weight="semiBold" style={styles.challengeTitle}>
+                    {challenge.title}
+                  </T>
+                  <View style={styles.challengeProgressBar}>
+                    <View
+                      style={[
+                        styles.challengeProgress,
+                        {
+                          width: `${Math.round(
+                            (challenge.current / challenge.total) * 100
+                          )}%`,
+                        },
+                      ]}
+                    />
+                  </View>
+                  <T variant="caption" style={styles.challengeStatus}>
+                    {challenge.current} / {challenge.total} completed
+                  </T>
+                </View>
+                <View style={styles.challengeReward}>
+                  <T style={styles.challengeTrophy}>🏆</T>
+                  <T variant="caption" weight="bold" style={styles.challengeXP}>
+                    +{challenge.xpReward} XP
+                  </T>
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Rewards Shop */}
+        <View style={styles.section}>
+          <T variant="h2" weight="bold" style={styles.sectionTitle}>
+            Rewards Shop
+          </T>
+          <View style={styles.rewardsGrid}>
+            {(rewards || []).map((reward) => (
+              <TouchableOpacity
+                key={reward.id}
+                style={styles.rewardCard}
+                onPress={() =>
+                  trackAction('view_reward', 'NewGamifiedLearningHub', {
+                    rewardId: reward.id,
+                  })
+                }
+              >
+                <View
+                  style={[
+                    styles.rewardIconContainer,
+                    { backgroundColor: reward.bgColor },
+                  ]}
+                >
+                  <T style={styles.rewardIconLarge}>{reward.icon}</T>
+                </View>
+                <View style={styles.rewardInfo}>
+                  <T variant="caption" weight="semiBold" style={styles.rewardTitle}>
+                    {reward.title}
+                  </T>
+                  <T variant="caption" weight="bold" style={styles.rewardPoints}>
+                    {reward.points} Points
+                  </T>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Activity Feed */}
+        <View style={styles.section}>
+          <T variant="h2" weight="bold" style={styles.sectionTitle}>
+            Activity Feed
+          </T>
+          <View style={styles.activityList}>
+            {(activities || []).map((activity) => (
+              <View key={activity.id} style={styles.activityItem}>
+                {activity.type === 'achievement' ? (
+                  <View style={styles.activityAchievementIcon}>
+                    <T style={styles.activityIconText}>{activity.icon}</T>
+                  </View>
+                ) : (
+                  <View style={styles.activityUserAvatar}>
+                    <T style={styles.activityAvatarText}>{activity.avatar}</T>
+                  </View>
+                )}
+                <View style={styles.activityContent}>
+                  <T variant="caption" style={styles.activityText}>
+                    {activity.text}{' '}
+                    <T variant="caption" weight="bold">
+                      {activity.boldText}
+                    </T>
+                  </T>
+                  <T variant="caption" style={styles.activityTimestamp}>
+                    {activity.timestamp}
+                  </T>
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Bottom padding */}
+        <View style={{ height: 24 }} />
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 16,
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
   },
-  statsCard: {
-    padding: 32,
+  // Top Bar - Material Design 56px
+  topBar: {
+    height: 56,
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
-    gap: 8,
+    justifyContent: 'space-between',
+    paddingHorizontal: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
-  points: {
-    fontSize: 48,
-    color: '#3B82F6',
+  iconButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 20,
   },
-  pointsLabel: {
-    color: '#6B7280',
+  icon: {
+    fontSize: 24,
+    color: '#333333',
   },
-  levelText: {
-    color: '#9CA3AF',
+  topBarTitle: {
+    color: '#111827',
+    fontSize: 18,
   },
-  badgesCard: {
+  container: {
+    flex: 1,
+    backgroundColor: '#F6F7F8',
+  },
+  // Profile Card
+  profileCard: {
+    margin: 16,
+    marginTop: 16,
     padding: 16,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+  },
+  profileHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+
     marginBottom: 16,
   },
-  badgesHeader: {
-    marginBottom: 12,
+  avatar: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  collectionProgress: {
+  avatarText: {
+    fontSize: 32,
+  },
+  profileInfo: {
+    flex: 1,
+  },
+  userName: {
+    color: '#111827',
+    fontSize: 18,
+    marginBottom: 4,
+  },
+  userXP: {
+    color: '#4A90E2',
+    fontSize: 16,
+    marginBottom: 2,
+  },
+  userLevel: {
     color: '#6B7280',
-    marginTop: 4,
+    fontSize: 13,
+  },
+  progressSection: {
+
+  },
+  progressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  progressLabel: {
+    color: '#111827',
+    fontSize: 13,
+  },
+  progressValue: {
+    color: '#6B7280',
+    fontSize: 13,
   },
   progressBarContainer: {
     height: 8,
+    borderRadius: 4,
     backgroundColor: '#E5E7EB',
-    borderRadius: 4,
     overflow: 'hidden',
-    marginBottom: 12,
   },
-  progressBarFill: {
-    height: '100%',
-    backgroundColor: '#3B82F6',
+  progressBar: {
+    height: 8,
     borderRadius: 4,
+    backgroundColor: '#4A90E2',
   },
-  categoryScroll: {
+  // Streak Banner
+  streakBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+
+    marginHorizontal: 16,
     marginBottom: 16,
-    marginHorizontal: -16,
-    paddingHorizontal: 16,
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: '#EBF4FF',
+  },
+  streakIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#4A90E2',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  streakIconText: {
+    fontSize: 28,
+  },
+  streakContent: {
+    flex: 1,
+  },
+  streakTitle: {
+    color: '#111827',
+    fontSize: 15,
+    marginBottom: 2,
+  },
+  streakSubtitle: {
+    color: '#6B7280',
+    fontSize: 13,
+  },
+  streakRewards: {
+    flexDirection: 'row',
+
+  },
+  rewardIcon: {
+    fontSize: 20,
+  },
+  // Section
+  section: {
+    marginBottom: 24,
   },
   sectionTitle: {
-    marginBottom: 16,
+    color: '#111827',
+    fontSize: 20,
+    paddingHorizontal: 16,
+    marginBottom: 12,
   },
+  // Badges
   badgesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    paddingHorizontal: 16,
+
   },
   badgeItem: {
-    width: '30%',
-    padding: 12,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
+    width: '22%',
     alignItems: 'center',
-    gap: 6,
-    borderWidth: 2,
-    borderColor: '#E5E7EB',
+
   },
   badgeItemLocked: {
     opacity: 0.5,
   },
-  badgeName: {
+  badgeIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeIconLocked: {
+    backgroundColor: '#E5E7EB',
+  },
+  badgeIconText: {
+    fontSize: 32,
+  },
+  badgeLabel: {
+    color: '#111827',
+    fontSize: 12,
     textAlign: 'center',
+  },
+  badgeLabelLocked: {
     color: '#6B7280',
-    fontSize: 11,
   },
-  earnedDate: {
-    color: '#9CA3AF',
-    fontSize: 10,
+  // Leaderboard
+  leaderboardList: {
+
+    paddingHorizontal: 16,
+  },
+  leaderboardItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+  },
+  leaderboardItemCurrent: {
+    backgroundColor: '#EBF4FF',
+    borderWidth: 2,
+    borderColor: '#4A90E2',
+  },
+  leaderboardRank: {
+    color: '#6B7280',
+    fontSize: 18,
+    width: 24,
     textAlign: 'center',
   },
-  badgeProgress: {
-    width: '100%',
-    height: 16,
-    backgroundColor: '#E5E7EB',
-    borderRadius: 8,
-    overflow: 'hidden',
-    position: 'relative',
-    justifyContent: 'center',
+  leaderboardRankCurrent: {
+    color: '#4A90E2',
+  },
+  leaderboardAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  badgeProgressFill: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    backgroundColor: '#3B82F6',
-  },
-  badgeProgressText: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#1F2937',
-    zIndex: 1,
-  },
-  achievementsCard: {
-    padding: 16,
-    marginBottom: 32,
-  },
-  timeline: {
-    gap: 16,
-  },
-  timelineItem: {
-    position: 'relative',
-    paddingLeft: 32,
-  },
-  timelineDot: {
-    position: 'absolute',
-    left: 0,
-    top: 8,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#3B82F6',
+  leaderboardAvatarCurrent: {
     borderWidth: 2,
-    borderColor: '#FFFFFF',
-    zIndex: 2,
+    borderColor: '#4A90E2',
   },
-  timelineLine: {
-    position: 'absolute',
-    left: 5,
-    top: 20,
-    bottom: -16,
-    width: 2,
-    backgroundColor: '#E5E7EB',
-    zIndex: 1,
+  leaderboardAvatarText: {
+    fontSize: 20,
   },
-  achievementCard: {
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    padding: 12,
-    borderLeftWidth: 3,
-    borderLeftColor: '#3B82F6',
+  leaderboardName: {
+    flex: 1,
+    color: '#111827',
+    fontSize: 14,
   },
-  achievementHeader: {
+  leaderboardXP: {
+    color: '#4A90E2',
+    fontSize: 14,
+  },
+  // Challenges
+  challengesList: {
+
+    paddingHorizontal: 16,
+  },
+  challengeCard: {
     flexDirection: 'row',
-    gap: 12,
-  },
-  achievementIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    alignItems: 'flex-start',
+
+    padding: 16,
+    borderRadius: 12,
     backgroundColor: '#FFFFFF',
+  },
+  challengeIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    backgroundColor: '#EBF4FF',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  challengeIconText: {
+    fontSize: 20,
+  },
+  challengeContent: {
+    flex: 1,
+  },
+  challengeTitle: {
+    color: '#111827',
+    fontSize: 15,
+    marginBottom: 8,
+  },
+  challengeProgressBar: {
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#E5E7EB',
+    marginBottom: 8,
+    overflow: 'hidden',
+  },
+  challengeProgress: {
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#4A90E2',
+  },
+  challengeStatus: {
+    color: '#6B7280',
+    fontSize: 13,
+  },
+  challengeReward: {
+    alignItems: 'center',
+
+  },
+  challengeTrophy: {
+    fontSize: 28,
+  },
+  challengeXP: {
+    color: '#F59E0B',
+    fontSize: 12,
+  },
+  // Rewards Shop
+  rewardsGrid: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+
+  },
+  rewardCard: {
+    flex: 1,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E5E7EB',
+    overflow: 'hidden',
   },
-  achievementContent: {
-    flex: 1,
-    gap: 4,
+  rewardIconContainer: {
+    height: 96,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  achievementDescription: {
-    color: '#6B7280',
+  rewardIconLarge: {
+    fontSize: 48,
   },
-  achievementDate: {
-    color: '#9CA3AF',
+  rewardInfo: {
+    padding: 12,
+    alignItems: 'center',
   },
-  emptyText: {
-    color: '#9CA3AF',
-    fontStyle: 'italic',
+  rewardTitle: {
+    color: '#111827',
+    fontSize: 13,
     textAlign: 'center',
-    paddingVertical: 16,
+    marginBottom: 4,
+  },
+  rewardPoints: {
+    color: '#F59E0B',
+    fontSize: 13,
+  },
+  // Activity Feed
+  activityList: {
+
+    paddingHorizontal: 16,
+  },
+  activityItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+
+  },
+  activityAchievementIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#D1FAE5',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  activityUserAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  activityIconText: {
+    fontSize: 20,
+  },
+  activityAvatarText: {
+    fontSize: 20,
+  },
+  activityContent: {
+    flex: 1,
+  },
+  activityText: {
+    color: '#111827',
+    fontSize: 13,
+    marginBottom: 2,
+  },
+  activityTimestamp: {
+    color: '#6B7280',
+    fontSize: 12,
   },
 });

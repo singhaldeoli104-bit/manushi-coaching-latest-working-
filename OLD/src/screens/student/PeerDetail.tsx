@@ -126,16 +126,13 @@ export default function PeerDetail({ route, navigation }: Props) {
       case 'video_call':
         trackAction('start_video_call', 'PeerDetail', { peerId });
         Alert.alert(
-          'Start Video Call',
-          `Would you like to start a video call with ${peerProfile?.name}?`,
+          '📹 Video Call',
+          `Video calling with ${peerProfile?.name} launching soon!\n\n🚀 Coming in next update:\n✓ One-on-one video calls\n✓ Screen sharing for study sessions\n✓ Group video calls\n✓ Whiteboard collaboration\n\nFor now, you can:\n💬 Use text chat\n📝 Share notes\n👥 Study together via messages`,
           [
-            { text: 'Cancel', style: 'cancel' },
+            { text: 'Okay', style: 'cancel' },
             {
-              text: 'Call',
-              onPress: () => {
-                // Video calling will be enabled when video service is integrated
-                Alert.alert('Calling...', 'Connecting to peer video call');
-              },
+              text: 'Use Chat Instead',
+              onPress: () => safeNavigate('ClassChat', { classId: `peer-${peerId}`, peerMode: true })
             },
           ]
         );
@@ -143,12 +140,14 @@ export default function PeerDetail({ route, navigation }: Props) {
       case 'study_group':
         trackAction('create_study_group', 'PeerDetail', { peerId });
         Alert.alert(
-          'Study Group',
-          'Create a new study group or join an existing one?',
+          '👥 Study Groups',
+          'Study group features launching soon!\n\n🚀 Coming soon:\n✓ Create private study groups\n✓ Group chat & discussions\n✓ Shared resources & notes\n✓ Schedule group sessions\n✓ Track group progress\n\nFor now:\n💬 Chat one-on-one\n📝 Share notes directly\n📚 Coordinate via messages',
           [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Create New', onPress: () => Alert.alert('Creating...', 'Study group feature will be available soon') },
-            { text: 'Join Existing', onPress: () => Alert.alert('Joining...', 'Study group feature will be available soon') },
+            { text: 'Got it', style: 'cancel' },
+            {
+              text: 'Share Notes',
+              onPress: () => safeNavigate('ClassNotes', { classId: `peer-${peerId}`, shareMode: true })
+            },
           ]
         );
         break;
@@ -291,7 +290,7 @@ const styles = StyleSheet.create({
   profileCard: {
     padding: 24,
     alignItems: 'center',
-    gap: 12,
+
     marginBottom: 16,
   },
   avatarContainer: {
@@ -325,7 +324,7 @@ const styles = StyleSheet.create({
   collaborationCard: {
     padding: 16,
     marginBottom: 16,
-    gap: 16,
+
   },
   sectionTitle: {
     marginBottom: 4,
@@ -333,7 +332,7 @@ const styles = StyleSheet.create({
   optionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+
   },
   optionButton: {
     width: '47%',
@@ -341,7 +340,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9FAFB',
     borderRadius: 12,
     alignItems: 'center',
-    gap: 8,
+
     borderWidth: 1,
     borderColor: '#E5E7EB',
   },
@@ -351,11 +350,11 @@ const styles = StyleSheet.create({
   classesCard: {
     padding: 16,
     marginBottom: 16,
-    gap: 12,
+
   },
   classItem: {
     flexDirection: 'row',
-    gap: 12,
+
     padding: 12,
     backgroundColor: '#F9FAFB',
     borderRadius: 8,
@@ -370,7 +369,7 @@ const styles = StyleSheet.create({
   },
   classInfo: {
     flex: 1,
-    gap: 4,
+
   },
   schedule: {
     color: '#6B7280',
@@ -378,7 +377,7 @@ const styles = StyleSheet.create({
   statsCard: {
     padding: 16,
     marginBottom: 32,
-    gap: 16,
+
   },
   statsGrid: {
     flexDirection: 'row',
@@ -386,7 +385,7 @@ const styles = StyleSheet.create({
   },
   statItem: {
     alignItems: 'center',
-    gap: 4,
+
   },
   statLabel: {
     color: '#6B7280',

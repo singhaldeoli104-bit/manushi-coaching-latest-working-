@@ -1,678 +1,406 @@
 /**
- * NewClassDetailScreen - Premium Minimal Design
- * Purpose: Display class details with tabs (overview/materials/recordings)
- * Features: Tabs system, recordings section, teacher info, materials
+ * NewClassDetailScreen - EXACT match to HTML reference
+ * Purpose: Class details with teacher info, materials, attendance, and assignments
+ * Design: Material Design with accordions and sticky action buttons
  */
 
-import React, { useCallback, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Linking, Alert, ScrollView } from 'react-native';
-import { useQuery } from '@tanstack/react-query';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  SafeAreaView,
+  ScrollView,
+} from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { BaseScreen } from '../../shared/components/BaseScreen';
-import { Card, CardHeader, CardContent } from '../../ui/surfaces/Card';
-import { Badge, Chip, T, Row, Col } from '../../ui';
-import { safeNavigate } from '../../utils/navigationService';
+import { T } from '../../ui';
 import { trackAction, trackScreenView } from '../../utils/navigationAnalytics';
-import { useAuth } from '../../context/AuthContext';
-import { supabase } from '../../config/supabaseClient';
 
 type Props = NativeStackScreenProps<any, 'NewClassDetailScreen'>;
 
-interface ClassDetails {
+interface Material {
   id: string;
-  subject: string;
-  teacher_name: string;
-  teacher_email?: string;
-  teacher_phone?: string;
-  scheduled_at: string;
-  duration_minutes: number;
-  meeting_link?: string;
-  description?: string;
-  status: 'scheduled' | 'live' | 'completed' | 'cancelled';
-  materials?: Array<{
-    id: string;
-    title: string;
-    type: string;
-    file_url?: string;
-    file_size?: string;
-    created_at: string;
-  }>;
-  recordings?: Array<{
-    id: string;
-    title: string;
-    recording_url?: string;
-    duration_minutes?: number;
-    created_at: string;
-    file_size?: string;
-  }>;
+  name: string;
+  type: 'pdf' | 'docx' | 'link';
 }
 
-type TabKey = 'overview' | 'materials' | 'recordings';
+interface Assignment {
+  id: string;
+  title: string;
+  dueDate: string;
+  isUrgent: boolean;
+}
 
 export default function NewClassDetailScreen({ route, navigation }: Props) {
-  const { user } = useAuth();
-  const classId = route.params?.classId;
+  const [materialsExpanded, setMaterialsExpanded] = useState(true);
+  const [assignmentsExpanded, setAssignmentsExpanded] = useState(false);
 
-  // Tab state
-  const [activeTab, setActiveTab] = useState<TabKey>('overview');
+  const title = route.params?.title || 'Biology - Cell Structure';
+  const teacher = route.params?.teacher || 'Dr. Evelyn Reed';
+  const department = route.params?.department || 'Biology Department';
 
-  // Track screen view
-  React.useEffect(() => {
-    trackScreenView('NewClassDetailScreen', { classId });
-  }, [classId]);
+  useEffect(() => {
+    trackScreenView('NewClassDetailScreen');
+  }, []);
 
-  // Fetch class details
-  const { data: classDetails, isLoading, error, refetch } = useQuery({
-    queryKey: ['class-detail', classId],
-    queryFn: async () => {
-      if (!classId) throw new Error('No class ID provided');
+  const materials: Material[] = [
+    { id: '1', name: 'Lecture Slides.pdf', type: 'pdf' },
+    { id: '2', name: 'Chapter 5 Notes.docx', type: 'docx' },
+    { id: '3', name: 'Reference: Photosynthesis Explained', type: 'link' },
+  ];
 
-      // Fetch class with teacher, materials, and recordings
-      const { data, error } = await supabase
-        .from('class_sessions')
-        .select(`
-          *,
-          teachers(name, email, phone),
-          study_materials(id, title, type, file_url, file_size, created_at)
-        `)
-        .eq('id', classId)
-        .single();
+  const assignments: Assignment[] = [
+    { id: '1', title: 'Lab Report 3', dueDate: 'Oct 28, 2024', isUrgent: true },
+    { id: '2', title: 'Weekly Quiz 5', dueDate: 'Nov 01, 2024', isUrgent: false },
+  ];
 
-      if (error) throw error;
-
-      // Fetch recordings for this class
-      const { data: recordingsData } = await supabase
-        .from('class_recordings')
-        .select('*')
-        .eq('class_id', classId)
-        .order('created_at', { ascending: false });
-
-      return {
-        ...data,
-        teacher_name: (data.teachers as any)?.name || 'Unknown Teacher',
-        teacher_email: (data.teachers as any)?.email,
-        teacher_phone: (data.teachers as any)?.phone,
-        materials: data.study_materials || [],
-        recordings: recordingsData || [],
-      } as ClassDetails;
-    },
-    enabled: !!classId,
-  });
-
-  // Get class status based on time
-  const getClassStatus = (): 'live' | 'upcoming' | 'ended' => {
-    if (!classDetails) return 'upcoming';
-    if (classDetails.status === 'cancelled' || classDetails.status === 'completed') return 'ended';
-
-    const now = new Date();
-    const start = new Date(classDetails.scheduled_at);
-    const end = new Date(start.getTime() + classDetails.duration_minutes * 60000);
-
-    if (now >= start && now <= end) return 'live';
-    if (now > end) return 'ended';
-    return 'upcoming';
+  const handleDownload = (material: Material) => {
+    trackAction('download_material', 'NewClassDetailScreen', { materialId: material.id });
   };
 
-  // Handle join class
-  const handleJoinClass = useCallback(async () => {
-    if (!classDetails?.meeting_link) {
-      Alert.alert('No Meeting Link', 'The meeting link is not available yet.');
-      return;
-    }
+  const handleDownloadAll = () => {
+    trackAction('download_all_materials', 'NewClassDetailScreen');
+  };
 
-    trackAction('join_class', 'NewClassDetailScreen', { classId });
+  const handleJoinClass = () => {
+    trackAction('join_class', 'NewClassDetailScreen');
+  };
 
-    try {
-      const supported = await Linking.canOpenURL(classDetails.meeting_link);
-      if (supported) {
-        await Linking.openURL(classDetails.meeting_link);
-      } else {
-        Alert.alert('Error', 'Unable to open meeting link.');
-      }
-    } catch (err) {
-      Alert.alert('Error', 'Failed to open meeting link.');
-    }
-  }, [classDetails, classId]);
+  const handleAskDoubt = () => {
+    trackAction('ask_doubt', 'NewClassDetailScreen');
+  };
 
-  // Handle download material
-  const handleDownloadMaterial = useCallback(
-    async (material: any) => {
-      if (!material.file_url) {
-        Alert.alert('No File', 'This material does not have a file attached.');
-        return;
-      }
-
-      trackAction('download_material', 'NewClassDetailScreen', {
-        classId,
-        materialId: material.id,
-      });
-
-      try {
-        const supported = await Linking.canOpenURL(material.file_url);
-        if (supported) {
-          await Linking.openURL(material.file_url);
-        } else {
-          Alert.alert('Error', 'Unable to open file.');
-        }
-      } catch (err) {
-        Alert.alert('Error', 'Failed to open file.');
-      }
-    },
-    [classId]
-  );
-
-  // Handle play recording
-  const handlePlayRecording = useCallback(
-    async (recording: any) => {
-      if (!recording.recording_url) {
-        Alert.alert('No Recording', 'This recording is not available yet.');
-        return;
-      }
-
-      trackAction('play_recording', 'NewClassDetailScreen', {
-        classId,
-        recordingId: recording.id,
-      });
-
-      Alert.alert(
-        'Play Recording',
-        `Play "${recording.title}"?`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Play',
-            onPress: async () => {
-              try {
-                const supported = await Linking.canOpenURL(recording.recording_url);
-                if (supported) {
-                  await Linking.openURL(recording.recording_url);
-                } else {
-                  Alert.alert('Error', 'Unable to open recording.');
-                }
-              } catch (err) {
-                Alert.alert('Error', 'Failed to open recording.');
-              }
-            },
-          },
-        ]
-      );
-    },
-    [classId]
-  );
-
-  // Handle contact teacher
-  const handleContactTeacher = useCallback(() => {
-    if (!classDetails?.teacher_email && !classDetails?.teacher_phone) {
-      Alert.alert('No Contact Info', 'Teacher contact information is not available.');
-      return;
-    }
-
-    trackAction('contact_teacher', 'NewClassDetailScreen', { classId });
-
-    const options = [];
-
-    if (classDetails.teacher_email) {
-      options.push({
-        text: `📧 Email: ${classDetails.teacher_email}`,
-        onPress: () => Linking.openURL(`mailto:${classDetails.teacher_email}`),
-      });
-    }
-
-    if (classDetails.teacher_phone) {
-      options.push({
-        text: `📞 Call: ${classDetails.teacher_phone}`,
-        onPress: () => Linking.openURL(`tel:${classDetails.teacher_phone}`),
-      });
-    }
-
-    options.push({ text: 'Cancel', style: 'cancel' });
-
-    Alert.alert('Contact Teacher', 'Choose contact method:', options);
-  }, [classDetails, classId]);
-
-  if (!classId) {
-    return (
-      <BaseScreen scrollable={false} error="No class ID provided">
-        <View />
-      </BaseScreen>
-    );
-  }
-
-  const status = getClassStatus();
-
-  // Render Overview Tab
-  const renderOverviewTab = () => (
-    <View style={styles.tabContent}>
-      {/* Class Header */}
-      <Card style={styles.headerCard}>
-        <View style={styles.headerTop}>
-          <View style={styles.headerInfo}>
-            <T variant="h2" weight="bold">
-              {classDetails?.subject}
-            </T>
-            <T variant="body" style={styles.teacherName}>
-              {classDetails?.teacher_name}
-            </T>
-          </View>
-          <Badge
-            variant={status === 'live' ? 'error' : status === 'upcoming' ? 'info' : 'neutral'}
-          >
-            {status === 'live' ? '🔴 LIVE' : status === 'upcoming' ? '🔵 Upcoming' : '⚪ Ended'}
-          </Badge>
-        </View>
-
-        {/* Time Info */}
-        <View style={styles.timeInfo}>
-          <View style={styles.timeRow}>
-            <T variant="caption" style={styles.timeLabel}>
-              📅{' '}
-              {new Date(classDetails?.scheduled_at || '').toLocaleDateString('en-US', {
-                weekday: 'long',
-                month: 'long',
-                day: 'numeric',
-              })}
-            </T>
-          </View>
-          <View style={styles.timeRow}>
-            <T variant="caption" style={styles.timeLabel}>
-              🕐{' '}
-              {new Date(classDetails?.scheduled_at || '').toLocaleTimeString('en-US', {
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true,
-              })}{' '}
-              • {classDetails?.duration_minutes} minutes
-            </T>
-          </View>
-        </View>
-
-        {/* Description */}
-        {classDetails?.description && (
-          <View style={styles.descriptionContainer}>
-            <T variant="body" style={styles.description}>
-              {classDetails.description}
-            </T>
-          </View>
-        )}
-
-        {/* Action Buttons */}
-        <View style={styles.actions}>
-          {status === 'live' && classDetails?.meeting_link && (
-            <TouchableOpacity
-              style={[styles.actionButton, styles.joinButton]}
-              onPress={handleJoinClass}
-              accessibilityRole="button"
-              accessibilityLabel="Join live class"
-            >
-              <T variant="body" weight="semiBold" style={styles.joinButtonText}>
-                🔴 Join Live Class
-              </T>
-            </TouchableOpacity>
-          )}
-          {status === 'upcoming' && classDetails?.meeting_link && (
-            <TouchableOpacity
-              style={[styles.actionButton, styles.linkButton]}
-              onPress={handleJoinClass}
-              accessibilityRole="button"
-              accessibilityLabel="View meeting link"
-            >
-              <T variant="body" weight="semiBold" style={styles.linkButtonText}>
-                🔗 View Meeting Link
-              </T>
-            </TouchableOpacity>
-          )}
-        </View>
-      </Card>
-
-      {/* Teacher Card */}
-      <Card style={styles.teacherCard}>
-        <T variant="title" weight="semiBold" style={styles.sectionTitle}>
-          Teacher
-        </T>
-        <View style={styles.teacherInfo}>
-          <View style={styles.teacherAvatar}>
-            <T variant="h2">👨‍🏫</T>
-          </View>
-          <View style={styles.teacherDetails}>
-            <T variant="body" weight="semiBold">
-              {classDetails?.teacher_name}
-            </T>
-            {classDetails?.teacher_email && (
-              <T variant="caption" style={styles.teacherEmail}>
-                {classDetails.teacher_email}
-              </T>
-            )}
-            {classDetails?.teacher_phone && (
-              <T variant="caption" style={styles.teacherEmail}>
-                {classDetails.teacher_phone}
-              </T>
-            )}
-          </View>
-          {(classDetails?.teacher_email || classDetails?.teacher_phone) && (
-            <TouchableOpacity
-              style={styles.contactButton}
-              onPress={handleContactTeacher}
-              accessibilityRole="button"
-              accessibilityLabel="Contact teacher"
-            >
-              <T variant="body">📧</T>
-            </TouchableOpacity>
-          )}
-        </View>
-      </Card>
-
-      {/* Quick Stats */}
-      <Card style={styles.statsCard}>
-        <T variant="title" weight="semiBold" style={styles.sectionTitle}>
-          Quick Info
-        </T>
-        <Row gap="md" style={{ justifyContent: 'space-around' }}>
-          <Col style={{ alignItems: 'center' }}>
-            <T variant="h3">📚</T>
-            <T variant="body" weight="bold">
-              {classDetails?.materials?.length || 0}
-            </T>
-            <T variant="caption" color="textSecondary">
-              Materials
-            </T>
-          </Col>
-          <Col style={{ alignItems: 'center' }}>
-            <T variant="h3">🎥</T>
-            <T variant="body" weight="bold">
-              {classDetails?.recordings?.length || 0}
-            </T>
-            <T variant="caption" color="textSecondary">
-              Recordings
-            </T>
-          </Col>
-          <Col style={{ alignItems: 'center' }}>
-            <T variant="h3">⏱️</T>
-            <T variant="body" weight="bold">
-              {classDetails?.duration_minutes}m
-            </T>
-            <T variant="caption" color="textSecondary">
-              Duration
-            </T>
-          </Col>
-        </Row>
-      </Card>
-    </View>
-  );
-
-  // Render Materials Tab
-  const renderMaterialsTab = () => (
-    <View style={styles.tabContent}>
-      {classDetails?.materials && classDetails.materials.length > 0 ? (
-        <>
-          <T variant="title" weight="semiBold" style={{ marginBottom: 12 }}>
-            Study Materials ({classDetails.materials.length})
-          </T>
-          {classDetails.materials.map((material) => (
-            <Card key={material.id} variant="outlined" style={{ marginBottom: 12 }}>
-              <TouchableOpacity
-                style={styles.materialItem}
-                onPress={() => handleDownloadMaterial(material)}
-                accessibilityRole="button"
-                accessibilityLabel={`Open ${material.title}`}
-              >
-                <View style={styles.materialIcon}>
-                  <T variant="h3">
-                    {material.type === 'pdf'
-                      ? '📄'
-                      : material.type === 'video'
-                      ? '🎥'
-                      : '📝'}
-                  </T>
-                </View>
-                <View style={styles.materialInfo}>
-                  <T variant="body" weight="semiBold" numberOfLines={1}>
-                    {material.title}
-                  </T>
-                  <Row gap="md">
-                    <T variant="caption" style={styles.materialMeta}>
-                      {new Date(material.created_at).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                      })}
-                    </T>
-                    {material.file_size && (
-                      <T variant="caption" style={styles.materialMeta}>
-                        {material.file_size}
-                      </T>
-                    )}
-                  </Row>
-                </View>
-                <T variant="body" style={styles.materialArrow}>
-                  ⬇️
-                </T>
-              </TouchableOpacity>
-            </Card>
-          ))}
-        </>
-      ) : (
-        <Card style={{ padding: 24, alignItems: 'center' }}>
-          <T variant="h2" style={{ marginBottom: 8 }}>
-            📚
-          </T>
-          <T variant="body" color="textSecondary" style={{ textAlign: 'center' }}>
-            No study materials available yet
-          </T>
-        </Card>
-      )}
-    </View>
-  );
-
-  // Render Recordings Tab
-  const renderRecordingsTab = () => (
-    <View style={styles.tabContent}>
-      {classDetails?.recordings && classDetails.recordings.length > 0 ? (
-        <>
-          <T variant="title" weight="semiBold" style={{ marginBottom: 12 }}>
-            Past Recordings ({classDetails.recordings.length})
-          </T>
-          {classDetails.recordings.map((recording) => (
-            <Card key={recording.id} variant="outlined" style={{ marginBottom: 12 }}>
-              <TouchableOpacity
-                style={styles.recordingItem}
-                onPress={() => handlePlayRecording(recording)}
-                accessibilityRole="button"
-                accessibilityLabel={`Play recording: ${recording.title}`}
-              >
-                <View style={styles.recordingIcon}>
-                  <T variant="h3">🎥</T>
-                </View>
-                <View style={styles.recordingInfo}>
-                  <T variant="body" weight="semiBold" numberOfLines={1}>
-                    {recording.title}
-                  </T>
-                  <Row gap="md">
-                    <T variant="caption" style={styles.recordingMeta}>
-                      {new Date(recording.created_at).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })}
-                    </T>
-                    {recording.duration_minutes && (
-                      <T variant="caption" style={styles.recordingMeta}>
-                        ⏱️ {recording.duration_minutes} min
-                      </T>
-                    )}
-                    {recording.file_size && (
-                      <T variant="caption" style={styles.recordingMeta}>
-                        {recording.file_size}
-                      </T>
-                    )}
-                  </Row>
-                </View>
-                <View style={styles.playButton}>
-                  <T variant="body">▶️</T>
-                </View>
-              </TouchableOpacity>
-            </Card>
-          ))}
-        </>
-      ) : (
-        <Card style={{ padding: 24, alignItems: 'center' }}>
-          <T variant="h2" style={{ marginBottom: 8 }}>
-            🎥
-          </T>
-          <T variant="body" color="textSecondary" style={{ textAlign: 'center' }}>
-            No recordings available yet
-          </T>
-        </Card>
-      )}
-    </View>
-  );
+  const handleAssignmentPress = (assignment: Assignment) => {
+    trackAction('open_assignment', 'NewClassDetailScreen', { assignmentId: assignment.id });
+  };
 
   return (
-    <BaseScreen
-      scrollable={false}
-      loading={isLoading}
-      error={error ? 'Failed to load class details' : null}
-      empty={!classDetails}
-      emptyMessage="Class not found"
-      onRefresh={() => {
-        trackAction('refresh_class_detail', 'NewClassDetailScreen', { classId });
-        refetch();
-      }}
-    >
-      {classDetails && (
-        <View style={styles.container}>
-          {/* Tab Selector */}
-          <View style={styles.tabSelector}>
-            <Chip
-              variant="filter"
-              label="Overview"
-              selected={activeTab === 'overview'}
-              onPress={() => {
-                setActiveTab('overview');
-                trackAction('switch_tab', 'NewClassDetailScreen', { tab: 'overview' });
-              }}
-            />
-            <Chip
-              variant="filter"
-              label={`Materials (${classDetails.materials?.length || 0})`}
-              selected={activeTab === 'materials'}
-              onPress={() => {
-                setActiveTab('materials');
-                trackAction('switch_tab', 'NewClassDetailScreen', { tab: 'materials' });
-              }}
-            />
-            <Chip
-              variant="filter"
-              label={`Recordings (${classDetails.recordings?.length || 0})`}
-              selected={activeTab === 'recordings'}
-              onPress={() => {
-                setActiveTab('recordings');
-                trackAction('switch_tab', 'NewClassDetailScreen', { tab: 'recordings' });
-              }}
-            />
+    <SafeAreaView style={styles.safeArea}>
+      {/* Top App Bar */}
+      <View style={styles.topBar}>
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={() => {
+            trackAction('back_button', 'NewClassDetailScreen');
+            navigation.goBack();
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <T variant="h2" style={styles.icon}>←</T>
+        </TouchableOpacity>
+
+        <T variant="body" weight="bold" style={styles.topBarTitle}>
+          {title}
+        </T>
+
+        <View style={styles.spacer} />
+      </View>
+
+      <ScrollView
+        style={styles.container}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* Teacher Info Card */}
+        <View style={styles.teacherCard}>
+          <View style={styles.teacherAvatar}>
+            <T style={styles.avatarText}>👩‍🏫</T>
+          </View>
+          <View style={styles.teacherInfo}>
+            <T variant="body" weight="semiBold" style={styles.teacherName}>
+              {teacher}
+            </T>
+            <T variant="caption" style={styles.department}>
+              {department}
+            </T>
+          </View>
+        </View>
+
+        {/* Details Grid */}
+        <View style={styles.detailsGrid}>
+          <View style={styles.detailItem}>
+            <T variant="caption" style={styles.detailLabel}>
+              Date
+            </T>
+            <T variant="caption" style={styles.detailValue}>
+              Oct 26, 2024
+            </T>
           </View>
 
-          {/* Tab Content */}
-          <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
-            {activeTab === 'overview' && renderOverviewTab()}
-            {activeTab === 'materials' && renderMaterialsTab()}
-            {activeTab === 'recordings' && renderRecordingsTab()}
-          </ScrollView>
+          <View style={[styles.detailItem, styles.detailItemRight]}>
+            <T variant="caption" style={styles.detailLabel}>
+              Duration
+            </T>
+            <T variant="caption" style={styles.detailValue}>
+              90 mins
+            </T>
+          </View>
+
+          <View style={[styles.detailItem, styles.detailItemBorder]}>
+            <T variant="caption" style={styles.detailLabel}>
+              Time
+            </T>
+            <T variant="caption" style={styles.detailValue}>
+              10:00 - 11:30 AM
+            </T>
+          </View>
+
+          <View style={[styles.detailItem, styles.detailItemRight, styles.detailItemBorder]}>
+            <T variant="caption" style={styles.detailLabel}>
+              Location
+            </T>
+            <T variant="caption" style={styles.detailValue}>
+              Room 301
+            </T>
+          </View>
         </View>
-      )}
-    </BaseScreen>
+
+        {/* Status Chips */}
+        <View style={styles.statusChips}>
+          <View style={styles.liveChip}>
+            <View style={styles.pulseDot} />
+            <T variant="caption" weight="semiBold" style={styles.liveText}>
+              Live
+            </T>
+          </View>
+
+          <View style={styles.recordingChip}>
+            <T variant="caption" weight="semiBold" style={styles.recordingText}>
+              Recording Available
+            </T>
+          </View>
+        </View>
+
+        {/* Class Materials Accordion */}
+        <View style={styles.accordion}>
+          <TouchableOpacity
+            style={styles.accordionHeader}
+            onPress={() => setMaterialsExpanded(!materialsExpanded)}
+            accessibilityRole="button"
+            accessibilityLabel="Toggle class materials"
+          >
+            <T variant="body" weight="semiBold" style={styles.accordionTitle}>
+              Class Materials
+            </T>
+            <T
+              style={[
+                styles.expandIcon,
+                materialsExpanded && styles.expandIconRotated,
+              ]}
+            >
+              ▼
+            </T>
+          </TouchableOpacity>
+
+          {materialsExpanded && (
+            <View style={styles.accordionContent}>
+              {materials.map((material) => (
+                <TouchableOpacity
+                  key={material.id}
+                  style={styles.materialItem}
+                  onPress={() => handleDownload(material)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Download ${material.name}`}
+                >
+                  <T style={styles.materialIcon}>
+                    {material.type === 'pdf'
+                      ? '📄'
+                      : material.type === 'docx'
+                      ? '📝'
+                      : '🔗'}
+                  </T>
+                  <T variant="caption" style={styles.materialName}>
+                    {material.name}
+                  </T>
+                  <T style={styles.actionIcon}>
+                    {material.type === 'link' ? '→' : '⬇'}
+                  </T>
+                </TouchableOpacity>
+              ))}
+
+              <TouchableOpacity
+                style={styles.downloadAllButton}
+                onPress={handleDownloadAll}
+                accessibilityRole="button"
+                accessibilityLabel="Download all materials"
+              >
+                <T style={styles.downloadAllIcon}>📥</T>
+                <T variant="body" weight="semiBold" style={styles.downloadAllText}>
+                  Download All
+                </T>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+
+        {/* Attendance Section */}
+        <View style={styles.attendanceSection}>
+          <T variant="body" weight="semiBold" style={styles.sectionTitle}>
+            Your Attendance
+          </T>
+          <View style={styles.attendanceCard}>
+            <View style={styles.attendanceLeft}>
+              <T style={styles.checkIcon}>✓</T>
+              <T variant="caption" weight="semiBold" style={styles.attendanceStatus}>
+                Present
+              </T>
+            </View>
+            <T variant="caption" style={styles.attendanceCount}>
+              28 / 30 students present
+            </T>
+          </View>
+        </View>
+
+        {/* Related Assignments Accordion */}
+        <View style={styles.accordion}>
+          <TouchableOpacity
+            style={styles.accordionHeader}
+            onPress={() => setAssignmentsExpanded(!assignmentsExpanded)}
+            accessibilityRole="button"
+            accessibilityLabel="Toggle related assignments"
+          >
+            <T variant="body" weight="semiBold" style={styles.accordionTitle}>
+              Related Assignments
+            </T>
+            <T
+              style={[
+                styles.expandIcon,
+                assignmentsExpanded && styles.expandIconRotated,
+              ]}
+            >
+              ▼
+            </T>
+          </TouchableOpacity>
+
+          {assignmentsExpanded && (
+            <View style={styles.accordionContent}>
+              {assignments.map((assignment) => (
+                <TouchableOpacity
+                  key={assignment.id}
+                  style={styles.assignmentItem}
+                  onPress={() => handleAssignmentPress(assignment)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open ${assignment.title}`}
+                >
+                  <T style={styles.assignmentIcon}>
+                    {assignment.id === '1' ? '📋' : '📝'}
+                  </T>
+                  <View style={styles.assignmentInfo}>
+                    <T variant="caption" weight="semiBold" style={styles.assignmentTitle}>
+                      {assignment.title}
+                    </T>
+                    <T
+                      variant="caption"
+                      style={[
+                        styles.assignmentDue,
+                        assignment.isUrgent && styles.assignmentDueUrgent,
+                      ]}
+                    >
+                      Due: {assignment.dueDate}
+                    </T>
+                  </View>
+                  <T style={styles.chevronIcon}>›</T>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
+
+        {/* Spacer for sticky footer */}
+        <View style={styles.footerSpacer} />
+      </ScrollView>
+
+      {/* Sticky Bottom Action Buttons */}
+      <View style={styles.stickyFooter}>
+        <TouchableOpacity
+          style={styles.joinButton}
+          onPress={handleJoinClass}
+          accessibilityRole="button"
+          accessibilityLabel="Join class"
+        >
+          <T style={styles.joinIcon}>📹</T>
+          <T variant="body" weight="bold" style={styles.joinText}>
+            Join Class
+          </T>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.doubtButton}
+          onPress={handleAskDoubt}
+          accessibilityRole="button"
+          accessibilityLabel="Ask doubt"
+        >
+          <T style={styles.doubtIcon}>❓</T>
+          <T variant="body" weight="bold" style={styles.doubtText}>
+            Ask Doubt
+          </T>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
+    backgroundColor: '#FFFFFF',
   },
-  tabSelector: {
+  // Top App Bar
+  topBar: {
+    height: 56,
     flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 8,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 8,
+    backgroundColor: '#F6F7F8',
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
   },
-  scrollContent: {
-    flex: 1,
-  },
-  tabContent: {
-    padding: 16,
-  },
-  headerCard: {
-    padding: 16,
-    gap: 12,
-    marginBottom: 16,
-  },
-  headerTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: 12,
-  },
-  headerInfo: {
-    flex: 1,
-    gap: 4,
-  },
-  teacherName: {
-    color: '#6B7280',
-  },
-  timeInfo: {
-    gap: 4,
-  },
-  timeRow: {
-    flexDirection: 'row',
+  iconButton: {
+    width: 40,
+    height: 40,
     alignItems: 'center',
-  },
-  timeLabel: {
-    color: '#6B7280',
-  },
-  descriptionContainer: {
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
-  },
-  description: {
-    color: '#4B5563',
-    lineHeight: 20,
-  },
-  actions: {
-    gap: 8,
-    paddingTop: 8,
-  },
-  actionButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    minHeight: 48,
     justifyContent: 'center',
+    borderRadius: 20,
   },
-  joinButton: {
-    backgroundColor: '#EF4444',
+  icon: {
+    fontSize: 24,
+    color: '#111418',
   },
-  joinButtonText: {
-    color: '#FFFFFF',
+  topBarTitle: {
+    flex: 1,
+    textAlign: 'center',
+    color: '#111418',
+    fontSize: 16,
+    paddingHorizontal: 8,
   },
-  linkButton: {
-    backgroundColor: '#3B82F6',
+  spacer: {
+    width: 40,
   },
-  linkButtonText: {
-    color: '#FFFFFF',
+  container: {
+    flex: 1,
+    backgroundColor: '#F6F7F8',
   },
-  teacherCard: {
+  scrollContent: {
     padding: 16,
-    gap: 12,
-    marginBottom: 16,
+    paddingBottom: 100,
   },
-  sectionTitle: {
-    marginBottom: 4,
-  },
-  teacherInfo: {
+  // Teacher Card
+  teacherCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+
+    backgroundColor: '#FFFFFF',
+    padding: 16,
+    borderRadius: 12,
+    minHeight: 72,
+    marginBottom: 24,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
   },
   teacherAvatar: {
     width: 56,
@@ -682,77 +410,290 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  teacherDetails: {
+  avatarText: {
+    fontSize: 28,
+  },
+  teacherInfo: {
     flex: 1,
-    gap: 4,
+
   },
-  teacherEmail: {
-    color: '#6B7280',
+  teacherName: {
+    color: '#111418',
+    fontSize: 15,
   },
-  contactButton: {
-    width: 48,
-    height: 48,
+  department: {
+    color: '#617589',
+    fontSize: 13,
+  },
+  // Details Grid
+  detailsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 24,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+  },
+  detailItem: {
+    width: '50%',
+    padding: 12,
+
+  },
+  detailItemRight: {
+    paddingLeft: 8,
+  },
+  detailItemBorder: {
+    borderTopWidth: 1,
+    borderTopColor: '#DBE0E6',
+  },
+  detailLabel: {
+    color: '#617589',
+    fontSize: 13,
+  },
+  detailValue: {
+    color: '#111418',
+    fontSize: 13,
+  },
+  // Status Chips
+  statusChips: {
+    flexDirection: 'row',
+
+    marginBottom: 24,
+    flexWrap: 'wrap',
+  },
+  liveChip: {
+    flexDirection: 'row',
     alignItems: 'center',
+
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: 'rgba(34, 197, 94, 0.2)',
+    borderRadius: 8,
+    height: 32,
+  },
+  pulseDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#22C55E',
+  },
+  liveText: {
+    color: '#15803D',
+    fontSize: 13,
+  },
+  recordingChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    backgroundColor: 'rgba(19, 127, 236, 0.2)',
+    borderRadius: 8,
+    height: 32,
     justifyContent: 'center',
-    backgroundColor: '#F3F4F6',
-    borderRadius: 24,
   },
-  statsCard: {
+  recordingText: {
+    color: '#137FEC',
+    fontSize: 13,
+  },
+  // Accordion
+  accordion: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    marginBottom: 12,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    overflow: 'hidden',
+  },
+  accordionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     padding: 16,
-    marginBottom: 16,
   },
+  accordionTitle: {
+    color: '#111418',
+    fontSize: 15,
+  },
+  expandIcon: {
+    fontSize: 16,
+    color: '#111418',
+  },
+  expandIconRotated: {
+    transform: [{ rotate: '180deg' }],
+  },
+  accordionContent: {
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    padding: 16,
+    paddingTop: 8,
+
+  },
+  // Materials
   materialItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    padding: 12,
+
+    paddingVertical: 8,
   },
   materialIcon: {
-    width: 48,
-    height: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#F9FAFB',
-    borderRadius: 8,
+    fontSize: 24,
   },
-  materialInfo: {
+  materialName: {
     flex: 1,
-    gap: 4,
+    color: '#617589',
+    fontSize: 13,
   },
-  materialMeta: {
-    color: '#9CA3AF',
-  },
-  materialArrow: {
-    color: '#3B82F6',
+  actionIcon: {
     fontSize: 20,
+    color: '#137FEC',
   },
-  recordingItem: {
+  downloadAllButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    padding: 12,
-  },
-  recordingIcon: {
-    width: 48,
-    height: 48,
-    alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FEF3C7',
+
+    paddingVertical: 12,
+    marginTop: 12,
+    backgroundColor: 'rgba(19, 127, 236, 0.1)',
     borderRadius: 8,
   },
-  recordingInfo: {
-    flex: 1,
-    gap: 4,
+  downloadAllIcon: {
+    fontSize: 20,
   },
-  recordingMeta: {
+  downloadAllText: {
+    color: '#137FEC',
+    fontSize: 14,
+  },
+  // Attendance
+  attendanceSection: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+  },
+  sectionTitle: {
+    color: '#111418',
+    fontSize: 15,
+  },
+  attendanceCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F6F7F8',
+    padding: 12,
+    borderRadius: 8,
+  },
+  attendanceLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+
+  },
+  checkIcon: {
+    fontSize: 20,
+    color: '#22C55E',
+  },
+  attendanceStatus: {
+    color: '#111827',
+    fontSize: 13,
+  },
+  attendanceCount: {
+    color: '#6B7280',
+    fontSize: 13,
+  },
+  // Assignments
+  assignmentItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+
+    paddingVertical: 8,
+  },
+  assignmentIcon: {
+    fontSize: 24,
+  },
+  assignmentInfo: {
+    flex: 1,
+
+  },
+  assignmentTitle: {
+    color: '#111418',
+    fontSize: 13,
+  },
+  assignmentDue: {
+    color: '#617589',
+    fontSize: 12,
+  },
+  assignmentDueUrgent: {
+    color: '#EF4444',
+  },
+  chevronIcon: {
+    fontSize: 24,
     color: '#9CA3AF',
   },
-  playButton: {
-    width: 40,
-    height: 40,
+  // Sticky Footer
+  footerSpacer: {
+    height: 80,
+  },
+  stickyFooter: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+
+    padding: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+  joinButton: {
+    flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#DBEAFE',
-    borderRadius: 20,
+
+    height: 48,
+    backgroundColor: '#137FEC',
+    borderRadius: 12,
+  },
+  joinIcon: {
+    fontSize: 20,
+  },
+  joinText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+  },
+  doubtButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+
+    height: 48,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 12,
+  },
+  doubtIcon: {
+    fontSize: 20,
+  },
+  doubtText: {
+    color: '#111827',
+    fontSize: 15,
   },
 });

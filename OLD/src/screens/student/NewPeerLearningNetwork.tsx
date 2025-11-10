@@ -1,34 +1,36 @@
 /**
- * NewPeerLearningNetwork - Premium Minimal Design
+ * NewPeerLearningNetwork - EXACT match to HTML reference
  * Purpose: Connect with peers for collaborative learning
- * Used in: StudentNavigator (CollaborationStack)
+ * Design: Material Design top bar, gradient header, search, peer cards, study groups
  */
 
-import React, { useState } from 'react';
-import { View, StyleSheet, FlatList, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  TextInput,
+  TouchableOpacity,
+  RefreshControl,
+  SafeAreaView,
+  StatusBar,
+  Image,
+} from 'react-native';
 import { useQuery } from '@tanstack/react-query';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { BaseScreen } from '../../shared/components/BaseScreen';
-import { Card, CardHeader, CardContent } from '../../ui/surfaces/Card';
-import { Badge } from '../../ui/data-display/Badge';
-import { Button } from '../../ui/inputs/Button';
-import { Chip } from '../../ui/inputs/Chip';
-import { Row } from '../../ui/layout/Row';
 import { T } from '../../ui';
-import { trackScreenView, trackAction } from '../../utils/navigationAnalytics';
+import { trackAction, trackScreenView } from '../../utils/navigationAnalytics';
 import { safeNavigate } from '../../utils/navigationService';
-import { getAvatarEmoji } from '../../utils/avatarUtils';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../config/supabaseClient';
-
-type Props = NativeStackScreenProps<any, 'NewPeerLearningNetwork'>;
+import HamburgerMenu from './HamburgerMenu';
 
 interface Peer {
   id: string;
   name: string;
-  subjects: string;
-  avatar: string;
-  student_id: string;
+  grade: string;
+  percentage: number;
+  subjects: string[];
+  avatar_url?: string;
 }
 
 interface StudyGroup {
@@ -36,470 +38,980 @@ interface StudyGroup {
   name: string;
   subject: string;
   members: number;
-  description: string;
-  isJoined: boolean;
+  maxMembers: number;
+  lastActive: string;
+  isActive: boolean;
 }
 
-interface PeerMatch {
+interface SuggestedPeer {
   id: string;
   name: string;
-  avatar: string;
+  grade: string;
   matchPercentage: number;
-  commonSubjects: string[];
-  studyStrength: string;
+  sharedClasses: number;
+  avatar_url?: string;
 }
 
-interface SharedResource {
-  id: string;
-  title: string;
-  type: 'pdf' | 'video' | 'link' | 'document';
-  sharedBy: string;
-  timestamp: string;
-}
-
-interface CollaborativeNote {
-  id: string;
-  title: string;
-  subject: string;
-  contributors: number;
-  lastUpdated: string;
-}
-
-interface LeaderboardEntry {
-  id: string;
-  name: string;
-  avatar: string;
-  rank: number;
-  points: number;
-  badge: string;
-}
-
-export default function NewPeerLearningNetwork({ navigation }: Props) {
+export default function NewPeerLearningNetwork() {
   const { user } = useAuth();
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const [activeTab, setActiveTab] = React.useState<'peers' | 'groups'>('peers');
 
-  // State for new features
-  const [activeTab, setActiveTab] = useState<'peers' | 'groups' | 'matches' | 'resources' | 'notes' | 'leaderboard'>('peers');
-  const [studyGroups, setStudyGroups] = useState<StudyGroup[]>([
-    { id: '1', name: 'Math Study Squad', subject: 'Mathematics', members: 8, description: 'Daily problem solving', isJoined: true },
-    { id: '2', name: 'Physics Lab Team', subject: 'Physics', members: 6, description: 'Experiment discussions', isJoined: false },
-    { id: '3', name: 'Chemistry Club', subject: 'Chemistry', members: 10, description: 'Organic chemistry focus', isJoined: true },
-  ]);
-  const [peerMatches, setPeerMatches] = useState<PeerMatch[]>([
-    { id: '1', name: 'Sarah Johnson', avatar: '👩‍🎓', matchPercentage: 95, commonSubjects: ['Math', 'Physics'], studyStrength: 'Problem Solving' },
-    { id: '2', name: 'Mike Chen', avatar: '👨‍🎓', matchPercentage: 88, commonSubjects: ['Chemistry', 'Biology'], studyStrength: 'Lab Work' },
-    { id: '3', name: 'Emma Davis', avatar: '👧', matchPercentage: 82, commonSubjects: ['Math'], studyStrength: 'Theory' },
-  ]);
-  const [sharedResources, setSharedResources] = useState<SharedResource[]>([
-    { id: '1', title: 'Calculus Notes Chapter 5', type: 'pdf', sharedBy: 'Sarah J.', timestamp: '2 hours ago' },
-    { id: '2', title: 'Physics Lab Demo Video', type: 'video', sharedBy: 'Mike C.', timestamp: '5 hours ago' },
-    { id: '3', title: 'Chemistry Reference Guide', type: 'link', sharedBy: 'Emma D.', timestamp: '1 day ago' },
-  ]);
-  const [collaborativeNotes, setCollaborativeNotes] = useState<CollaborativeNote[]>([
-    { id: '1', title: 'Trigonometry Summary', subject: 'Mathematics', contributors: 5, lastUpdated: '30 min ago' },
-    { id: '2', title: 'Thermodynamics Concepts', subject: 'Physics', contributors: 3, lastUpdated: '2 hours ago' },
-  ]);
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([
-    { id: '1', name: 'Sarah Johnson', avatar: '👩‍🎓', rank: 1, points: 2450, badge: '🏆' },
-    { id: '2', name: 'Mike Chen', avatar: '👨‍🎓', rank: 2, points: 2180, badge: '🥈' },
-    { id: '3', name: 'You', avatar: '👤', rank: 3, points: 1950, badge: '🥉' },
-    { id: '4', name: 'Emma Davis', avatar: '👧', rank: 4, points: 1720, badge: '⭐' },
-    { id: '5', name: 'Alex Kim', avatar: '🧑‍🎓', rank: 5, points: 1580, badge: '⭐' },
-  ]);
-
-  React.useEffect(() => {
+  useEffect(() => {
     trackScreenView('NewPeerLearningNetwork');
   }, []);
 
-  // Handlers
-  const handleJoinGroup = (groupId: string) => {
-    setStudyGroups(prev => prev.map(g =>
-      g.id === groupId ? { ...g, isJoined: !g.isJoined, members: g.isJoined ? g.members - 1 : g.members + 1 } : g
-    ));
-    trackAction('toggle_study_group', 'NewPeerLearningNetwork', { groupId });
-  };
-
-  const handleGroupChat = (groupId: string, groupName: string) => {
-    trackAction('open_group_chat', 'NewPeerLearningNetwork', { groupId });
-    Alert.alert('Group Chat', `Opening chat for ${groupName}...`);
-  };
-
-  const handleConnectPeer = (peerId: string, name: string) => {
-    trackAction('connect_matched_peer', 'NewPeerLearningNetwork', { peerId });
-    Alert.alert('Peer Matching', `Connecting with ${name}...`);
-  };
-
-  const handleDownloadResource = (resourceId: string, title: string) => {
-    trackAction('download_shared_resource', 'NewPeerLearningNetwork', { resourceId });
-    Alert.alert('Download', `Downloading "${title}"...`);
-  };
-
-  const handleOpenNote = (noteId: string, title: string) => {
-    trackAction('open_collaborative_note', 'NewPeerLearningNetwork', { noteId });
-    Alert.alert('Collaborative Note', `Opening "${title}"...`);
-  };
-
-  const getResourceIcon = (type: string) => {
-    switch (type) {
-      case 'pdf': return '📄';
-      case 'video': return '🎥';
-      case 'link': return '🔗';
-      case 'document': return '📝';
-      default: return '📎';
-    }
-  };
-
-  // Fetch peers from same class/batch
-  const { data: peers, isLoading, error, refetch } = useQuery({
-    queryKey: ['peer-network', user?.id],
+  // Fetch connections (peers from same class)
+  const { data: connections, isLoading, refetch } = useQuery({
+    queryKey: ['peer-connections', user?.id],
     queryFn: async () => {
       if (!user?.id) throw new Error('No user ID');
 
-      // First, get current user's class/batch
-      const { data: studentData, error: studentError } = await supabase
+      const { data: studentData } = await supabase
         .from('students')
-        .select('class_id, batch_id')
+        .select('class_id, grade')
         .eq('id', user.id)
         .single();
 
-      if (studentError) throw studentError;
+      if (!studentData) return [];
 
-      // Then fetch peers from same class
-      const { data, error } = await supabase
+      // Fetch peers from same class with their grade and avatar
+      const { data: peers, error: peersError } = await supabase
         .from('students')
-        .select('id, name, email, subjects')
+        .select('id, name, email, grade, avatar_url')
         .eq('class_id', studentData.class_id)
         .neq('id', user.id)
+        .limit(5);
+
+      if (peersError) {
+        console.error('Error fetching peers:', peersError);
+        return [];
+      }
+
+      // For each peer, fetch their subjects from class_enrollments
+      const peersWithDetails = await Promise.all(
+        (peers || []).map(async (peer) => {
+          // Fetch peer's enrolled courses/subjects
+          const { data: enrollments } = await supabase
+            .from('class_enrollments')
+            .select(`
+              classes (
+                name
+              )
+            `)
+            .eq('student_id', peer.id)
+            .limit(3);
+
+          // Calculate match percentage based on shared classes
+          const { data: sharedClasses } = await supabase
+            .from('class_enrollments')
+            .select('class_id')
+            .eq('student_id', peer.id)
+            .in(
+              'class_id',
+              (await supabase
+                .from('class_enrollments')
+                .select('class_id')
+                .eq('student_id', user.id)
+                .then(res => res.data?.map(e => e.class_id) || []))
+            );
+
+          const subjects = enrollments?.map((e: any) => e.classes?.name).filter(Boolean) || [];
+          const matchPercentage = sharedClasses?.length
+            ? Math.min(95, 70 + (sharedClasses.length * 8))
+            : 75;
+
+          return {
+            id: peer.id,
+            name: peer.name || 'Unknown Student',
+            grade: peer.grade ? `Grade ${peer.grade}` : `Grade ${studentData.grade || 11}`,
+            percentage: matchPercentage,
+            subjects: subjects.slice(0, 2),
+            avatar_url: peer.avatar_url || undefined,
+          };
+        })
+      );
+
+      return peersWithDetails as Peer[];
+    },
+    enabled: !!user?.id,
+  });
+
+  // Fetch student profile data for HamburgerMenu
+  const { data: studentData } = useQuery({
+    queryKey: ['student-profile-menu', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+
+      const { data, error } = await supabase
+        .from('students')
+        .select('name, grade, section, student_id')
+        .eq('id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching student profile:', error);
+        return null;
+      }
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  // Fetch study groups
+  const { data: studyGroups } = useQuery({
+    queryKey: ['study-groups', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+
+      const { data, error } = await supabase
+        .from('study_groups')
+        .select(`
+          id,
+          name,
+          subject,
+          max_members,
+          last_active_at
+        `)
+        .order('last_active_at', { ascending: false })
         .limit(10);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching study groups:', error);
+        return [];
+      }
 
-      return (data || []).map((student) => ({
-        id: student.id,
-        name: student.name || 'Unknown Student',
-        subjects: student.subjects || 'Various subjects',
-        avatar: getAvatarEmoji(student.id),
-        student_id: student.id,
-      })) as Peer[];
+      // Helper function to format time ago
+      const formatTimeAgo = (timestamp: string) => {
+        const now = new Date().getTime();
+        const activityTime = new Date(timestamp).getTime();
+        const diffMinutes = Math.floor((now - activityTime) / (1000 * 60));
+
+        if (diffMinutes < 60) return `${diffMinutes}m ago`;
+        const diffHours = Math.floor(diffMinutes / 60);
+        if (diffHours < 24) return `${diffHours}h ago`;
+        const diffDays = Math.floor(diffHours / 24);
+        return `${diffDays}d ago`;
+      };
+
+      // Helper function to check if active (within 15 minutes)
+      const isWithinMinutes = (timestamp: string, minutes: number) => {
+        const now = new Date().getTime();
+        const activityTime = new Date(timestamp).getTime();
+        const diffMinutes = Math.floor((now - activityTime) / (1000 * 60));
+        return diffMinutes <= minutes;
+      };
+
+      // Fetch member counts for each group
+      const groupsWithDetails = await Promise.all(
+        (data || []).map(async (group) => {
+          const { count } = await supabase
+            .from('group_members')
+            .select('*', { count: 'exact', head: true })
+            .eq('group_id', group.id);
+
+          return {
+            id: group.id,
+            name: group.name,
+            subject: group.subject,
+            members: count || 0,
+            maxMembers: group.max_members,
+            lastActive: formatTimeAgo(group.last_active_at),
+            isActive: isWithinMinutes(group.last_active_at, 15),
+          };
+        })
+      );
+
+      return groupsWithDetails as StudyGroup[];
+    },
+    enabled: !!user?.id,
+  });
+
+  // Fetch suggested peers using RPC function
+  const { data: suggestedPeers } = useQuery({
+    queryKey: ['suggested-peers', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+
+      const { data, error } = await supabase
+        .rpc('get_suggested_peers', { p_student_id: user.id })
+        .limit(5);
+
+      if (error) {
+        console.error('Error fetching suggested peers:', error);
+        return [];
+      }
+
+      return (data || []).map((peer: any) => ({
+        id: peer.id,
+        name: peer.name,
+        grade: peer.grade ? `Grade ${peer.grade}` : 'Grade 11',
+        matchPercentage: peer.match_percentage || 85,
+        sharedClasses: peer.shared_classes || 0,
+        avatar_url: peer.avatar_url || undefined,
+      })) as SuggestedPeer[];
     },
     enabled: !!user?.id,
   });
 
   return (
-    <BaseScreen
-      scrollable={false}
-      loading={isLoading}
-      error={error ? 'Failed to load peers' : null}
-    >
-      <ScrollView style={styles.scrollContainer}>
-        <View style={styles.container}>
-          <Card style={styles.headerCard}>
-            <T variant="h2" weight="bold">
-              Peer Learning Network
-            </T>
-            <T variant="body" style={styles.subtitle}>
-              Collaborate, share, and learn together
-            </T>
-          </Card>
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-          {/* Tab Selector */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabScroll}>
-            <Row gap="xs" style={{ paddingHorizontal: 16, paddingVertical: 8 }}>
-              <Chip variant="filter" label="👥 Peers" selected={activeTab === 'peers'} onPress={() => setActiveTab('peers')} />
-              <Chip variant="filter" label="📚 Groups" selected={activeTab === 'groups'} onPress={() => setActiveTab('groups')} />
-              <Chip variant="filter" label="🎯 Matches" selected={activeTab === 'matches'} onPress={() => setActiveTab('matches')} />
-              <Chip variant="filter" label="📁 Resources" selected={activeTab === 'resources'} onPress={() => setActiveTab('resources')} />
-              <Chip variant="filter" label="📝 Notes" selected={activeTab === 'notes'} onPress={() => setActiveTab('notes')} />
-              <Chip variant="filter" label="🏆 Board" selected={activeTab === 'leaderboard'} onPress={() => setActiveTab('leaderboard')} />
-            </Row>
-          </ScrollView>
+      {/* Hamburger Menu */}
+      <HamburgerMenu
+        visible={menuVisible}
+        onClose={() => setMenuVisible(false)}
+        currentRoute="NewPeerLearningNetwork"
+        studentData={studentData || undefined}
+      />
 
-          {/* 1. Peers Tab (Original) */}
-          {activeTab === 'peers' && peers && (
-            <View style={styles.tabContent}>
-              {peers.map((item) => (
-                <TouchableOpacity
-                  key={item.id}
-                  style={styles.peerCard}
-                  onPress={() => {
-                    trackAction('view_peer', 'NewPeerLearningNetwork', { peerId: item.id });
-                    safeNavigate('PeerDetail', { peerId: item.student_id, peerName: item.name });
-                  }}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Connect with ${item.name}`}
-                >
-                  <View style={styles.peerAvatar}>
-                    <T variant="h2">{item.avatar}</T>
-                  </View>
-                  <View style={styles.peerInfo}>
-                    <T variant="body" weight="semiBold">{item.name}</T>
-                    <T variant="caption" style={styles.peerSubjects}>{item.subjects}</T>
-                  </View>
-                  <T variant="body">💬</T>
-                </TouchableOpacity>
-              ))}
+      {/* Top App Bar - Material Design Standard */}
+      <View style={styles.topBar}>
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={() => {
+            trackAction('open_menu', 'NewPeerLearningNetwork');
+            setMenuVisible(true);
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Open menu"
+        >
+          <T variant="h2" style={styles.icon}>☰</T>
+        </TouchableOpacity>
+        <T variant="title" weight="bold" style={styles.topBarTitle}>Study Network</T>
+        <TouchableOpacity
+          style={styles.iconButton}
+          accessibilityRole="button"
+          accessibilityLabel="More options"
+        >
+          <T variant="h2" style={styles.icon}>⋮</T>
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isLoading}
+            onRefresh={() => {
+              trackAction('refresh_peer_network', 'NewPeerLearningNetwork');
+              refetch();
+            }}
+          />
+        }
+      >
+        {/* Gradient Header */}
+        <View style={styles.gradientHeader}>
+          <T style={styles.headerTitle}>Connect & Collaborate</T>
+          <T variant="body" style={styles.headerSubtitle}>
+            Find study partners and groups for your courses.
+          </T>
+          <View style={styles.tabsRow}>
+            <TouchableOpacity
+              style={[styles.tabButton, activeTab === 'peers' && styles.tabButtonActive]}
+              onPress={() => {
+                setActiveTab('peers');
+                trackAction('switch_to_peers_tab', 'NewPeerLearningNetwork');
+              }}
+            >
+              <T variant="body" weight="bold" style={activeTab === 'peers' ? styles.tabTextActive : styles.tabTextInactive}>
+                Find Peers
+              </T>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.tabButton, activeTab === 'groups' && styles.tabButtonActive]}
+              onPress={() => {
+                setActiveTab('groups');
+                trackAction('switch_to_groups_tab', 'NewPeerLearningNetwork');
+              }}
+            >
+              <T variant="body" weight="bold" style={activeTab === 'groups' ? styles.tabTextActive : styles.tabTextInactive}>
+                Groups
+              </T>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Floating Search Bar */}
+        <View style={styles.searchContainer}>
+          <View style={styles.searchCard}>
+            <T variant="h3" style={styles.searchIcon}>🔍</T>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search students or groups..."
+              placeholderTextColor="#888888"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+          </View>
+        </View>
+
+        <View style={styles.content}>
+          {/* My Connections Section */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <T variant="body" weight="bold" style={styles.sectionTitle}>My Connections</T>
+              <TouchableOpacity onPress={() => trackAction('view_all_connections', 'NewPeerLearningNetwork')}>
+                <T variant="caption" weight="bold" style={styles.seeAllLink}>See All</T>
+              </TouchableOpacity>
             </View>
-          )}
 
-          {/* 2. Study Groups Tab */}
-          {activeTab === 'groups' && (
-            <View style={styles.tabContent}>
-              {studyGroups.map((group) => (
-                <Card key={group.id} style={styles.groupCard}>
-                  <View style={styles.groupHeader}>
-                    <View style={{ flex: 1 }}>
-                      <T variant="body" weight="semiBold">{group.name}</T>
-                      <T variant="caption" style={{ color: '#6B7280' }}>{group.subject}</T>
-                    </View>
-                    <Badge variant="info" label={`${group.members} members`} />
-                  </View>
-                  <T variant="caption" style={{ color: '#6B7280', marginVertical: 8 }}>
-                    {group.description}
-                  </T>
-                  <Row gap="xs">
-                    <Button
-                      variant={group.isJoined ? 'primary' : 'outline'}
-                      onPress={() => handleJoinGroup(group.id)}
-                      style={{ flex: 1 }}
-                    >
-                      {group.isJoined ? 'Joined ✓' : 'Join'}
-                    </Button>
-                    {group.isJoined && (
-                      <Button variant="outline" onPress={() => handleGroupChat(group.id, group.name)}>
-                        💬 Chat
-                      </Button>
+            {/* Horizontal Scroll - Peer Cards */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.horizontalScrollContent}
+            >
+              {(connections || []).map((peer) => (
+                <View key={peer.id} style={styles.peerCard}>
+                  {/* Profile Header */}
+                  <View style={styles.peerCardHeader}>
+                    {peer.avatar_url ? (
+                      <Image source={{ uri: peer.avatar_url }} style={styles.peerAvatar} />
+                    ) : (
+                      <View style={styles.peerAvatarPlaceholder}>
+                        <T variant="h2">👤</T>
+                      </View>
                     )}
-                  </Row>
-                </Card>
-              ))}
-            </View>
-          )}
-
-          {/* 3. Peer Matching Tab */}
-          {activeTab === 'matches' && (
-            <View style={styles.tabContent}>
-              {peerMatches.map((match) => (
-                <Card key={match.id} style={styles.matchCard}>
-                  <View style={styles.matchHeader}>
-                    <T variant="h2">{match.avatar}</T>
-                    <View style={{ flex: 1, marginLeft: 12 }}>
-                      <T variant="body" weight="semiBold">{match.name}</T>
-                      <T variant="caption" style={{ color: '#6B7280' }}>
-                        {match.studyStrength}
-                      </T>
+                    <View style={styles.peerInfo}>
+                      <T variant="body" weight="bold" style={styles.peerName}>{peer.name}</T>
+                      <T variant="caption" style={styles.peerGrade}>{peer.grade}</T>
                     </View>
-                    <View style={styles.matchBadge}>
-                      <T variant="caption" weight="bold" style={{ color: '#10B981' }}>
-                        {match.matchPercentage}%
+                    <View style={styles.percentageBadge}>
+                      <T variant="caption" style={styles.starIcon}>⭐</T>
+                      <T variant="caption" weight="bold" style={styles.percentageText}>
+                        {peer.percentage}%
                       </T>
                     </View>
                   </View>
-                  <View style={styles.matchSubjects}>
-                    {match.commonSubjects.map((subject, idx) => (
-                      <Badge key={idx} variant="info" label={subject} />
+
+                  {/* Subject Tags */}
+                  <View style={styles.subjectTags}>
+                    {peer.subjects.map((subject, idx) => (
+                      <View key={idx} style={styles.subjectTag}>
+                        <T variant="caption" style={styles.subjectTagText}>{subject}</T>
+                      </View>
                     ))}
                   </View>
-                  <Button variant="primary" onPress={() => handleConnectPeer(match.id, match.name)}>
-                    Connect
-                  </Button>
-                </Card>
-              ))}
-            </View>
-          )}
 
-          {/* 4. Resource Sharing Tab */}
-          {activeTab === 'resources' && (
-            <View style={styles.tabContent}>
-              {sharedResources.map((resource) => (
-                <View key={resource.id} style={styles.resourceItem}>
-                  <T variant="h3">{getResourceIcon(resource.type)}</T>
-                  <View style={{ flex: 1, marginLeft: 12 }}>
-                    <T variant="body" weight="semiBold">{resource.title}</T>
-                    <T variant="caption" style={{ color: '#9CA3AF' }}>
-                      {resource.sharedBy} • {resource.timestamp}
+                  {/* Action Buttons */}
+                  <View style={styles.peerCardActions}>
+                    <TouchableOpacity
+                      style={styles.messageButton}
+                      onPress={() => {
+                        trackAction('message_peer', 'NewPeerLearningNetwork', { peerId: peer.id });
+                      }}
+                    >
+                      <T variant="caption" weight="bold" style={styles.messageButtonText}>Message</T>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.viewProfileButton}
+                      onPress={() => {
+                        trackAction('view_peer_profile', 'NewPeerLearningNetwork', { peerId: peer.id });
+                        // @ts-expect-error - PeerDetail is in CollaborationStack, navigation types need update
+                        safeNavigate('PeerDetail', { peerId: peer.id, peerName: peer.name });
+                      }}
+                    >
+                      <T variant="caption" weight="bold" style={styles.viewProfileButtonText}>View Profile</T>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+
+          {/* Study Groups Section */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <T variant="body" weight="bold" style={styles.sectionTitle}>Study Groups</T>
+              <TouchableOpacity onPress={() => trackAction('view_all_groups', 'NewPeerLearningNetwork')}>
+                <T variant="caption" weight="bold" style={styles.seeAllLink}>See All</T>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.groupsList}>
+              {(studyGroups || []).map((group) => (
+                <View key={group.id} style={styles.groupCard}>
+                  <View style={styles.groupCardHeader}>
+                    <View style={styles.groupCardLeft}>
+                      <T variant="body" weight="bold" style={styles.groupName}>{group.name}</T>
+                      <T variant="caption" style={styles.groupSubject}>{group.subject}</T>
+                    </View>
+                    {group.isActive && (
+                      <View style={styles.activeBadge}>
+                        <View style={styles.activeDot} />
+                        <T variant="caption" weight="bold" style={styles.activeBadgeText}>Active</T>
+                      </View>
+                    )}
+                  </View>
+
+                  <View style={styles.groupCardFooter}>
+                    <View style={styles.groupStats}>
+                      <T variant="caption" style={styles.groupIcon}>👥</T>
+                      <T variant="caption" style={styles.groupStatsText}>
+                        {group.members}/{group.maxMembers} members
+                      </T>
+                    </View>
+                    <T variant="caption" style={styles.lastActiveText}>
+                      Last active: {group.lastActive}
                     </T>
                   </View>
+
                   <TouchableOpacity
-                    onPress={() => handleDownloadResource(resource.id, resource.title)}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Download ${resource.title}`}
+                    style={styles.openGroupButton}
+                    onPress={() => {
+                      trackAction('open_group', 'NewPeerLearningNetwork', { groupId: group.id });
+                    }}
                   >
-                    <T variant="h3">⬇️</T>
+                    <T variant="caption" weight="bold" style={styles.openGroupButtonText}>Open Group</T>
                   </TouchableOpacity>
                 </View>
               ))}
             </View>
-          )}
+          </View>
 
-          {/* 5. Collaborative Notes Tab */}
-          {activeTab === 'notes' && (
-            <View style={styles.tabContent}>
-              {collaborativeNotes.map((note) => (
-                <TouchableOpacity
-                  key={note.id}
-                  style={styles.noteCard}
-                  onPress={() => handleOpenNote(note.id, note.title)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Open note ${note.title}`}
-                >
-                  <View style={styles.noteHeader}>
-                    <T variant="body" weight="semiBold">{note.title}</T>
-                    <Badge variant="success" label={note.subject} />
-                  </View>
-                  <View style={styles.noteFooter}>
-                    <T variant="caption" style={{ color: '#9CA3AF' }}>
-                      👥 {note.contributors} contributors
-                    </T>
-                    <T variant="caption" style={{ color: '#9CA3AF' }}>
-                      Updated {note.lastUpdated}
-                    </T>
-                  </View>
-                </TouchableOpacity>
-              ))}
+          {/* Suggested for You Section */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <T variant="body" weight="bold" style={styles.sectionTitle}>Suggested for You</T>
             </View>
-          )}
 
-          {/* 6. Leaderboard Tab */}
-          {activeTab === 'leaderboard' && (
-            <View style={styles.tabContent}>
-              {leaderboard.map((entry) => (
-                <View key={entry.id} style={[styles.leaderboardItem, entry.name === 'You' && styles.leaderboardItemHighlight]}>
-                  <View style={styles.leaderboardRank}>
-                    <T variant="body" weight="bold">{entry.badge}</T>
-                    <T variant="caption" style={{ color: '#6B7280' }}>#{entry.rank}</T>
+            {/* Horizontal Scroll - Suggested Cards */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.horizontalScrollContent}
+            >
+              {/* Suggested Peer Card */}
+              {(suggestedPeers || []).map((peer) => (
+                <View key={peer.id} style={styles.suggestedPeerCard}>
+                  <View style={styles.suggestedPeerHeader}>
+                    {peer.avatar_url ? (
+                      <Image source={{ uri: peer.avatar_url }} style={styles.suggestedPeerAvatar} />
+                    ) : (
+                      <View style={styles.suggestedPeerAvatarPlaceholder}>
+                        <T variant="h2">👤</T>
+                      </View>
+                    )}
+                    <View style={styles.suggestedPeerInfo}>
+                      <T variant="body" weight="bold" style={styles.suggestedPeerName}>{peer.name}</T>
+                      <T variant="caption" style={styles.suggestedPeerGrade}>{peer.grade}</T>
+                      <View style={styles.matchBadge}>
+                        <T variant="caption" style={styles.starIcon}>⭐</T>
+                        <T variant="caption" weight="bold" style={styles.matchBadgeText}>
+                          {peer.matchPercentage}% Match
+                        </T>
+                      </View>
+                    </View>
+                    <TouchableOpacity
+                      style={styles.addButton}
+                      onPress={() => {
+                        trackAction('add_suggested_peer', 'NewPeerLearningNetwork', { peerId: peer.id });
+                      }}
+                    >
+                      <T variant="body" style={styles.addButtonIcon}>+</T>
+                    </TouchableOpacity>
                   </View>
-                  <T variant="h3">{entry.avatar}</T>
-                  <View style={{ flex: 1, marginLeft: 12 }}>
-                    <T variant="body" weight="semiBold">{entry.name}</T>
-                    <T variant="caption" style={{ color: '#6B7280' }}>
-                      {entry.points.toLocaleString()} points
-                    </T>
-                  </View>
+                  <T variant="caption" style={styles.suggestedPeerHint}>
+                    You both share {peer.sharedClasses} classes together.
+                  </T>
                 </View>
               ))}
-            </View>
-          )}
+
+              {/* Suggested Group Card */}
+              <View style={styles.suggestedGroupCard}>
+                <View style={styles.suggestedGroupHeader}>
+                  <View style={styles.suggestedGroupIcon}>
+                    <T variant="h2" style={styles.suggestedGroupIconText}>🧬</T>
+                  </View>
+                  <View style={styles.suggestedGroupInfo}>
+                    <T variant="body" weight="bold" style={styles.suggestedGroupName}>Biology Buffs</T>
+                    <T variant="caption" style={styles.suggestedGroupSubject}>Intro to Biology</T>
+                  </View>
+                </View>
+                <T variant="caption" style={styles.suggestedGroupHint}>
+                  New group with students from your class.
+                </T>
+                <TouchableOpacity
+                  style={styles.joinGroupButton}
+                  onPress={() => {
+                    trackAction('join_suggested_group', 'NewPeerLearningNetwork', { groupId: 'biology-buffs' });
+                  }}
+                >
+                  <T variant="caption" weight="bold" style={styles.joinGroupButtonText}>Join Group</T>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </View>
         </View>
       </ScrollView>
-    </BaseScreen>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollContainer: {
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#F8F9FA',
+  },
+  scrollView: {
     flex: 1,
   },
-  container: {
-    flex: 1,
-    paddingBottom: 16,
-  },
-  headerCard: {
-    padding: 16,
-    margin: 16,
-    marginBottom: 8,
-    gap: 8,
-  },
-  subtitle: {
-    color: '#6B7280',
-  },
-  tabScroll: {
-    flexGrow: 0,
-  },
-  tabContent: {
-    padding: 16,
-    gap: 12,
-  },
-  peerCard: {
+  // Top App Bar - Material Design Standard
+  topBar: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 12,
-    padding: 16,
+    paddingHorizontal: 16,
+    height: 56,
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 2,
   },
-  peerAvatar: {
+  iconButton: {
     width: 48,
     height: 48,
-    borderRadius: 24,
-    backgroundColor: '#F3F4F6',
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 24,
+  },
+  icon: {
+    fontSize: 24,
+    color: '#333333',
+  },
+  topBarTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#333333',
+  },
+  // Gradient Header
+  gradientHeader: {
+    backgroundColor: '#4A90E2',
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 56,
+  },
+  headerTitle: {
+    fontSize: 30,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: -0.5,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginTop: 4,
+  },
+  tabsRow: {
+    flexDirection: 'row',
+    marginTop: 24,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 9999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  tabButtonActive: {
+    backgroundColor: '#FFFFFF',
+  },
+  tabTextActive: {
+    fontSize: 14,
+    color: '#4A90E2',
+  },
+  tabTextInactive: {
+    fontSize: 14,
+    color: '#FFFFFF',
+  },
+  // Floating Search Bar
+  searchContainer: {
+    paddingHorizontal: 16,
+    marginTop: -32,
+    marginBottom: 24,
+  },
+  searchCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 56,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  searchIcon: {
+    fontSize: 20,
+    color: '#888888',
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#333333',
+  },
+  content: {
+    paddingBottom: 32,
+  },
+  // Section Layout
+  section: {
+    marginBottom: 32,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    color: '#333333',
+  },
+  seeAllLink: {
+    fontSize: 14,
+    color: '#4A90E2',
+  },
+  // Horizontal Scroll
+  horizontalScrollContent: {
+    paddingHorizontal: 16,
+  },
+  // Peer Card (Horizontal Scroll)
+  peerCard: {
+    width: 256,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    marginRight: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  peerCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  peerAvatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+  },
+  peerAvatarPlaceholder: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#E0E0E0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
   },
   peerInfo: {
     flex: 1,
-    gap: 4,
   },
-  peerSubjects: {
-    color: '#6B7280',
+  peerName: {
+    fontSize: 16,
+    color: '#333333',
+  },
+  peerGrade: {
+    fontSize: 14,
+    color: '#888888',
+    marginTop: 2,
+  },
+  percentageBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 9999,
+    backgroundColor: 'rgba(245, 166, 35, 0.1)',
+  },
+  starIcon: {
+    fontSize: 14,
+    marginRight: 4,
+  },
+  percentageText: {
+    fontSize: 12,
+    color: '#F5A623',
+  },
+  subjectTags: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 16,
+  },
+  subjectTag: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 9999,
+    backgroundColor: '#F8F9FA',
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  subjectTagText: {
+    fontSize: 12,
+    color: '#888888',
+  },
+  peerCardActions: {
+    flexDirection: 'row',
+    marginTop: 8,
+  },
+  messageButton: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: '#4A90E2',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+  messageButtonText: {
+    fontSize: 14,
+    color: '#FFFFFF',
+  },
+  viewProfileButton: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: '#F8F9FA',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  viewProfileButtonText: {
+    fontSize: 14,
+    color: '#333333',
+  },
+  // Study Groups Section
+  groupsList: {
+    paddingHorizontal: 16,
   },
   groupCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
     padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
   },
-  groupHeader: {
+  groupCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  groupCardLeft: {
+    flex: 1,
+  },
+  groupName: {
+    fontSize: 16,
+    color: '#333333',
+  },
+  groupSubject: {
+    fontSize: 14,
+    color: '#888888',
+    marginTop: 2,
+  },
+  activeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 9999,
+    backgroundColor: 'rgba(80, 227, 194, 0.2)',
+  },
+  activeDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#50E3C2',
+    marginRight: 6,
+  },
+  activeBadgeText: {
+    fontSize: 12,
+    color: '#50E3C2',
+  },
+  groupCardFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  matchCard: {
-    padding: 16,
-    gap: 12,
-  },
-  matchHeader: {
+  groupStats: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  groupIcon: {
+    fontSize: 18,
+    marginRight: 6,
+  },
+  groupStatsText: {
+    fontSize: 14,
+    color: '#888888',
+  },
+  lastActiveText: {
+    fontSize: 14,
+    color: '#888888',
+  },
+  openGroupButton: {
+    marginTop: 8,
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: 'rgba(74, 144, 226, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  openGroupButtonText: {
+    fontSize: 14,
+    color: '#4A90E2',
+  },
+  // Suggested for You Section
+  suggestedPeerCard: {
+    width: 288,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(74, 144, 226, 0.5)',
+    padding: 16,
+    marginRight: 16,
+  },
+  suggestedPeerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  suggestedPeerAvatar: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+  },
+  suggestedPeerAvatarPlaceholder: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#E0E0E0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+  },
+  suggestedPeerInfo: {
+    flex: 1,
+  },
+  suggestedPeerName: {
+    fontSize: 16,
+    color: '#333333',
+  },
+  suggestedPeerGrade: {
+    fontSize: 14,
+    color: '#888888',
+    marginTop: 2,
   },
   matchBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: '#D1FAE5',
-    borderRadius: 12,
-  },
-  matchSubjects: {
-    flexDirection: 'row',
-    gap: 6,
-    flexWrap: 'wrap',
-  },
-  resourceItem: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 9999,
+    backgroundColor: 'rgba(245, 166, 35, 0.1)',
+    alignSelf: 'flex-start',
+    marginTop: 4,
+    marginBottom: 16,
+  },
+  matchBadgeText: {
+    fontSize: 12,
+    color: '#F5A623',
+  },
+  addButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#4A90E2',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  addButtonIcon: {
+    fontSize: 20,
+    color: '#FFFFFF',
+  },
+  suggestedPeerHint: {
+    fontSize: 14,
+    color: 'rgba(74, 144, 226, 0.8)',
+  },
+  // Suggested Group Card
+  suggestedGroupCard: {
+    width: 288,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
     padding: 16,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
+    marginRight: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
   },
-  noteCard: {
-    padding: 16,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    gap: 12,
-  },
-  noteHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  noteFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  leaderboardItem: {
+  suggestedGroupHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    padding: 16,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
+    marginBottom: 16,
   },
-  leaderboardItemHighlight: {
-    backgroundColor: '#DBEAFE',
-    borderWidth: 2,
-    borderColor: '#3B82F6',
-  },
-  leaderboardRank: {
+  suggestedGroupIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(80, 227, 194, 0.2)',
     alignItems: 'center',
-    minWidth: 40,
+    justifyContent: 'center',
+    marginRight: 16,
+  },
+  suggestedGroupIconText: {
+    fontSize: 30,
+    color: '#50E3C2',
+  },
+  suggestedGroupInfo: {
+    flex: 1,
+  },
+  suggestedGroupName: {
+    fontSize: 16,
+    color: '#333333',
+  },
+  suggestedGroupSubject: {
+    fontSize: 14,
+    color: '#888888',
+    marginTop: 2,
+  },
+  suggestedGroupHint: {
+    fontSize: 14,
+    color: '#888888',
+    marginBottom: 16,
+  },
+  joinGroupButton: {
+    marginTop: 8,
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: '#4A90E2',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  joinGroupButtonText: {
+    fontSize: 14,
+    color: '#FFFFFF',
   },
 });

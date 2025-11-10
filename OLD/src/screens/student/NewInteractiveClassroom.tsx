@@ -9,11 +9,11 @@ import { View, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert } from
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BaseScreen } from '../../shared/components/BaseScreen';
-import { Card } from '../../ui/surfaces/Card';
-import { Badge } from '../../ui/data-display/Badge';
-import { Button } from '../../ui/inputs/Button';
-import { Chip } from '../../ui/inputs/Chip';
-import { Row } from '../../ui/layout/Row';
+import { Card } from '../../ui';
+import { Badge } from '../../ui';
+import { Button } from '../../ui';
+import { Chip } from '../../ui';
+import { Row } from '../../ui';
 import { T } from '../../ui';
 import { trackScreenView, trackAction } from '../../utils/navigationAnalytics';
 import { useAuth } from '../../context/AuthContext';
@@ -42,7 +42,7 @@ interface Question {
 
 interface WhiteboardSlide {
   id: string;
-  imageUrl: string;
+  imageUrl?: string; // Optional - using emoji placeholder instead of external URLs
   title: string;
   pageNumber: number;
   timestamp: string;
@@ -94,21 +94,18 @@ export default function NewInteractiveClassroom({ route, navigation }: Props) {
   const [whiteboardSlides, setWhiteboardSlides] = useState<WhiteboardSlide[]>([
     {
       id: '1',
-      imageUrl: 'https://via.placeholder.com/800x600/DBEAFE/3B82F6?text=Slide+1',
       title: 'Introduction to Computer Networks',
       pageNumber: 1,
       timestamp: '10:30 AM',
     },
     {
       id: '2',
-      imageUrl: 'https://via.placeholder.com/800x600/F3E8FF/9333EA?text=Slide+2',
       title: 'OSI Model Layers',
       pageNumber: 2,
       timestamp: '10:35 AM',
     },
     {
       id: '3',
-      imageUrl: 'https://via.placeholder.com/800x600/D1FAE5/10B981?text=Slide+3',
       title: 'TCP vs UDP Comparison',
       pageNumber: 3,
       timestamp: '10:42 AM',
@@ -489,12 +486,12 @@ const styles = StyleSheet.create({
   },
   tabContent: {
     padding: 16,
-    gap: 16,
+
   },
   // Poll Styles
   pollCard: {
     padding: 20,
-    gap: 16,
+
   },
   emptyCard: {
     padding: 32,
@@ -531,7 +528,7 @@ const styles = StyleSheet.create({
   // Q&A Styles
   qaCard: {
     padding: 16,
-    gap: 12,
+
   },
   questionInput: {
     backgroundColor: '#F9FAFB',
@@ -546,7 +543,7 @@ const styles = StyleSheet.create({
   },
   questionCard: {
     padding: 16,
-    gap: 12,
+
   },
   questionHeader: {
     flexDirection: 'row',
@@ -570,7 +567,7 @@ const styles = StyleSheet.create({
     borderLeftColor: '#10B981',
     padding: 12,
     borderRadius: 8,
-    gap: 6,
+
   },
   answerLabel: {
     color: '#059669',
@@ -587,14 +584,14 @@ const styles = StyleSheet.create({
   // Whiteboard Styles
   whiteboardHeader: {
     padding: 16,
-    gap: 4,
+
   },
   slideCount: {
     color: '#6B7280',
   },
   slideCard: {
     padding: 16,
-    gap: 8,
+
   },
   slideHeader: {
     flexDirection: 'row',
@@ -614,7 +611,7 @@ const styles = StyleSheet.create({
   // Breakout Room Styles
   breakoutHeader: {
     padding: 16,
-    gap: 4,
+
   },
   breakoutInfo: {
     color: '#6B7280',
@@ -625,7 +622,7 @@ const styles = StyleSheet.create({
   roomHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+
   },
   roomTopic: {
     color: '#6B7280',

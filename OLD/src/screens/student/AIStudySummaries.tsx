@@ -80,17 +80,7 @@ export default function AIStudySummaries({ navigation }: Props) {
       subject: summary.subject,
     });
 
-    // TODO: Create SummaryDetail.tsx screen for full summary view
-    const keyPointsList = summary.key_points.length > 0
-      ? summary.key_points.map((point, i) => `${i + 1}. ${point}`).join('\n')
-      : 'No key points available';
-
-    Alert.alert(
-      summary.topic,
-      `${summary.summary}\n\n📌 Key Points:\n${keyPointsList}`,
-      [{ text: 'Close' }],
-      { cancelable: true }
-    );
+    navigation.navigate('SummaryDetail', { summaryId: summary.id });
   };
 
   const handleGenerateSummary = () => {
@@ -98,11 +88,13 @@ export default function AIStudySummaries({ navigation }: Props) {
       subject: selectedSubject || 'all',
     });
 
-    // Show instructions for AI integration
     Alert.alert(
-      'AI Summary Generation',
-      'To enable automatic summary generation:\n\n1. Integrate OpenAI, Claude, or Gemini API\n2. Configure summarization prompts\n3. Set up document analysis pipeline\n\nFor now, study summaries will be provided by teachers and curated content.',
-      [{ text: 'OK' }]
+      '✨ AI Summary Generation',
+      'AI-powered summary creation launching soon!\n\n🚀 Coming features:\n✓ Auto-summarize chapters\n✓ Extract key points instantly\n✓ Generate topic-wise notes\n✓ Convert PDFs to summaries\n\nCurrent options:\n\n📚 Browse existing summaries above\n🔄 Refresh to see new summaries\n📝 Request summaries via "Submit Doubt"\n💬 Ask AI Tutor to explain topics',
+      [
+        { text: 'Got it' },
+        { text: 'Refresh List', onPress: () => refetch() }
+      ]
     );
   };
 
@@ -265,7 +257,7 @@ const styles = StyleSheet.create({
   headerCard: {
     padding: 20,
     marginBottom: 16,
-    gap: 8,
+
   },
   subtitle: {
     color: '#6B7280',
@@ -273,7 +265,7 @@ const styles = StyleSheet.create({
   filterCard: {
     padding: 16,
     marginBottom: 16,
-    gap: 12,
+
   },
   filterLabel: {
     color: '#6B7280',
@@ -281,7 +273,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   filterScroll: {
-    gap: 8,
+
   },
   filterChip: {
     paddingVertical: 8,
@@ -314,12 +306,12 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   summariesList: {
-    gap: 12,
+
     marginBottom: 32,
   },
   summaryCard: {
     padding: 16,
-    gap: 12,
+
   },
   summaryHeader: {
     flexDirection: 'row',
@@ -347,7 +339,7 @@ const styles = StyleSheet.create({
   },
   summaryFooter: {
     flexDirection: 'row',
-    gap: 16,
+
     marginTop: 4,
   },
   wordCount: {

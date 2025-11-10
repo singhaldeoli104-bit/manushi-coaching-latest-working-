@@ -1,89 +1,64 @@
 /**
- * NewStudyLibraryScreen - Premium Minimal Design
- * Purpose: Digital resource browser with search, offline download, and note-taking
- * Features: Search, Filter, Sort, Download, Bookmarks, Notes, View Toggle, Caching
+ * NewStudyLibraryScreen - EXACT match to HTML reference
+ * Purpose: Digital resource browser with search, filters, and AI assistant
+ * Design: Material Design top bar, search, AI card, filter chips, 2-column resource grid
  */
 
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   View,
   StyleSheet,
-  TouchableOpacity,
-  FlatList,
-  Linking,
-  Alert,
-  TextInput,
-  Modal,
   ScrollView,
-  Dimensions,
+  TextInput,
+  TouchableOpacity,
+  RefreshControl,
+  SafeAreaView,
+  StatusBar,
+  Alert,
+  Linking,
 } from 'react-native';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { BaseScreen } from '../../shared/components/BaseScreen';
-import { Card, CardHeader, CardContent, CardActions, T, Button, Chip, Badge, Row, Col, Spacer } from '../../ui';
+import { useQuery } from '@tanstack/react-query';
+import { useNavigation } from '@react-navigation/native';
+import { T } from '../../ui';
 import { trackAction, trackScreenView } from '../../utils/navigationAnalytics';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../config/supabaseClient';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const { width } = Dimensions.get('window');
-
-type Props = NativeStackScreenProps<any, 'NewStudyLibraryScreen'>;
+import HamburgerMenu from './HamburgerMenu';
+import ResourceViewerScreen from './ResourceViewerScreen';
 
 interface StudyMaterial {
   id: string;
   title: string;
   subject: string;
-  type: 'pdf' | 'video' | 'document' | 'link' | 'audio' | 'presentation' | 'image';
-  file_url?: string;
-  description?: string;
-  created_at: string;
-  author?: string;
-  tags?: string[];
-  rating?: number;
-  downloads?: number;
-  file_size?: string;
-  isBookmarked?: boolean;
-  isDownloaded?: boolean;
-  downloadProgress?: number;
+  type: 'PDF' | 'VIDEO' | 'DOC' | 'QUIZ';
+  file_size: string;
+  tags: string[];
+  rating: number;
+  views: string;
+  isBookmarked: boolean;
+  iconColor: string;
+  iconBgColor: string;
+  icon: string;
+  tagColor: string;
 }
 
-interface Note {
-  id: string;
-  material_id: string;
-  content: string;
-  created_at: string;
-}
+type FilterType = string;
 
-type ViewMode = 'grid' | 'list';
-type FilterType = 'all' | 'bookmarked' | 'downloaded' | 'recent';
-type SortType = 'name' | 'date' | 'size' | 'rating';
-
-export default function NewStudyLibraryScreen({ navigation }: Props) {
+export default function NewStudyLibraryScreen() {
   const { user } = useAuth();
-
-  // State management
-  const [selectedSubject, setSelectedSubject] = useState<string>('All');
+  const navigation = useNavigation<any>();
+  const [menuVisible, setMenuVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterType, setFilterType] = useState<FilterType>('all');
-  const [sortType, setSortType] = useState<SortType>('date');
-  const [viewMode, setViewMode] = useState<ViewMode>('list');
-  const [showSortModal, setShowSortModal] = useState(false);
-  const [showDetailModal, setShowDetailModal] = useState(false);
-  const [showNoteModal, setShowNoteModal] = useState(false);
-  const [selectedMaterial, setSelectedMaterial] = useState<StudyMaterial | null>(null);
-  const [noteText, setNoteText] = useState('');
-  const [notes, setNotes] = useState<Note[]>([]);
+  const [selectedFilter, setSelectedFilter] = useState<FilterType>('All');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewerResource, setViewerResource] = useState<any>(null);
 
-  // Track screen view
   useEffect(() => {
     trackScreenView('NewStudyLibraryScreen');
-    loadCachedData();
-    loadNotes();
   }, []);
 
   // Fetch study materials
-  const { data: materials, isLoading, error, refetch, isRefetching } = useQuery({
+  const { data: materials, isLoading, refetch } = useQuery({
     queryKey: ['study-materials', user?.id],
     queryFn: async () => {
       if (!user?.id) throw new Error('No user ID');
@@ -95,7 +70,7 @@ export default function NewStudyLibraryScreen({ navigation }: Props) {
 
       if (error) throw error;
 
-      // Load bookmark status
+      // Fetch user bookmarks
       const { data: bookmarks } = await supabase
         .from('user_bookmarks')
         .select('material_id')
@@ -103,143 +78,104 @@ export default function NewStudyLibraryScreen({ navigation }: Props) {
 
       const bookmarkedIds = new Set(bookmarks?.map(b => b.material_id) || []);
 
-      const materialsWithStatus = (data || []).map(m => ({
-        ...m,
-        isBookmarked: bookmarkedIds.has(m.id),
-        isDownloaded: false, // Check local storage if needed
-      })) as StudyMaterial[];
+      return (data || []).map((m) => {
+        // Convert DB type to display format
+        const displayType = (m.type || 'pdf').toUpperCase() === 'PRESENTATION' ? 'DOC' :
+                           (m.type || 'pdf').toUpperCase();
+        const typeConfig = getTypeConfig(displayType);
 
-      // Cache data
-      await AsyncStorage.setItem('study_materials_cache', JSON.stringify({
-        materials: materialsWithStatus,
-        timestamp: Date.now(),
-      }));
+        // Format views count
+        const formatViews = (count: number) => {
+          if (count >= 1000) return `${(count / 1000).toFixed(1)}k`;
+          return count.toString();
+        };
 
-      return materialsWithStatus;
+        return {
+          id: m.id,
+          title: m.title || 'Untitled',
+          subject: m.subject_code || 'General',
+          type: displayType as 'PDF' | 'VIDEO' | 'DOC' | 'QUIZ',
+          file_size: m.file_size || '1.2 MB',
+          tags: m.tags || [m.subject_code || 'General'],
+          rating: parseFloat(m.rating) || 4.5,
+          views: formatViews(m.views_count || 0),
+          isBookmarked: bookmarkedIds.has(m.id),
+          ...typeConfig,
+        } as StudyMaterial;
+      });
     },
     enabled: !!user?.id,
   });
 
-  // Load cached data on mount
-  const loadCachedData = async () => {
-    try {
-      const cached = await AsyncStorage.getItem('study_materials_cache');
-      if (cached) {
-        console.log('Loaded materials from cache');
+  // Fetch student profile data for HamburgerMenu
+  const { data: studentData } = useQuery({
+    queryKey: ['student-profile-menu', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+
+      const { data, error } = await supabase
+        .from('students')
+        .select('name, grade, section, student_id')
+        .eq('id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching student profile:', error);
+        return null;
       }
-    } catch (error) {
-      console.error('Failed to load cache:', error);
-    }
-  };
+      return data;
+    },
+    enabled: !!user?.id,
+  });
 
-  // Load notes
-  const loadNotes = async () => {
-    if (!user?.id) return;
-    try {
-      const { data } = await supabase
-        .from('material_notes')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (data) {
-        setNotes(data);
-      }
-    } catch (error) {
-      console.error('Failed to load notes:', error);
-    }
-  };
-
-  // Get unique subjects
-  const subjects = useMemo(() => {
-    if (!materials) return ['All'];
-    const uniqueSubjects = Array.from(new Set(materials.map(m => m.subject)));
-    return ['All', ...uniqueSubjects];
-  }, [materials]);
-
-  // Filter, search, and sort materials
-  const filteredMaterials = useMemo(() => {
-    if (!materials) return [];
-    let filtered = materials;
-
-    // Apply search filter
-    if (searchQuery) {
-      filtered = filtered.filter(m =>
-        m.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        m.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        m.author?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        m.tags?.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
-      );
-    }
-
-    // Apply subject filter
-    if (selectedSubject !== 'All') {
-      filtered = filtered.filter(m => m.subject === selectedSubject);
-    }
-
-    // Apply type filter
-    switch (filterType) {
-      case 'bookmarked':
-        filtered = filtered.filter(m => m.isBookmarked);
-        break;
-      case 'downloaded':
-        filtered = filtered.filter(m => m.isDownloaded);
-        break;
-      case 'recent':
-        const weekAgo = new Date();
-        weekAgo.setDate(weekAgo.getDate() - 7);
-        filtered = filtered.filter(m => new Date(m.created_at) > weekAgo);
-        break;
-    }
-
-    // Apply sorting
-    const sorted = [...filtered].sort((a, b) => {
-      switch (sortType) {
-        case 'name':
-          return a.title.localeCompare(b.title);
-        case 'date':
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-        case 'size':
-          return parseFloat(b.file_size || '0') - parseFloat(a.file_size || '0');
-        case 'rating':
-          return (b.rating || 0) - (a.rating || 0);
-        default:
-          return 0;
-      }
-    });
-
-    return sorted;
-  }, [materials, searchQuery, selectedSubject, filterType, sortType]);
-
-  // Get material icon
-  const getMaterialIcon = (type: string): string => {
-    switch (type) {
-      case 'pdf':
-        return '📄';
-      case 'video':
-        return '🎥';
-      case 'audio':
-        return '🎵';
-      case 'presentation':
-        return '📊';
-      case 'image':
-        return '🖼️';
-      case 'link':
-        return '🔗';
+  const getTypeConfig = (type: string) => {
+    switch (type.toUpperCase()) {
+      case 'PDF':
+        return {
+          icon: '📄',
+          iconColor: '#EF4444',
+          iconBgColor: '#FEE2E2',
+          tagColor: '#10B981',
+        };
+      case 'VIDEO':
+        return {
+          icon: '📺',
+          iconColor: '#3B82F6',
+          iconBgColor: '#DBEAFE',
+          tagColor: '#F59E0B',
+        };
+      case 'DOC':
+        return {
+          icon: '📝',
+          iconColor: '#6366F1',
+          iconBgColor: '#E0E7FF',
+          tagColor: '#8B5CF6',
+        };
+      case 'QUIZ':
+        return {
+          icon: '❓',
+          iconColor: '#10B981',
+          iconBgColor: '#D1FAE5',
+          tagColor: '#14B8A6',
+        };
       default:
-        return '📝';
+        return {
+          icon: '📄',
+          iconColor: '#EF4444',
+          iconBgColor: '#FEE2E2',
+          tagColor: '#10B981',
+        };
     }
   };
 
-  // Toggle bookmark
-  const toggleBookmark = useCallback(async (materialId: string) => {
+  const toggleBookmark = async (materialId: string) => {
     if (!user?.id) return;
 
     const material = materials?.find(m => m.id === materialId);
-    const isCurrentlyBookmarked = material?.isBookmarked;
+    if (!material) return;
 
     try {
-      if (isCurrentlyBookmarked) {
+      if (material.isBookmarked) {
         await supabase
           .from('user_bookmarks')
           .delete()
@@ -250,783 +186,637 @@ export default function NewStudyLibraryScreen({ navigation }: Props) {
           .insert({ user_id: user.id, material_id: materialId });
       }
 
-      trackAction('toggle_bookmark', 'NewStudyLibraryScreen', {
-        materialId,
-        bookmarked: !isCurrentlyBookmarked
-      });
-
+      trackAction('toggle_bookmark', 'NewStudyLibraryScreen', { materialId });
       refetch();
-      Alert.alert(
-        'Success',
-        isCurrentlyBookmarked ? 'Removed from bookmarks' : 'Added to bookmarks'
+    } catch (error) {
+      console.error('Failed to update bookmark:', error);
+    }
+  };
+
+  // Apply filters and search
+  const displayMaterials = useMemo(() => {
+    let filtered = materials || [];
+
+    // Apply filter
+    if (selectedFilter === 'Favorites') {
+      filtered = filtered.filter(m => m.isBookmarked);
+    } else if (selectedFilter === 'New') {
+      // Show materials from last 7 days
+      filtered = filtered.filter(m => {
+        // Assuming new materials don't have this logic in DB yet
+        return true; // Keep all for now
+      });
+    } else if (selectedFilter !== 'All') {
+      // Filter by subject
+      filtered = filtered.filter(m => m.subject === selectedFilter);
+    }
+
+    // Apply search
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(m =>
+        m.title.toLowerCase().includes(query) ||
+        m.subject.toLowerCase().includes(query) ||
+        m.tags.some(tag => tag.toLowerCase().includes(query))
       );
-    } catch (error) {
-      Alert.alert('Error', 'Failed to update bookmark');
     }
-  }, [materials, user?.id, refetch]);
 
-  // Download resource (simulated)
-  const downloadResource = useCallback(async (materialId: string) => {
-    const material = materials?.find(m => m.id === materialId);
-    if (!material) return;
+    return filtered;
+  }, [materials, selectedFilter, searchQuery]);
 
-    Alert.alert(
-      'Download',
-      `Download "${material.title}"?\n\nThis will save the file for offline access.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Download',
-          onPress: () => {
-            trackAction('download_material', 'NewStudyLibraryScreen', { materialId });
-            // Simulate download - in production, use FileSystem API
-            Alert.alert('Downloading', 'File download started...');
-          },
-        },
-      ]
+  const renderStars = (rating: number) => {
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 >= 0.5;
+    const stars = [];
+
+    for (let i = 0; i < fullStars; i++) {
+      stars.push(<T key={`full-${i}`} variant="caption" style={styles.starFilled}>⭐</T>);
+    }
+
+    if (hasHalfStar) {
+      stars.push(<T key="half" variant="caption" style={styles.starHalf}>⭐</T>);
+    }
+
+    const emptyStars = 5 - Math.ceil(rating);
+    for (let i = 0; i < emptyStars; i++) {
+      stars.push(<T key={`empty-${i}`} variant="caption" style={styles.starEmpty}>☆</T>);
+    }
+
+    return stars;
+  };
+
+  // Generate dynamic filters from materials data
+  const filters = useMemo(() => {
+    const baseFilters: FilterType[] = ['All', 'Favorites', 'New'];
+
+    if (!materials || materials.length === 0) {
+      return baseFilters;
+    }
+
+    // Extract unique subjects from materials
+    const uniqueSubjects = Array.from(
+      new Set(materials.map(m => m.subject).filter(Boolean))
+    ).sort();
+
+    return [...baseFilters, ...uniqueSubjects];
+  }, [materials]);
+
+  // If viewing a resource, show the viewer
+  if (viewerResource) {
+    return (
+      <ResourceViewerScreen
+        route={{ params: { resource: viewerResource } } as any}
+        navigation={{
+          ...navigation,
+          goBack: () => setViewerResource(null)
+        } as any}
+      />
     );
-  }, [materials]);
-
-  // View material detail
-  const viewMaterialDetail = useCallback((material: StudyMaterial) => {
-    setSelectedMaterial(material);
-    setShowDetailModal(true);
-    trackAction('view_material_detail', 'NewStudyLibraryScreen', { materialId: material.id });
-  }, []);
-
-  // Open file
-  const handleMaterialPress = useCallback(async (material: StudyMaterial) => {
-    if (!material.file_url) {
-      Alert.alert('No File', 'This material does not have a file attached.');
-      return;
-    }
-
-    trackAction('open_study_material', 'NewStudyLibraryScreen', {
-      materialId: material.id,
-      type: material.type,
-    });
-
-    try {
-      const supported = await Linking.canOpenURL(material.file_url);
-      if (supported) {
-        await Linking.openURL(material.file_url);
-      } else {
-        Alert.alert('Error', 'Unable to open this file.');
-      }
-    } catch (err) {
-      Alert.alert('Error', 'Failed to open file.');
-    }
-  }, []);
-
-  // Add note
-  const openNoteModal = useCallback((materialId: string) => {
-    const material = materials?.find(m => m.id === materialId);
-    setSelectedMaterial(material || null);
-    setNoteText('');
-    setShowNoteModal(true);
-  }, [materials]);
-
-  // Save note
-  const saveNote = useCallback(async () => {
-    if (!noteText.trim() || !selectedMaterial || !user?.id) return;
-
-    try {
-      const { error } = await supabase
-        .from('material_notes')
-        .insert({
-          user_id: user.id,
-          material_id: selectedMaterial.id,
-          content: noteText.trim(),
-        });
-
-      if (error) throw error;
-
-      trackAction('add_note', 'NewStudyLibraryScreen', { materialId: selectedMaterial.id });
-      setShowNoteModal(false);
-      setNoteText('');
-      loadNotes();
-      Alert.alert('Success', 'Note added successfully!');
-    } catch (error) {
-      Alert.alert('Error', 'Failed to save note');
-    }
-  }, [noteText, selectedMaterial, user?.id]);
-
-  // Render material card (List view)
-  const renderMaterialList = ({ item }: { item: StudyMaterial }) => (
-    <Card style={styles.materialCard} onPress={() => viewMaterialDetail(item)}>
-      <View style={styles.materialContent}>
-        <View style={styles.materialIcon}>
-          <T variant="h3">{getMaterialIcon(item.type)}</T>
-        </View>
-
-        <View style={styles.materialInfo}>
-          <Row justify="space-between" align="flex-start">
-            <View style={{ flex: 1 }}>
-              <T variant="body" weight="semiBold" numberOfLines={2}>
-                {item.title}
-              </T>
-            </View>
-            <TouchableOpacity
-              onPress={(e) => {
-                e.stopPropagation();
-                toggleBookmark(item.id);
-              }}
-              style={styles.bookmarkButton}
-              accessibilityRole="button"
-              accessibilityLabel={item.isBookmarked ? 'Remove bookmark' : 'Add bookmark'}
-            >
-              <T variant="h3">{item.isBookmarked ? '⭐' : '☆'}</T>
-            </TouchableOpacity>
-          </Row>
-
-          <Badge variant="info" style={styles.subjectBadge}>
-            {item.subject}
-          </Badge>
-
-          {item.description && (
-            <T variant="caption" style={styles.materialDescription} numberOfLines={2}>
-              {item.description}
-            </T>
-          )}
-
-          {item.author && (
-            <T variant="caption" style={styles.authorText}>
-              👤 {item.author}
-            </T>
-          )}
-
-          <Row gap="md" style={styles.statsRow}>
-            {item.rating !== undefined && item.rating > 0 && (
-              <Row gap="xs">
-                <T variant="caption">⭐</T>
-                <T variant="caption">{item.rating.toFixed(1)}</T>
-              </Row>
-            )}
-            {item.downloads !== undefined && item.downloads > 0 && (
-              <Row gap="xs">
-                <T variant="caption">⬇️</T>
-                <T variant="caption">{item.downloads}</T>
-              </Row>
-            )}
-            {item.file_size && (
-              <T variant="caption">📏 {item.file_size}</T>
-            )}
-            <T variant="caption" style={styles.dateText}>
-              {new Date(item.created_at).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-              })}
-            </T>
-          </Row>
-
-          {item.tags && item.tags.length > 0 && (
-            <Row gap="xs" wrap style={{ marginTop: 4 }}>
-              {item.tags.slice(0, 3).map(tag => (
-                <Chip key={tag} variant="suggestion" label={`#${tag}`} />
-              ))}
-            </Row>
-          )}
-        </View>
-      </View>
-    </Card>
-  );
-
-  // Render material card (Grid view)
-  const renderMaterialGrid = ({ item }: { item: StudyMaterial }) => (
-    <Card style={styles.gridCard} onPress={() => viewMaterialDetail(item)}>
-      <View style={styles.gridContent}>
-        <Row justify="space-between" align="flex-start">
-          <T variant="h1">{getMaterialIcon(item.type)}</T>
-          <TouchableOpacity
-            onPress={(e) => {
-              e.stopPropagation();
-              toggleBookmark(item.id);
-            }}
-            accessibilityRole="button"
-            accessibilityLabel={item.isBookmarked ? 'Remove bookmark' : 'Add bookmark'}
-          >
-            <T variant="h3">{item.isBookmarked ? '⭐' : '☆'}</T>
-          </TouchableOpacity>
-        </Row>
-
-        <T variant="body" weight="semiBold" numberOfLines={2} style={{ marginTop: 8 }}>
-          {item.title}
-        </T>
-
-        <Badge variant="info" style={{ marginTop: 4, alignSelf: 'flex-start' }}>
-          {item.subject}
-        </Badge>
-
-        {item.rating !== undefined && item.rating > 0 && (
-          <Row gap="xs" style={{ marginTop: 8 }}>
-            <T variant="caption">⭐</T>
-            <T variant="caption">{item.rating.toFixed(1)}</T>
-          </Row>
-        )}
-      </View>
-    </Card>
-  );
+  }
 
   return (
-    <BaseScreen
-      scrollable={false}
-      loading={isLoading}
-      error={error ? 'Failed to load study materials' : null}
-      empty={!materials || materials.length === 0}
-      emptyMessage="No study materials available"
-      emptyIcon="📚"
-      onRefresh={refetch}
-      refreshing={isRefetching}
-    >
-      <View style={styles.container}>
-        {/* Search Bar */}
-        <Card variant="outlined" style={styles.searchCard}>
-          <Row gap="sm" align="center">
-            <T variant="h3">🔍</T>
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="dark-content" backgroundColor="#F6F7F8" />
+
+      {/* Hamburger Menu */}
+      <HamburgerMenu
+        visible={menuVisible}
+        onClose={() => setMenuVisible(false)}
+        currentRoute="NewStudyLibraryScreen"
+        studentData={studentData || undefined}
+      />
+
+      {/* Top Bar - Material Design Standard */}
+      <View style={styles.topBar}>
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={() => {
+            trackAction('open_menu', 'NewStudyLibraryScreen');
+            setMenuVisible(true);
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Open menu"
+        >
+          <T variant="h2" style={styles.icon}>☰</T>
+        </TouchableOpacity>
+        <T variant="title" weight="bold" style={styles.topBarTitle}>Study Library</T>
+        <TouchableOpacity
+          style={styles.iconButton}
+          accessibilityRole="button"
+          accessibilityLabel="More options"
+        >
+          <T variant="h2" style={styles.icon}>⋮</T>
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isLoading}
+            onRefresh={() => {
+              trackAction('refresh_study_library', 'NewStudyLibraryScreen');
+              refetch();
+            }}
+          />
+        }
+      >
+        {/* Search Bar Section with Blue Gradient */}
+        <View style={styles.searchSection}>
+          <View style={styles.searchCard}>
+            <T variant="h3" style={styles.searchIcon}>🔍</T>
             <TextInput
               style={styles.searchInput}
-              placeholder="Search resources, authors, tags..."
+              placeholder="Search notes, videos, articles..."
+              placeholderTextColor="#888888"
               value={searchQuery}
               onChangeText={setSearchQuery}
-              placeholderTextColor="#9CA3AF"
             />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchQuery('')}>
-                <T variant="body" style={{ color: '#6B7280' }}>✕</T>
-              </TouchableOpacity>
-            )}
-          </Row>
-        </Card>
-
-        {/* Filter and Sort Controls */}
-        <Card variant="outlined" style={styles.controlsCard}>
-          <T variant="body" weight="semiBold" style={{ marginBottom: 8 }}>
-            Filter:
-          </T>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <Row gap="xs">
-              <Chip
-                variant="filter"
-                label="All"
-                selected={filterType === 'all'}
-                onPress={() => {
-                  setFilterType('all');
-                  trackAction('filter_change', 'NewStudyLibraryScreen', { filter: 'all' });
-                }}
-              />
-              <Chip
-                variant="filter"
-                label="⭐ Bookmarked"
-                selected={filterType === 'bookmarked'}
-                onPress={() => {
-                  setFilterType('bookmarked');
-                  trackAction('filter_change', 'NewStudyLibraryScreen', { filter: 'bookmarked' });
-                }}
-              />
-              <Chip
-                variant="filter"
-                label="⬇️ Downloaded"
-                selected={filterType === 'downloaded'}
-                onPress={() => {
-                  setFilterType('downloaded');
-                  trackAction('filter_change', 'NewStudyLibraryScreen', { filter: 'downloaded' });
-                }}
-              />
-              <Chip
-                variant="filter"
-                label="🆕 Recent"
-                selected={filterType === 'recent'}
-                onPress={() => {
-                  setFilterType('recent');
-                  trackAction('filter_change', 'NewStudyLibraryScreen', { filter: 'recent' });
-                }}
-              />
-            </Row>
-          </ScrollView>
-
-          <Spacer size="md" />
-
-          <Row justify="space-between" align="center">
-            <View>
-              <T variant="body" weight="semiBold" style={{ marginBottom: 8 }}>
-                Subject:
-              </T>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <Row gap="xs">
-                  {subjects.map(subject => (
-                    <Chip
-                      key={subject}
-                      variant="filter"
-                      label={subject}
-                      selected={selectedSubject === subject}
-                      onPress={() => {
-                        setSelectedSubject(subject);
-                        trackAction('filter_subject', 'NewStudyLibraryScreen', { subject });
-                      }}
-                    />
-                  ))}
-                </Row>
-              </ScrollView>
-            </View>
-          </Row>
-
-          <Spacer size="md" />
-
-          <Row justify="space-between" align="center">
-            <TouchableOpacity onPress={() => setShowSortModal(true)}>
-              <Chip variant="assist" label={`Sort: ${sortType}`} />
-            </TouchableOpacity>
-
-            <Row gap="xs">
-              <Chip
-                variant="filter"
-                label="⊞"
-                selected={viewMode === 'grid'}
-                onPress={() => {
-                  setViewMode('grid');
-                  trackAction('view_mode', 'NewStudyLibraryScreen', { mode: 'grid' });
-                }}
-              />
-              <Chip
-                variant="filter"
-                label="☰"
-                selected={viewMode === 'list'}
-                onPress={() => {
-                  setViewMode('list');
-                  trackAction('view_mode', 'NewStudyLibraryScreen', { mode: 'list' });
-                }}
-              />
-            </Row>
-          </Row>
-        </Card>
-
-        {/* Results Count */}
-        <View style={styles.resultsCount}>
-          <T variant="caption" style={{ color: '#6B7280' }}>
-            {filteredMaterials.length} resource{filteredMaterials.length !== 1 ? 's' : ''} found
-          </T>
+          </View>
         </View>
 
-        {/* Materials List */}
-        {viewMode === 'list' ? (
-          <FlatList
-            data={filteredMaterials}
-            keyExtractor={(item) => item.id}
-            renderItem={renderMaterialList}
-            contentContainerStyle={styles.materialsList}
-            showsVerticalScrollIndicator={false}
-            ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <T variant="body" style={styles.emptyText}>
-                  {searchQuery
-                    ? `No results for "${searchQuery}"`
-                    : selectedSubject !== 'All'
-                    ? `No materials for ${selectedSubject}`
-                    : filterType !== 'all'
-                    ? `No ${filterType} materials`
-                    : 'No study materials available'}
+        {/* AI Assistant Card (Floating) */}
+        <View style={styles.aiContainer}>
+          <View style={styles.aiCard}>
+            <View style={styles.aiCardContent}>
+              <View style={styles.aiCardLeft}>
+                <T variant="caption" style={styles.aiLabel}>AI Study Assistant</T>
+                <T variant="body" weight="bold" style={styles.aiTitle}>
+                  Need help understanding a concept?
                 </T>
+                <TouchableOpacity
+                  style={styles.askAiButton}
+                  onPress={() => {
+                    trackAction('open_ai_assistant', 'NewStudyLibraryScreen');
+                  }}
+                >
+                  <T variant="caption" weight="bold" style={styles.askAiButtonText}>Ask AI</T>
+                </TouchableOpacity>
               </View>
-            }
-          />
-        ) : (
-          <FlatList
-            data={filteredMaterials}
-            keyExtractor={(item) => item.id}
-            renderItem={renderMaterialGrid}
-            numColumns={2}
-            columnWrapperStyle={styles.gridRow}
-            contentContainerStyle={styles.materialsList}
-            showsVerticalScrollIndicator={false}
-            ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <T variant="body" style={styles.emptyText}>
-                  No materials found
-                </T>
+              <View style={styles.aiCardRight}>
+                <T variant="display" style={styles.aiIcon}>🤖</T>
               </View>
-            }
-          />
-        )}
-
-        {/* Sort Modal */}
-        <Modal visible={showSortModal} transparent animationType="slide">
-          <View style={styles.modalOverlay}>
-            <Card style={styles.sortModal}>
-              <CardHeader
-                title="Sort By"
-                trailing={
-                  <TouchableOpacity onPress={() => setShowSortModal(false)}>
-                    <T variant="h2">✕</T>
-                  </TouchableOpacity>
-                }
-              />
-              <CardContent>
-                <Button
-                  variant={sortType === 'date' ? 'primary' : 'ghost'}
-                  fullWidth
-                  onPress={() => {
-                    setSortType('date');
-                    setShowSortModal(false);
-                    trackAction('sort_change', 'NewStudyLibraryScreen', { sort: 'date' });
-                  }}
-                >
-                  📅 Date Added
-                </Button>
-                <Spacer size="sm" />
-                <Button
-                  variant={sortType === 'name' ? 'primary' : 'ghost'}
-                  fullWidth
-                  onPress={() => {
-                    setSortType('name');
-                    setShowSortModal(false);
-                    trackAction('sort_change', 'NewStudyLibraryScreen', { sort: 'name' });
-                  }}
-                >
-                  🔤 Name
-                </Button>
-                <Spacer size="sm" />
-                <Button
-                  variant={sortType === 'rating' ? 'primary' : 'ghost'}
-                  fullWidth
-                  onPress={() => {
-                    setSortType('rating');
-                    setShowSortModal(false);
-                    trackAction('sort_change', 'NewStudyLibraryScreen', { sort: 'rating' });
-                  }}
-                >
-                  ⭐ Rating
-                </Button>
-                <Spacer size="sm" />
-                <Button
-                  variant={sortType === 'size' ? 'primary' : 'ghost'}
-                  fullWidth
-                  onPress={() => {
-                    setSortType('size');
-                    setShowSortModal(false);
-                    trackAction('sort_change', 'NewStudyLibraryScreen', { sort: 'size' });
-                  }}
-                >
-                  📏 File Size
-                </Button>
-              </CardContent>
-            </Card>
+            </View>
           </View>
-        </Modal>
+        </View>
 
-        {/* Detail Modal */}
-        <Modal visible={showDetailModal} transparent animationType="slide">
-          <View style={styles.modalOverlay}>
-            <ScrollView contentContainerStyle={styles.scrollModalContent}>
-              <Card style={styles.detailModal}>
-                <CardHeader
-                  title={selectedMaterial?.title || ''}
-                  trailing={
-                    <TouchableOpacity onPress={() => setShowDetailModal(false)}>
-                      <T variant="h2">✕</T>
-                    </TouchableOpacity>
-                  }
-                />
-                <CardContent>
-                  <Row gap="sm" style={{ marginBottom: 16 }}>
-                    <T variant="h1">{getMaterialIcon(selectedMaterial?.type || 'document')}</T>
-                    <Badge variant="info">{selectedMaterial?.type.toUpperCase()}</Badge>
-                    <Badge>{selectedMaterial?.subject}</Badge>
-                  </Row>
+        {/* Filter Chips */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.filtersScroll}
+          contentContainerStyle={styles.filtersContent}
+        >
+          {filters.map((filter) => (
+            <TouchableOpacity
+              key={filter}
+              style={[styles.filterChip, selectedFilter === filter && styles.filterChipActive]}
+              onPress={() => {
+                setSelectedFilter(filter);
+                trackAction('select_filter', 'NewStudyLibraryScreen', { filter });
+              }}
+            >
+              <T
+                variant="caption"
+                weight="medium"
+                style={selectedFilter === filter ? styles.filterChipTextActive : styles.filterChipTextInactive}
+              >
+                {filter}
+              </T>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
 
-                  {selectedMaterial?.description && (
-                    <>
-                      <T variant="body" weight="semiBold">Description:</T>
-                      <Spacer size="sm" />
-                      <T variant="body">{selectedMaterial.description}</T>
-                      <Spacer size="md" />
-                    </>
-                  )}
+        {/* Resources Header */}
+        <View style={styles.resourcesHeader}>
+          <T variant="body" weight="bold" style={styles.resourcesCount}>
+            {displayMaterials.length} Resources
+          </T>
+          <View style={styles.viewToggle}>
+            <TouchableOpacity onPress={() => setViewMode('grid')}>
+              <T variant="h3" style={viewMode === 'grid' ? styles.viewIconActive : styles.viewIconInactive}>
+                ⊞
+              </T>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setViewMode('list')}>
+              <T variant="h3" style={viewMode === 'list' ? styles.viewIconActive : styles.viewIconInactive}>
+                ☰
+              </T>
+            </TouchableOpacity>
+          </View>
+        </View>
 
-                  {selectedMaterial?.author && (
-                    <>
-                      <T variant="body" weight="semiBold">Author:</T>
-                      <Spacer size="sm" />
-                      <T variant="body">👤 {selectedMaterial.author}</T>
-                      <Spacer size="md" />
-                    </>
-                  )}
+        {/* Resource Cards Grid */}
+        <View style={styles.resourceGrid}>
+          {displayMaterials.map((material) => (
+            <TouchableOpacity
+              key={material.id}
+              style={styles.resourceCard}
+              onPress={async () => {
+                trackAction('open_resource', 'NewStudyLibraryScreen', {
+                  materialId: material.id,
+                  type: material.type
+                });
 
-                  <Row gap="lg">
-                    {selectedMaterial?.rating !== undefined && selectedMaterial.rating > 0 && (
-                      <Col>
-                        <T variant="caption" style={{ color: '#6B7280' }}>Rating</T>
-                        <Row gap="xs">
-                          <T variant="body">⭐</T>
-                          <T variant="body" weight="semiBold">{selectedMaterial.rating.toFixed(1)}</T>
-                        </Row>
-                      </Col>
-                    )}
-                    {selectedMaterial?.downloads !== undefined && selectedMaterial.downloads > 0 && (
-                      <Col>
-                        <T variant="caption" style={{ color: '#6B7280' }}>Downloads</T>
-                        <Row gap="xs">
-                          <T variant="body">⬇️</T>
-                          <T variant="body" weight="semiBold">{selectedMaterial.downloads}</T>
-                        </Row>
-                      </Col>
-                    )}
-                    {selectedMaterial?.file_size && (
-                      <Col>
-                        <T variant="caption" style={{ color: '#6B7280' }}>Size</T>
-                        <T variant="body" weight="semiBold">📏 {selectedMaterial.file_size}</T>
-                      </Col>
-                    )}
-                  </Row>
+                // Fetch full material details with file_url
+                const { data: fullMaterial, error } = await supabase
+                  .from('study_materials')
+                  .select('*')
+                  .eq('id', material.id)
+                  .single();
 
-                  <Spacer size="md" />
+                if (error || !fullMaterial) {
+                  Alert.alert('Error', 'Failed to load resource details');
+                  return;
+                }
 
-                  <T variant="caption" style={{ color: '#9CA3AF' }}>
-                    Added on {new Date(selectedMaterial?.created_at || '').toLocaleDateString()}
+                const hasFileUrl = fullMaterial.file_url && fullMaterial.file_url.trim() !== '';
+
+                if (hasFileUrl) {
+                  // Show resource viewer as modal
+                  setViewerResource({
+                    id: material.id,
+                    title: material.title,
+                    type: material.type,
+                    fileUrl: fullMaterial.file_url,
+                    subject: material.subject,
+                  });
+                } else {
+                  // Show info dialog if no file URL
+                  Alert.alert(
+                    material.title,
+                    `Type: ${material.type}\nSubject: ${material.subject}\nSize: ${material.file_size}\nRating: ${material.rating}⭐\nViews: ${material.views}\n\n${fullMaterial.description || 'No description available'}\n\nFile not yet uploaded to this resource.`,
+                    [
+                      { text: 'OK', style: 'cancel' }
+                    ]
+                  );
+                }
+              }}
+              activeOpacity={0.7}
+            >
+              {/* Icon Section */}
+              <View style={[styles.resourceIconContainer, { backgroundColor: material.iconBgColor }]}>
+                <T style={{ ...styles.resourceIcon, color: material.iconColor }}>
+                  {material.icon}
+                </T>
+              </View>
+
+              {/* Content Section */}
+              <View style={styles.resourceContent}>
+                {/* Title and Bookmark */}
+                <View style={styles.resourceTitleRow}>
+                  <T variant="caption" weight="bold" style={styles.resourceTitle} numberOfLines={2}>
+                    {material.title}
                   </T>
-
-                  {selectedMaterial?.tags && selectedMaterial.tags.length > 0 && (
-                    <>
-                      <Spacer size="md" />
-                      <T variant="body" weight="semiBold">Tags:</T>
-                      <Spacer size="sm" />
-                      <Row gap="xs" wrap>
-                        {selectedMaterial.tags.map(tag => (
-                          <Chip key={tag} variant="suggestion" label={`#${tag}`} />
-                        ))}
-                      </Row>
-                    </>
-                  )}
-                </CardContent>
-                <CardActions>
-                  <Button
-                    variant="outline"
-                    onPress={() => {
-                      setShowDetailModal(false);
-                      openNoteModal(selectedMaterial?.id || '');
-                    }}
+                  <TouchableOpacity
+                    onPress={() => toggleBookmark(material.id)}
+                    style={styles.bookmarkButton}
                   >
-                    📝 Add Note
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onPress={() => {
-                      if (selectedMaterial) {
-                        downloadResource(selectedMaterial.id);
-                      }
-                    }}
-                  >
-                    ⬇️ Download
-                  </Button>
-                  <Button
-                    variant="primary"
-                    onPress={() => {
-                      if (selectedMaterial) {
-                        setShowDetailModal(false);
-                        handleMaterialPress(selectedMaterial);
-                      }
-                    }}
-                  >
-                    Open File
-                  </Button>
-                </CardActions>
-              </Card>
-            </ScrollView>
-          </View>
-        </Modal>
-
-        {/* Note Modal */}
-        <Modal visible={showNoteModal} transparent animationType="slide">
-          <View style={styles.modalOverlay}>
-            <Card style={styles.noteModal}>
-              <CardHeader
-                title="Add Note"
-                trailing={
-                  <TouchableOpacity onPress={() => setShowNoteModal(false)}>
-                    <T variant="h2">✕</T>
-                  </TouchableOpacity>
-                }
-              />
-              <CardContent>
-                <T variant="body" style={{ marginBottom: 8 }}>
-                  {selectedMaterial?.title}
-                </T>
-                <TextInput
-                  style={styles.noteInput}
-                  placeholder="Write your note..."
-                  value={noteText}
-                  onChangeText={setNoteText}
-                  multiline
-                  numberOfLines={6}
-                  placeholderTextColor="#9CA3AF"
-                />
-              </CardContent>
-              <CardActions>
-                <Button variant="ghost" onPress={() => setShowNoteModal(false)}>
-                  Cancel
-                </Button>
-                <Button variant="primary" onPress={saveNote}>
-                  Save Note
-                </Button>
-              </CardActions>
-            </Card>
-          </View>
-        </Modal>
-
-        {/* My Notes Section (if any) */}
-        {notes.length > 0 && (
-          <View style={styles.notesSection}>
-            <T variant="body" weight="semiBold" style={{ marginBottom: 8 }}>
-              📝 My Notes ({notes.length})
-            </T>
-            {notes.slice(0, 3).map(note => {
-              const material = materials?.find(m => m.id === note.material_id);
-              return (
-                <Card key={note.id} style={styles.noteCard}>
-                  {material && (
-                    <T variant="caption" weight="semiBold" style={{ color: '#3B82F6' }}>
-                      {material.title}
+                    <T variant="body" style={styles.bookmarkIcon}>
+                      {material.isBookmarked ? '🔖' : '🔗'}
                     </T>
-                  )}
-                  <T variant="body" style={{ marginTop: 4 }}>
-                    {note.content}
-                  </T>
-                  <T variant="caption" style={{ color: '#9CA3AF', marginTop: 4 }}>
-                    {new Date(note.created_at).toLocaleDateString()}
-                  </T>
-                </Card>
-              );
-            })}
-          </View>
-        )}
-      </View>
-    </BaseScreen>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Type Badge and File Size */}
+                <View style={styles.resourceMeta}>
+                  <View style={[styles.typeBadge, { backgroundColor: material.iconColor }]}>
+                    <T variant="caption" weight="bold" style={styles.typeBadgeText}>
+                      {material.type}
+                    </T>
+                  </View>
+                  <T variant="caption" style={styles.fileSize}>{material.file_size}</T>
+                </View>
+
+                {/* Subject Tags */}
+                <View style={styles.tagsRow}>
+                  {material.tags.slice(0, 2).map((tag, idx) => (
+                    <View
+                      key={idx}
+                      style={[
+                        styles.tag,
+                        {
+                          backgroundColor:
+                            material.tagColor === '#10B981' ? '#D1FAE5' :
+                            material.tagColor === '#F59E0B' ? '#FEF3C7' :
+                            material.tagColor === '#8B5CF6' ? '#EDE9FE' :
+                            '#CCFBF1',
+                        },
+                      ]}
+                    >
+                      <T variant="caption" style={{ ...styles.tagText, color: material.tagColor }}>
+                        {tag}
+                      </T>
+                    </View>
+                  ))}
+                </View>
+
+                {/* Rating and Views */}
+                <View style={styles.ratingRow}>
+                  <View style={styles.starsContainer}>
+                    {renderStars(material.rating)}
+                  </View>
+                  <T variant="caption" style={styles.views}>{material.views}</T>
+                </View>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#F6F7F8',
+  },
+  scrollView: {
     flex: 1,
   },
+  // Top Bar - Material Design Standard
+  topBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    height: 64,
+    backgroundColor: '#F6F7F8',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  icon: {
+    fontSize: 24,
+    color: '#333333',
+  },
+  topBarTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#333333',
+  },
+  // Search Section with Blue Gradient
+  searchSection: {
+    backgroundColor: '#4A90E2',
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 8,
+  },
   searchCard: {
-    margin: 16,
-    marginBottom: 8,
-    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 48,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  searchIcon: {
+    fontSize: 20,
+    color: '#888888',
+    marginRight: 8,
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: '#1F2937',
+    color: '#333333',
   },
-  controlsCard: {
-    marginHorizontal: 16,
-    marginBottom: 8,
-    padding: 12,
-  },
-  resultsCount: {
+  // AI Assistant Card (Floating)
+  aiContainer: {
     paddingHorizontal: 16,
+    marginTop: -40,
+    marginBottom: 16,
+  },
+  aiCard: {
+    backgroundColor: '#EAF2FD',
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  aiCardContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+
+  },
+  aiCardLeft: {
+    flex: 2,
+
+  },
+  aiLabel: {
+    fontSize: 14,
+    color: '#4A90E2',
+    fontWeight: '500',
+  },
+  aiTitle: {
+    fontSize: 16,
+    color: '#333333',
+  },
+  askAiButton: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 20,
+    paddingVertical: 9,
+    backgroundColor: '#4A90E2',
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  askAiButtonText: {
+    fontSize: 14,
+    color: '#FFFFFF',
+  },
+  aiCardRight: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  aiIcon: {
+    fontSize: 60,
+    opacity: 0.3,
+    color: '#4A90E2',
+  },
+  // Filter Chips
+  filtersScroll: {
+    marginBottom: 8,
+  },
+  filtersContent: {
+    paddingHorizontal: 16,
+
+  },
+  filterChip: {
+    height: 36,
+    paddingHorizontal: 16,
+    borderRadius: 9999,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  filterChipActive: {
+    backgroundColor: '#4A90E2',
+  },
+  filterChipTextActive: {
+    fontSize: 14,
+    color: '#FFFFFF',
+  },
+  filterChipTextInactive: {
+    fontSize: 14,
+    color: '#333333',
+  },
+  // Resources Header
+  resourcesHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 16,
     paddingBottom: 8,
   },
-  materialsList: {
-    padding: 16,
-    gap: 12,
+  resourcesCount: {
+    fontSize: 18,
+    color: '#333333',
   },
-  materialCard: {
-    marginBottom: 0,
-  },
-  materialContent: {
+  viewToggle: {
     flexDirection: 'row',
-    gap: 12,
-    padding: 12,
+
+    alignItems: 'center',
   },
-  materialIcon: {
-    width: 48,
-    height: 48,
+  viewIconActive: {
+    fontSize: 24,
+    color: '#4A90E2',
+  },
+  viewIconInactive: {
+    fontSize: 24,
+    color: '#CCCCCC',
+  },
+  // Resource Cards Grid
+  resourceGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: 12,
+    paddingBottom: 16,
+
+  },
+  resourceCard: {
+    width: '47%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 12,
+    margin: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  resourceIconContainer: {
+    height: 96,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
   },
-  materialInfo: {
+  resourceIcon: {
+    fontSize: 48,
+  },
+  resourceContent: {
+
+  },
+  resourceTitleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  resourceTitle: {
+    fontSize: 14,
+    color: '#333333',
     flex: 1,
-    gap: 4,
+    marginRight: 4,
   },
   bookmarkButton: {
-    marginLeft: 8,
+    padding: 2,
   },
-  subjectBadge: {
-    alignSelf: 'flex-start',
+  bookmarkIcon: {
+    fontSize: 20,
+    color: '#CCCCCC',
   },
-  materialDescription: {
-    color: '#6B7280',
-  },
-  authorText: {
-    color: '#6B7280',
-  },
-  statsRow: {
-    marginTop: 4,
-  },
-  dateText: {
-    color: '#9CA3AF',
-  },
-  gridRow: {
-    gap: 12,
-  },
-  gridCard: {
-    flex: 1,
-    maxWidth: (width - 48) / 2,
-  },
-  gridContent: {
-    padding: 12,
-  },
-  emptyContainer: {
+  resourceMeta: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 48,
+
   },
-  emptyText: {
-    color: '#9CA3AF',
-    fontStyle: 'italic',
+  typeBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 9999,
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
+  typeBadgeText: {
+    fontSize: 12,
+    color: '#FFFFFF',
+  },
+  fileSize: {
+    fontSize: 12,
+    color: '#888888',
+  },
+  tagsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+
+  },
+  tag: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 9999,
+  },
+  tagText: {
+    fontSize: 12,
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
   },
-  scrollModalContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    padding: 16,
+  starsContainer: {
+    flexDirection: 'row',
   },
-  sortModal: {
-    width: '100%',
-    maxWidth: 400,
-  },
-  detailModal: {
-    width: '100%',
-    maxWidth: 500,
-  },
-  noteModal: {
-    width: '100%',
-    maxWidth: 400,
-  },
-  noteInput: {
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 8,
-    padding: 12,
+  starFilled: {
     fontSize: 16,
-    minHeight: 120,
-    textAlignVertical: 'top',
-    color: '#1F2937',
+    color: '#FFD700',
   },
-  notesSection: {
-    padding: 16,
-    paddingTop: 0,
+  starHalf: {
+    fontSize: 16,
+    color: '#FFD700',
   },
-  noteCard: {
-    marginBottom: 8,
-    padding: 12,
+  starEmpty: {
+    fontSize: 16,
+    color: '#E0E0E0',
+  },
+  views: {
+    fontSize: 12,
+    color: '#888888',
   },
 });

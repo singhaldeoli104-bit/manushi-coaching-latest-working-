@@ -8,11 +8,11 @@ import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BaseScreen } from '../../shared/components/BaseScreen';
-import { Card } from '../../ui/surfaces/Card';
-import { Badge } from '../../ui/data-display/Badge';
-import { Button } from '../../ui/inputs/Button';
-import { Chip } from '../../ui/inputs/Chip';
-import { Row } from '../../ui/layout/Row';
+import { Card } from '../../ui';
+import { Badge } from '../../ui';
+import { Button } from '../../ui';
+import { Chip } from '../../ui';
+import { Row } from '../../ui';
 import { T } from '../../ui';
 import { trackScreenView, trackAction } from '../../utils/navigationAnalytics';
 import { safeNavigate } from '../../utils/navigationService';
@@ -430,11 +430,11 @@ const styles = StyleSheet.create({
   },
   tabContent: {
     padding: 16,
-    gap: 16,
+
   },
   headerCard: {
     padding: 20,
-    gap: 8,
+
   },
   subtitle: {
     color: '#6B7280',
@@ -478,7 +478,7 @@ const styles = StyleSheet.create({
   weakAreaHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+
     marginBottom: 8,
   },
   suggestions: {
@@ -505,7 +505,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   studyPlanTasks: {
-    gap: 4,
+
   },
   // Flashcard Styles
   flashcardItem: {
@@ -514,7 +514,7 @@ const styles = StyleSheet.create({
   },
   flashcardHeader: {
     flexDirection: 'row',
-    gap: 8,
+
     alignItems: 'center',
   },
   flashcardAnswer: {
@@ -537,7 +537,7 @@ const styles = StyleSheet.create({
   },
   keyPoints: {
     marginTop: 12,
-    gap: 4,
+
   },
   // Test Styles
   testItem: {

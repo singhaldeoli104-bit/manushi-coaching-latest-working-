@@ -1,326 +1,584 @@
 /**
- * NewVirtualClassroom - Premium Minimal Design
- * Purpose: Virtual classroom interface placeholder
- * Used in: StudentNavigator (ClassesStack)
+ * NewVirtualClassroom - EXACT match to HTML reference
+ * Purpose: Interactive whiteboard classroom interface
+ * Design: Material Design with whiteboard, tool palette, points badge, footer tabs
  */
 
-import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Alert, Modal, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  SafeAreaView,
+  ScrollView,
+} from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { BaseScreen } from '../../shared/components/BaseScreen';
-import { VideoPlaceholder } from '../../shared/components/VideoPlaceholder';
-import { Card, CardHeader, CardContent } from '../../ui/surfaces/Card';
-import { Button } from '../../ui/inputs/Button';
-import { Chip } from '../../ui/inputs/Chip';
-import { Row } from '../../ui/layout/Row';
 import { T } from '../../ui';
-import { trackScreenView, trackAction } from '../../utils/navigationAnalytics';
-import { safeNavigate } from '../../utils/navigationService';
+import { trackAction, trackScreenView } from '../../utils/navigationAnalytics';
 
 type Props = NativeStackScreenProps<any, 'NewVirtualClassroom'>;
 
-export default function NewVirtualClassroom({ navigation }: Props) {
-  const [videoEnabled, setVideoEnabled] = useState(false);
-  const [audioEnabled, setAudioEnabled] = useState(false);
+type Tool = 'edit' | 'eraser' | 'text' | 'shapes';
+type FooterTab = 'chat' | 'participants' | 'hand' | 'more';
 
-  // New features state
-  const [view3D, setView3D] = useState(true);
-  const [showAvatarCustomization, setShowAvatarCustomization] = useState(false);
-  const [showInteractions, setShowInteractions] = useState(false);
-  const [selectedAvatar, setSelectedAvatar] = useState('👨‍🎓');
-  const [selectedSkinTone, setSelectedSkinTone] = useState('default');
+export default function NewVirtualClassroom({ route, navigation }: Props) {
+  const [selectedTool, setSelectedTool] = useState<Tool>('edit');
+  const [activeTab, setActiveTab] = useState<FooterTab>('chat');
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [points, setPoints] = useState(150);
 
-  const avatarOptions = ['👨‍🎓', '👩‍🎓', '🧑‍🎓', '👨‍💼', '👩‍💼', '🧑‍💻'];
-  const skinTones = [
-    { label: 'Default', value: 'default', emoji: '🙂' },
-    { label: 'Light', value: 'light', emoji: '🏻' },
-    { label: 'Medium', value: 'medium', emoji: '🏽' },
-    { label: 'Dark', value: 'dark', emoji: '🏾' },
-  ];
+  const classTitle = route.params?.title || 'Algebra II';
+  const teacherName = route.params?.teacher || 'Mrs. Davison';
+  const topic = route.params?.topic || 'Solving Quadratic Equations';
 
-  const interactions = [
-    { id: 'wave', icon: '👋', label: 'Wave', description: 'Wave to others' },
-    { id: 'thumbs-up', icon: '👍', label: 'Thumbs Up', description: 'Show approval' },
-    { id: 'clap', icon: '👏', label: 'Clap', description: 'Applaud' },
-    { id: 'thinking', icon: '🤔', label: 'Thinking', description: 'Thinking pose' },
-    { id: 'raise-hand', icon: '✋', label: 'Raise Hand', description: 'Ask question' },
-    { id: 'confused', icon: '😕', label: 'Confused', description: 'Need help' },
-  ];
+  // Timer for class duration (starts at 45:32 as shown in HTML)
+  useEffect(() => {
+    setElapsedTime(45 * 60 + 32); // 45 minutes 32 seconds
 
-  React.useEffect(() => {
+    const timer = setInterval(() => {
+      setElapsedTime((prev) => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
     trackScreenView('NewVirtualClassroom');
   }, []);
 
-  const handleToggle3DView = () => {
-    setView3D(!view3D);
-    trackAction('toggle_3d_view', 'NewVirtualClassroom', { enabled: !view3D });
+  // Format time as MM:SS
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
 
-  const handleSelectAvatar = (avatar: string) => {
-    setSelectedAvatar(avatar);
-    trackAction('select_avatar', 'NewVirtualClassroom', { avatar });
+  const handleToolSelect = (tool: Tool) => {
+    setSelectedTool(tool);
+    trackAction('select_tool', 'NewVirtualClassroom', { tool });
   };
 
-  const handleSelectSkinTone = (tone: string) => {
-    setSelectedSkinTone(tone);
-    trackAction('select_skin_tone', 'NewVirtualClassroom', { tone });
+  const handleTabPress = (tab: FooterTab) => {
+    setActiveTab(tab);
+    trackAction('footer_tab', 'NewVirtualClassroom', { tab });
   };
 
-  const handleInteraction = (interactionId: string, label: string) => {
-    trackAction('virtual_interaction', 'NewVirtualClassroom', { interaction: interactionId });
-    Alert.alert('Virtual Interaction', `You performed: ${label}`);
-  };
-
-  const handleControlPress = (featureId: string) => {
-    trackAction('toggle_control', 'NewVirtualClassroom', { control: featureId });
-
-    switch (featureId) {
-      case 'video':
-        setVideoEnabled(!videoEnabled);
-        break;
-      case 'audio':
-        setAudioEnabled(!audioEnabled);
-        break;
-      case 'chat':
-        safeNavigate('ClassChat', { classId: 'virtual-classroom' });
-        break;
-      case 'raise-hand':
-        handleInteraction('raise-hand', 'Raise Hand');
-        break;
-    }
+  const handleEndClass = () => {
+    trackAction('end_class', 'NewVirtualClassroom');
+    navigation.goBack();
   };
 
   return (
-    <BaseScreen scrollable={true}>
-      <View style={styles.container}>
-        {/* 1. 3D Classroom View */}
-        <Card style={styles.viewCard}>
-          <Row gap="sm" style={{ marginBottom: 12, justifyContent: 'space-between', alignItems: 'center' }}>
-            <T variant="title" weight="semiBold">
-              {view3D ? '🏫 3D Classroom' : '📹 2D View'}
-            </T>
-            <Button variant={view3D ? 'primary' : 'outline'} onPress={handleToggle3DView}>
-              {view3D ? '3D' : '2D'}
-            </Button>
-          </Row>
+    <SafeAreaView style={styles.safeArea}>
+      {/* Top Header */}
+      <View style={styles.topBar}>
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={() => {
+            trackAction('back_button', 'NewVirtualClassroom');
+            navigation.goBack();
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <T variant="h2" style={styles.icon}>☰</T>
+        </TouchableOpacity>
 
-          {view3D ? (
-            <View style={styles.classroom3D}>
-              <T variant="h1">🏫</T>
-              <T variant="body" style={{ textAlign: 'center', color: '#6B7280' }}>
-                3D Immersive Classroom Environment
-              </T>
-              <View style={styles.avatarPreview}>
-                <T variant="h1">{selectedAvatar}</T>
-                <T variant="caption">Your Avatar</T>
-              </View>
-            </View>
-          ) : (
-            <VideoPlaceholder
-              isLive={true}
-              showControls={false}
-              placeholderMessage="2D Classroom View"
-            />
-          )}
-        </Card>
+        <T variant="body" weight="bold" style={styles.topBarTitle}>
+          Virtual Classroom
+        </T>
 
-        {/* 2. Avatar Customization */}
-        <Card style={styles.avatarCard}>
-          <View style={styles.avatarHeader}>
-            <T variant="title" weight="semiBold">
-              👤 Avatar Customization
-            </T>
-            <Button
-              variant="outline"
-              onPress={() => setShowAvatarCustomization(!showAvatarCustomization)}
-            >
-              {showAvatarCustomization ? 'Hide' : 'Customize'}
-            </Button>
-          </View>
-
-          {showAvatarCustomization && (
-            <View style={styles.customizationPanel}>
-              <T variant="body" weight="semiBold" style={{ marginBottom: 8 }}>
-                Select Avatar
-              </T>
-              <View style={styles.avatarGrid}>
-                {avatarOptions.map((avatar, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={[
-                      styles.avatarOption,
-                      selectedAvatar === avatar && styles.avatarOptionSelected,
-                    ]}
-                    onPress={() => handleSelectAvatar(avatar)}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Select avatar ${index + 1}`}
-                  >
-                    <T variant="h1">{avatar}</T>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              <T variant="body" weight="semiBold" style={{ marginTop: 16, marginBottom: 8 }}>
-                Skin Tone
-              </T>
-              <Row gap="xs" wrap>
-                {skinTones.map((tone) => (
-                  <Chip
-                    key={tone.value}
-                    variant="filter"
-                    label={`${tone.emoji} ${tone.label}`}
-                    selected={selectedSkinTone === tone.value}
-                    onPress={() => handleSelectSkinTone(tone.value)}
-                  />
-                ))}
-              </Row>
-            </View>
-          )}
-        </Card>
-
-        {/* 3. Virtual Interactions */}
-        <Card style={styles.interactionsCard}>
-          <View style={styles.interactionsHeader}>
-            <T variant="title" weight="semiBold">
-              🤝 Virtual Interactions
-            </T>
-            <Button
-              variant="outline"
-              onPress={() => setShowInteractions(!showInteractions)}
-            >
-              {showInteractions ? 'Hide' : 'Show'}
-            </Button>
-          </View>
-
-          {showInteractions && (
-            <View style={styles.interactionsGrid}>
-              {interactions.map((interaction) => (
-                <TouchableOpacity
-                  key={interaction.id}
-                  style={styles.interactionButton}
-                  onPress={() => handleInteraction(interaction.id, interaction.label)}
-                  accessibilityRole="button"
-                  accessibilityLabel={interaction.description}
-                >
-                  <T variant="h2">{interaction.icon}</T>
-                  <T variant="caption" style={{ textAlign: 'center' }}>
-                    {interaction.label}
-                  </T>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-        </Card>
-
-        {/* Basic Controls */}
-        <Card style={styles.controlsCard}>
-          <T variant="title" weight="semiBold" style={{ marginBottom: 12 }}>
-            Controls
-          </T>
-          <Row gap="xs" wrap>
-            <Button
-              variant={videoEnabled ? 'primary' : 'outline'}
-              onPress={() => handleControlPress('video')}
-            >
-              🎥 Video
-            </Button>
-            <Button
-              variant={audioEnabled ? 'primary' : 'outline'}
-              onPress={() => handleControlPress('audio')}
-            >
-              🎤 Audio
-            </Button>
-            <Button variant="outline" onPress={() => handleControlPress('chat')}>
-              💬 Chat
-            </Button>
-            <Button variant="outline" onPress={() => handleControlPress('raise-hand')}>
-              ✋ Hand
-            </Button>
-          </Row>
-        </Card>
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={() => trackAction('more_options', 'NewVirtualClassroom')}
+          accessibilityRole="button"
+          accessibilityLabel="More options"
+        >
+          <T variant="h2" style={styles.icon}>⋮</T>
+        </TouchableOpacity>
       </View>
-    </BaseScreen>
+
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        {/* Teacher Profile Section with Timer */}
+        <View style={styles.teacherSection}>
+          <View style={styles.teacherAvatar}>
+            <T style={styles.teacherAvatarText}>👩‍🏫</T>
+          </View>
+
+          <View style={styles.teacherInfo}>
+            <T variant="caption" style={styles.teacherLabel}>
+              Teacher
+            </T>
+            <T variant="body" weight="bold" style={styles.teacherName}>
+              {teacherName}
+            </T>
+          </View>
+
+          <View style={styles.timerContainer}>
+            <T style={styles.timerIcon}>⏱</T>
+            <T variant="body" weight="bold" style={styles.timerText}>
+              {formatTime(elapsedTime)}
+            </T>
+          </View>
+
+          <TouchableOpacity
+            style={styles.endClassButton}
+            onPress={handleEndClass}
+            accessibilityRole="button"
+            accessibilityLabel="End class"
+          >
+            <T variant="caption" weight="semiBold" style={styles.endClassText}>
+              End Class
+            </T>
+          </TouchableOpacity>
+        </View>
+
+        {/* Class Title */}
+        <View style={styles.classTitleContainer}>
+          <T variant="h2" weight="bold" style={styles.classTitle}>
+            {classTitle}
+          </T>
+        </View>
+
+        {/* Class Details Grid */}
+        <View style={styles.detailsGrid}>
+          <View style={styles.detailCard}>
+            <T variant="caption" style={styles.detailLabel}>
+              Topic
+            </T>
+            <T variant="body" weight="semiBold" style={styles.detailValue}>
+              {topic}
+            </T>
+          </View>
+
+          <View style={styles.detailCard}>
+            <T variant="caption" style={styles.detailLabel}>
+              Teacher
+            </T>
+            <T variant="body" weight="semiBold" style={styles.detailValue}>
+              {teacherName}
+            </T>
+          </View>
+        </View>
+
+        {/* Main Whiteboard Area */}
+        <View style={styles.whiteboardContainer}>
+          <View style={styles.whiteboard}>
+            <T variant="body" style={styles.whiteboardInstruction}>
+              Tap on tools to start drawing
+            </T>
+          </View>
+        </View>
+
+        {/* Floating Tool Palette */}
+        <View style={styles.toolPalette}>
+          <TouchableOpacity
+            style={[
+              styles.toolButton,
+              selectedTool === 'edit' && styles.toolButtonActive,
+            ]}
+            onPress={() => handleToolSelect('edit')}
+            accessibilityRole="button"
+            accessibilityLabel="Edit tool"
+          >
+            <T style={styles.toolIcon}>✏️</T>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.toolButton,
+              selectedTool === 'eraser' && styles.toolButtonActive,
+            ]}
+            onPress={() => handleToolSelect('eraser')}
+            accessibilityRole="button"
+            accessibilityLabel="Eraser tool"
+          >
+            <T style={styles.toolIcon}>🧹</T>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.toolButton,
+              selectedTool === 'text' && styles.toolButtonActive,
+            ]}
+            onPress={() => handleToolSelect('text')}
+            accessibilityRole="button"
+            accessibilityLabel="Text tool"
+          >
+            <T style={styles.toolIcon}>📝</T>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.toolButton,
+              selectedTool === 'shapes' && styles.toolButtonActive,
+            ]}
+            onPress={() => handleToolSelect('shapes')}
+            accessibilityRole="button"
+            accessibilityLabel="Shapes tool"
+          >
+            <T style={styles.toolIcon}>⬛</T>
+          </TouchableOpacity>
+        </View>
+
+        {/* Points Badge (Top Right) */}
+        <View style={styles.pointsBadge}>
+          <T style={styles.trophyIcon}>🏆</T>
+          <T variant="body" weight="bold" style={styles.pointsText}>
+            {points} pts
+          </T>
+        </View>
+      </ScrollView>
+
+      {/* Footer Tabs */}
+      <View style={styles.footerTabs}>
+        <TouchableOpacity
+          style={styles.footerTab}
+          onPress={() => handleTabPress('chat')}
+          accessibilityRole="button"
+          accessibilityLabel="Chat"
+        >
+          <T
+            style={[
+              styles.footerTabIcon,
+              activeTab === 'chat' && styles.footerTabIconActive,
+            ]}
+          >
+            💬
+          </T>
+          <T
+            variant="caption"
+            style={[
+              styles.footerTabText,
+              activeTab === 'chat' && styles.footerTabTextActive,
+            ]}
+          >
+            Chat
+          </T>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.footerTab}
+          onPress={() => handleTabPress('participants')}
+          accessibilityRole="button"
+          accessibilityLabel="Participants"
+        >
+          <T
+            style={[
+              styles.footerTabIcon,
+              activeTab === 'participants' && styles.footerTabIconActive,
+            ]}
+          >
+            👥
+          </T>
+          <T
+            variant="caption"
+            style={[
+              styles.footerTabText,
+              activeTab === 'participants' && styles.footerTabTextActive,
+            ]}
+          >
+            Participants
+          </T>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.footerTab}
+          onPress={() => handleTabPress('hand')}
+          accessibilityRole="button"
+          accessibilityLabel="Raise hand"
+        >
+          <T
+            style={[
+              styles.footerTabIcon,
+              activeTab === 'hand' && styles.footerTabIconActive,
+            ]}
+          >
+            ✋
+          </T>
+          <T
+            variant="caption"
+            style={[
+              styles.footerTabText,
+              activeTab === 'hand' && styles.footerTabTextActive,
+            ]}
+          >
+            Raise Hand
+          </T>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.footerTab}
+          onPress={() => handleTabPress('more')}
+          accessibilityRole="button"
+          accessibilityLabel="More options"
+        >
+          <T
+            style={[
+              styles.footerTabIcon,
+              activeTab === 'more' && styles.footerTabIconActive,
+            ]}
+          >
+            ⋯
+          </T>
+          <T
+            variant="caption"
+            style={[
+              styles.footerTabText,
+              activeTab === 'more' && styles.footerTabTextActive,
+            ]}
+          >
+            More
+          </T>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  // Top Bar - Material Design 56px
+  topBar: {
+    height: 56,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 8,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 20,
+  },
+  icon: {
+    fontSize: 24,
+    color: '#333333',
+  },
+  topBarTitle: {
+    color: '#111827',
+    fontSize: 18,
+  },
   container: {
-    padding: 16,
-    gap: 16,
+    flex: 1,
+    backgroundColor: '#F6F7F8',
   },
-  viewCard: {
+  // Teacher Section
+  teacherSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: 16,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+
   },
-  classroom3D: {
-    height: 250,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
+  teacherAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#F3F4F6',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 16,
-    borderWidth: 2,
-    borderColor: '#E5E7EB',
   },
-  avatarPreview: {
+  teacherAvatarText: {
+    fontSize: 24,
+  },
+  teacherInfo: {
+    flex: 1,
+  },
+  teacherLabel: {
+    color: '#6B7280',
+    fontSize: 12,
+    marginBottom: 2,
+  },
+  teacherName: {
+    color: '#111827',
+    fontSize: 15,
+  },
+  timerContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 16,
   },
-  avatarCard: {
+  timerIcon: {
+    fontSize: 16,
+  },
+  timerText: {
+    color: '#111827',
+    fontSize: 14,
+  },
+  endClassButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#EF4444',
+    borderRadius: 6,
+  },
+  endClassText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+  },
+  // Class Title
+  classTitleContainer: {
     padding: 16,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
-  avatarHeader: {
+  classTitle: {
+    color: '#111827',
+    fontSize: 24,
+  },
+  // Class Details Grid
+  detailsGrid: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  customizationPanel: {
-    marginTop: 8,
-  },
-  avatarGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  avatarOption: {
-    width: 70,
-    height: 70,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#E5E7EB',
-  },
-  avatarOptionSelected: {
-    backgroundColor: '#DBEAFE',
-    borderColor: '#3B82F6',
-  },
-  interactionsCard: {
     padding: 16,
+
+    backgroundColor: '#FFFFFF',
+    marginBottom: 16,
   },
-  interactionsHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  interactionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    marginTop: 8,
-  },
-  interactionButton: {
-    width: '30%',
-    minWidth: 90,
+  detailCard: {
+    flex: 1,
     padding: 12,
     backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    alignItems: 'center',
-    gap: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
-  controlsCard: {
+  detailLabel: {
+    color: '#6B7280',
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  detailValue: {
+    color: '#111827',
+    fontSize: 14,
+  },
+  // Whiteboard Container
+  whiteboardContainer: {
     padding: 16,
+    paddingBottom: 80, // Space for tool palette
+  },
+  whiteboard: {
+    height: 400,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#D1D5DB',
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  whiteboardInstruction: {
+    color: '#9CA3AF',
+    fontSize: 15,
+    fontStyle: 'italic',
+  },
+  // Floating Tool Palette
+  toolPalette: {
+    position: 'absolute',
+    bottom: 100,
+    left: 20,
+    flexDirection: 'row',
+
+    backgroundColor: '#FFFFFF',
+    padding: 8,
+    borderRadius: 24,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+  },
+  toolButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  toolButtonActive: {
+    backgroundColor: '#4A90E2',
+  },
+  toolIcon: {
+    fontSize: 24,
+  },
+  // Points Badge (Top Right)
+  pointsBadge: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: '#FEF3C7',
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: '#FBBF24',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+  trophyIcon: {
+    fontSize: 20,
+  },
+  pointsText: {
+    color: '#92400E',
+    fontSize: 14,
+  },
+  // Footer Tabs
+  footerTabs: {
+    flexDirection: 'row',
+    height: 64,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+  footerTab: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+
+  },
+  footerTabIcon: {
+    fontSize: 24,
+  },
+  footerTabIconActive: {
+    fontSize: 24,
+  },
+  footerTabText: {
+    color: '#6B7280',
+    fontSize: 12,
+  },
+  footerTabTextActive: {
+    color: '#4A90E2',
+    fontWeight: '600',
   },
 });

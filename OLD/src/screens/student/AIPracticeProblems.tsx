@@ -89,12 +89,7 @@ export default function AIPracticeProblems({ navigation }: Props) {
       difficulty: problem.difficulty,
     });
 
-    // TODO: Create PracticeProblemDetail.tsx screen for solving problems
-    Alert.alert(
-      problem.topic,
-      `${problem.question}\n\nDifficulty: ${problem.difficulty.toUpperCase()}`,
-      [{ text: 'OK', onPress: () => {} }]
-    );
+    navigation.navigate('PracticeProblemDetail', { problemId: problem.id });
   };
 
   const handleGenerateNew = () => {
@@ -102,11 +97,13 @@ export default function AIPracticeProblems({ navigation }: Props) {
       difficulty: selectedDifficulty || 'all',
     });
 
-    // Show instructions for AI integration
     Alert.alert(
-      'AI Problem Generation',
-      'To enable automatic problem generation:\n\n1. Integrate OpenAI, Claude, or Gemini API\n2. Configure prompts for each subject\n3. Set difficulty parameters\n\nFor now, practice problems will be added manually by teachers.',
-      [{ text: 'OK' }]
+      '✨ AI Problem Generation',
+      'AI-powered problem generation launching soon!\n\n🚀 Coming features:\n✓ Auto-generate problems by topic\n✓ Adaptive difficulty levels\n✓ Personalized to your weak areas\n✓ Instant problem creation\n\nCurrent options:\n\n📚 Practice with existing problems above\n🔄 Refresh to see new teacher-added problems\n📝 Request specific topics via "Submit Doubt"',
+      [
+        { text: 'Got it' },
+        { text: 'Refresh List', onPress: () => refetch() }
+      ]
     );
   };
 
@@ -231,7 +228,7 @@ const styles = StyleSheet.create({
   headerCard: {
     padding: 20,
     marginBottom: 16,
-    gap: 8,
+
   },
   subtitle: {
     color: '#6B7280',
@@ -239,7 +236,7 @@ const styles = StyleSheet.create({
   filterCard: {
     padding: 16,
     marginBottom: 16,
-    gap: 12,
+
   },
   filterLabel: {
     color: '#6B7280',
@@ -248,7 +245,7 @@ const styles = StyleSheet.create({
   },
   filterButtons: {
     flexDirection: 'row',
-    gap: 8,
+
   },
   filterButton: {
     flex: 1,
@@ -283,12 +280,12 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   problemsList: {
-    gap: 12,
+
     marginBottom: 32,
   },
   problemCard: {
     padding: 16,
-    gap: 8,
+
   },
   problemHeader: {
     flexDirection: 'row',
@@ -299,7 +296,7 @@ const styles = StyleSheet.create({
   problemMeta: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+
   },
   subject: {
     color: '#6B7280',

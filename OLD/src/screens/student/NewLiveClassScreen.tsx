@@ -10,11 +10,11 @@ import { useQuery } from '@tanstack/react-query';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BaseScreen } from '../../shared/components/BaseScreen';
 import { VideoPlaceholder } from '../../shared/components/VideoPlaceholder';
-import { Card } from '../../ui/surfaces/Card';
-import { Badge } from '../../ui/data-display/Badge';
-import { Button } from '../../ui/inputs/Button';
-import { Chip } from '../../ui/inputs/Chip';
-import { Row } from '../../ui/layout/Row';
+import { Card } from '../../ui';
+import { Badge } from '../../ui';
+import { Button } from '../../ui';
+import { Chip } from '../../ui';
+import { Row } from '../../ui';
 import { T } from '../../ui';
 import { trackScreenView, trackAction } from '../../utils/navigationAnalytics';
 import { useAuth } from '../../context/AuthContext';
@@ -368,7 +368,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    gap: 12,
+
   },
   headerCard: {
     padding: 16,
@@ -376,11 +376,11 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 12,
+
   },
   networkIndicator: {
     alignItems: 'flex-end',
-    gap: 4,
+
   },
   networkDot: {
     width: 8,
@@ -396,7 +396,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#1F2937',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
+
     padding: 20,
   },
   participantsGridCard: {
@@ -415,7 +415,7 @@ const styles = StyleSheet.create({
   participantsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+
   },
   participantTile: {
     width: '31%',
@@ -462,12 +462,12 @@ const styles = StyleSheet.create({
   },
   chatMessage: {
     flexDirection: 'row',
-    gap: 8,
+
     marginBottom: 12,
   },
   chatInput: {
     flexDirection: 'row',
-    gap: 8,
+
     padding: 16,
     borderTopWidth: 1,
     borderTopColor: '#E5E7EB',
@@ -491,7 +491,7 @@ const styles = StyleSheet.create({
   },
   controlBar: {
     padding: 16,
-    gap: 12,
+
   },
   reactionsRow: {
     flexDirection: 'row',

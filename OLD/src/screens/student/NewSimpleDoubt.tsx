@@ -8,9 +8,9 @@ import React, { useState } from 'react';
 import { View, StyleSheet, TextInput, TouchableOpacity, Alert, Modal } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BaseScreen } from '../../shared/components/BaseScreen';
-import { Card, CardHeader, CardContent } from '../../ui/surfaces/Card';
-import { Button } from '../../ui/inputs/Button';
-import { Row } from '../../ui/layout/Row';
+import { Card, CardHeader, CardContent } from '../../ui';
+import { Button } from '../../ui';
+import { Row } from '../../ui';
 import { T } from '../../ui';
 import { trackAction, trackScreenView } from '../../utils/navigationAnalytics';
 import { useAuth } from '../../context/AuthContext';
@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
   },
   formCard: {
     padding: 20,
-    gap: 20,
+
   },
   title: {
     marginBottom: -12,
@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
     color: '#6B7280',
   },
   inputGroup: {
-    gap: 8,
+
   },
   label: {
     color: '#374151',
@@ -316,7 +316,7 @@ const styles = StyleSheet.create({
   relatedDoubtItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+
     paddingVertical: 12,
     paddingHorizontal: 12,
     backgroundColor: '#F9FAFB',

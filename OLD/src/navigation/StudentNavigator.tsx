@@ -5,6 +5,7 @@
  */
 
 import React from 'react';
+import { TouchableOpacity } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -20,7 +21,7 @@ import { useTheme } from '../context/ThemeContext';
 // NEW SCREENS - Premium Minimal Design (21 screens)
 // ==========================================
 import NewStudentDashboard from '../screens/student/NewStudentDashboard';
-import NewScheduleScreen from '../screens/student/NewScheduleScreen';
+// import NewScheduleScreen from '../screens/student/NewScheduleScreen'; // Not used - using NewEnhancedSchedule
 import NewClassDetailScreen from '../screens/student/NewClassDetailScreen';
 import NewAssignmentDetailScreen from '../screens/student/NewAssignmentDetailScreen';
 import NewProgressDetailScreen from '../screens/student/NewProgressDetailScreen';
@@ -40,16 +41,21 @@ import NewEnhancedSchedule from '../screens/student/NewEnhancedSchedule';
 import NewActivityDetail from '../screens/student/NewActivityDetail';
 import NewSimpleDoubt from '../screens/student/NewSimpleDoubt';
 import NewDoubtSubmission from '../screens/student/NewDoubtSubmission';
+import StudentProfileScreen from '../screens/student/StudentProfileScreen';
 
 // ==========================================
-// RECENTLY CREATED SCREENS (6 screens)
+// RECENTLY CREATED SCREENS (8 screens)
 // ==========================================
 import AIPracticeProblems from '../screens/student/AIPracticeProblems';
+import PracticeProblemDetail from '../screens/student/PracticeProblemDetail';
 import AIStudySummaries from '../screens/student/AIStudySummaries';
+import SummaryDetail from '../screens/student/SummaryDetail';
 import PeerDetail from '../screens/student/PeerDetail';
 import Whiteboard from '../screens/student/Whiteboard';
 import ClassChat from '../screens/student/ClassChat';
 import ClassNotes from '../screens/student/ClassNotes';
+import DoubtDetailScreen from '../screens/student/DoubtDetailScreen';
+import ResourceViewerScreen from '../screens/student/ResourceViewerScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -89,9 +95,60 @@ function HomeStack() {
         options={{ headerShown: false, title: 'Submit Doubt' }}
       />
       <Stack.Screen
+        name="DoubtDetailScreen"
+        component={DoubtDetailScreen}
+        options={{ headerShown: false, title: 'Doubt Details' }}
+      />
+      <Stack.Screen
         name="NewAILearningDashboard"
         component={NewAILearningDashboard}
         options={{ headerShown: false, title: 'AI Dashboard' }}
+      />
+
+      <Stack.Screen
+        name="NewStudyLibraryScreen"
+        component={NewStudyLibraryScreen}
+        options={{ headerShown: false, title: 'Study Library' }}
+      />
+      <Stack.Screen
+        name="NewEnhancedAIStudy"
+        component={NewEnhancedAIStudy}
+        options={{ headerShown: false, title: 'AI Study' }}
+      />
+      <Stack.Screen
+        name="NewPeerLearningNetwork"
+        component={NewPeerLearningNetwork}
+        options={{ headerShown: false, title: 'Study Network' }}
+      />
+      <Stack.Screen
+        name="NewEnhancedLiveClass"
+        component={NewEnhancedLiveClass}
+        options={{ headerShown: false, title: 'Live Class' }}
+      />
+      <Stack.Screen
+        name="NewAssignmentDetailScreen"
+        component={NewAssignmentDetailScreen}
+        options={{ headerShown: false, title: 'Assignment' }}
+      />
+      <Stack.Screen
+        name="NewAITutorChat"
+        component={NewAITutorChat}
+        options={{ headerShown: false, title: 'AI Tutor Chat' }}
+      />
+      <Stack.Screen
+        name="NewVirtualClassroom"
+        component={NewVirtualClassroom}
+        options={{ headerShown: false, title: 'Virtual Classroom' }}
+      />
+      <Stack.Screen
+        name="NewClassDetailScreen"
+        component={NewClassDetailScreen}
+        options={{ headerShown: false, title: 'Class Details' }}
+      />
+      <Stack.Screen
+        name="StudentProfileScreen"
+        component={StudentProfileScreen}
+        options={{ headerShown: false, title: 'Profile' }}
       />
 
     </Stack.Navigator>
@@ -104,7 +161,7 @@ function ClassesStack() {
 
   return (
     <Stack.Navigator
-      initialRouteName="NewScheduleScreen"
+      initialRouteName="NewEnhancedSchedule"
       screenOptions={{
         headerStyle: { backgroundColor: theme.Surface },
         headerTintColor: theme.OnSurface,
@@ -112,15 +169,11 @@ function ClassesStack() {
     >
       {/* ✅ NEW SCREENS - Premium Minimal Design (DEFAULT) */}
       <Stack.Screen
-        name="NewScheduleScreen"
-        component={NewScheduleScreen}
-        options={{ headerShown: false, title: 'Schedule' }}
-      />
-      <Stack.Screen
         name="NewEnhancedSchedule"
         component={NewEnhancedSchedule}
-        options={{ headerShown: false, title: 'My Schedule' }}
+        options={{ headerShown: false, title: 'Schedule' }}
       />
+
       <Stack.Screen
         name="NewClassDetailScreen"
         component={NewClassDetailScreen}
@@ -187,6 +240,11 @@ function AssignmentsStack() {
         options={{ headerShown: false, title: 'Study Resources' }}
       />
       <Stack.Screen
+        name="ResourceViewerScreen"
+        component={ResourceViewerScreen}
+        options={{ headerShown: false, title: 'Resource Viewer' }}
+      />
+      <Stack.Screen
         name="NewAssignmentDetailScreen"
         component={NewAssignmentDetailScreen}
         options={{ headerShown: false, title: 'Assignment' }}
@@ -219,9 +277,19 @@ function AssignmentsStack() {
         options={{ headerShown: false, title: 'AI Practice Problems' }}
       />
       <Stack.Screen
+        name="PracticeProblemDetail"
+        component={PracticeProblemDetail}
+        options={{ headerShown: false, title: 'Practice Problem' }}
+      />
+      <Stack.Screen
         name="AIStudySummaries"
         component={AIStudySummaries}
         options={{ headerShown: false, title: 'AI Study Summaries' }}
+      />
+      <Stack.Screen
+        name="SummaryDetail"
+        component={SummaryDetail}
+        options={{ headerShown: false, title: 'Summary Detail' }}
       />
 
     </Stack.Navigator>
@@ -292,7 +360,7 @@ export default function StudentNavigator() {
 
   return (
     <Tab.Navigator
-      screenOptions={{
+      screenOptions={({ route }) => ({
         headerShown: false,
         tabBarActiveTintColor: theme.primary,
         tabBarInactiveTintColor: theme.OnSurfaceVariant,
@@ -304,7 +372,20 @@ export default function StudentNavigator() {
           fontSize: 12,
           fontWeight: '600',
         },
-      }}
+        // Reset stack to initial route when tab is pressed
+        tabBarButton: (props) => {
+          return (
+            <TouchableOpacity
+              {...props}
+              onPress={(e) => {
+                if (props.onPress) {
+                  props.onPress(e);
+                }
+              }}
+            />
+          );
+        },
+      })}
     >
       <Tab.Screen
         name="Home"
@@ -314,6 +395,15 @@ export default function StudentNavigator() {
             <Icon name="home" size={size} color={color} />
           ),
         }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            // Reset Home stack to initial route when tab is pressed
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Home' }],
+            });
+          },
+        })}
       />
       <Tab.Screen
         name="Classes"
@@ -323,6 +413,15 @@ export default function StudentNavigator() {
             <Icon name="school" size={size} color={color} />
           ),
         }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            // Reset Classes stack to initial route when tab is pressed
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Classes' }],
+            });
+          },
+        })}
       />
       <Tab.Screen
         name="Study"
@@ -332,6 +431,15 @@ export default function StudentNavigator() {
             <Icon name="library-books" size={size} color={color} />
           ),
         }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            // Reset Study stack to initial route when tab is pressed
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Study' }],
+            });
+          },
+        })}
       />
       <Tab.Screen
         name="Progress"
@@ -341,6 +449,15 @@ export default function StudentNavigator() {
             <Icon name="trending-up" size={size} color={color} />
           ),
         }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            // Reset Progress stack to initial route when tab is pressed
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Progress' }],
+            });
+          },
+        })}
       />
       <Tab.Screen
         name="Connect"
@@ -350,6 +467,15 @@ export default function StudentNavigator() {
             <Icon name="people" size={size} color={color} />
           ),
         }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            // Reset Connect stack to initial route when tab is pressed
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Connect' }],
+            });
+          },
+        })}
       />
     </Tab.Navigator>
   );

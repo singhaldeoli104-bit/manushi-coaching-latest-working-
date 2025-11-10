@@ -28,11 +28,14 @@ import StudentNavigator from './src/navigation/StudentNavigator';
 // Import Teacher Navigator for testing (will use AppNavigator if not available)
 // import TeacherNavigator from './src/navigation/TeacherNavigator';
 
-// Import Role Selection Screen
-import { RoleSelectionScreen } from './src/screens/common/RoleSelectionScreen';
+// Import Student Welcome Screen (student-only focus)
+import StudentWelcomeScreen from './src/screens/auth/StudentWelcomeScreen';
+
+// Import Role Selection Screen (multi-role mode - currently disabled)
+// import { RoleSelectionScreen } from './src/screens/common/RoleSelectionScreen';
 
 // ⚠️ DEV MODE FLAGS
-// SHOW_ROLE_SELECTION: Set to true to show role selection screen on app open
+// SHOW_ROLE_SELECTION: Set to true to show student welcome screen on app open (student-only focus)
 // SHOW_NEW_DASHBOARD_DIRECTLY: Set to true to see NEW parent dashboard directly (ignored if SHOW_ROLE_SELECTION is true)
 // Set both to false to use normal login flow
 const SHOW_ROLE_SELECTION = true;
@@ -150,8 +153,8 @@ const AppContent = ({ initialState }: { initialState?: InitialState }) => {
         backgroundColor={showDevDashboard ? theme.Primary : theme.Background}
       />
       {showRoleSelection ? (
-        /* DEV MODE: Show role selection screen */
-        <RoleSelectionScreen onSelectRole={setSelectedRole} />
+        /* DEV MODE: Show student welcome screen (student-only focus) */
+        <StudentWelcomeScreen onGetStarted={() => setSelectedRole('student')} />
       ) : showDevDashboard ? (
         /* DEV MODE: Show selected dashboard */
         <NavigationContainer
@@ -176,7 +179,8 @@ const AppContent = ({ initialState }: { initialState?: InitialState }) => {
           }}
           onStateChange={(state) => {
             // Save state on navigation
-            saveNavigationState(state);
+            // ⚠️ DISABLED TEMPORARILY - Not saving state to prevent persistence issues
+            // saveNavigationState(state);
             // Track screen views
             onNavigationStateChange(state);
           }}
@@ -219,6 +223,9 @@ function App(): React.JSX.Element {
         console.log('✅ [App] i18n initialized');
 
         // Check if we should restore state
+        // ⚠️ DISABLED TEMPORARILY - Navigation state restoration causing Home tab to show wrong screen
+        // Re-enable after implementing proper tab reset logic
+        /*
         const shouldRestore = await shouldRestoreNavigationState({
           isLoggedIn: true, // Set based on auth state
           appVersion: '1.0.0',
@@ -233,6 +240,8 @@ function App(): React.JSX.Element {
             console.log('📍 [App] No saved state to restore');
           }
         }
+        */
+        console.log('📍 [App] Navigation state restoration disabled - using initial routes');
       } catch (error) {
         console.error('❌ [App] Failed to restore navigation state:', error);
       } finally {

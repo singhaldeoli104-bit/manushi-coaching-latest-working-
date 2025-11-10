@@ -345,7 +345,7 @@ const styles = StyleSheet.create({
   noteCard: {
     padding: 16,
     marginBottom: 12,
-    gap: 8,
+
   },
   noteTitle: {
     marginBottom: 4,
@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 64,
-    gap: 12,
+
   },
   emptyTitle: {
     textAlign: 'center',
@@ -411,7 +411,7 @@ const styles = StyleSheet.create({
   },
   editorActions: {
     flexDirection: 'row',
-    gap: 12,
+
   },
   actionButton: {
     flex: 1,

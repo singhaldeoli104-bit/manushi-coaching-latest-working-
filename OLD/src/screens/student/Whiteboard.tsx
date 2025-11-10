@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    gap: 12,
+
   },
   canvasContainer: {
     flex: 1,
@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
   },
   canvasPlaceholder: {
     alignItems: 'center',
-    gap: 12,
+
     padding: 24,
   },
   canvasTitle: {
@@ -235,12 +235,12 @@ const styles = StyleSheet.create({
   },
   toolsRow: {
     flexDirection: 'row',
-    gap: 12,
+
   },
   toolButton: {
     padding: 12,
     alignItems: 'center',
-    gap: 4,
+
     minWidth: 80,
     borderRadius: 8,
     backgroundColor: '#F9FAFB',
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
   },
   colorPanel: {
     padding: 12,
-    gap: 8,
+
   },
   panelTitle: {
     color: '#6B7280',
@@ -269,7 +269,7 @@ const styles = StyleSheet.create({
   },
   colorsRow: {
     flexDirection: 'row',
-    gap: 12,
+
   },
   colorButton: {
     width: 48,
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
   },
   actionsRow: {
     flexDirection: 'row',
-    gap: 12,
+
   },
   actionButton: {
     flex: 1,

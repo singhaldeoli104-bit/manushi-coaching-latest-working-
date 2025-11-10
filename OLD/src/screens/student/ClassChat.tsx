@@ -229,13 +229,13 @@ const styles = StyleSheet.create({
   },
   messagesList: {
     padding: 16,
-    gap: 12,
+
   },
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 64,
-    gap: 12,
+
   },
   emptyText: {
     color: '#6B7280',
@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
   },
   messageContainer: {
     maxWidth: '80%',
-    gap: 4,
+
   },
   currentUserMessage: {
     alignSelf: 'flex-end',
@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
   messageBubble: {
     padding: 12,
     borderRadius: 16,
-    gap: 4,
+
     minWidth: 80,
   },
   currentUserBubble: {
@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     flexDirection: 'row',
-    gap: 8,
+
     padding: 16,
     borderTopWidth: 1,
     borderTopColor: '#E5E7EB',

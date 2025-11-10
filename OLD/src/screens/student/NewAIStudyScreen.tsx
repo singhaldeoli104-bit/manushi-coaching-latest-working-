@@ -829,7 +829,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    gap: 8,
+
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
   },
@@ -893,7 +893,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F3F4F6',
     borderRadius: 12,
     padding: 8,
-    gap: 8,
+
   },
   chatInput: {
     flex: 1,
@@ -934,7 +934,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F3F4F6',
     padding: 12,
     borderRadius: 8,
-    gap: 8,
+
   },
   hintItem: {
     paddingVertical: 4,
