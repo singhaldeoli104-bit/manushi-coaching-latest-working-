@@ -16,6 +16,7 @@ import {
   Alert,
   Switch,
   SafeAreaView,
+  Animated,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -29,6 +30,7 @@ import { supabase } from '../../config/supabaseClient';
 import HamburgerMenu from './HamburgerMenu';
 import { getCache, setCache, CacheDurations } from '../../services/utils/CacheManager';
 import FilterChips from '../../shared/components/FilterChips';
+import { useFadeInUp } from '../../shared/hooks/useAnimations';
 
 type Props = NativeStackScreenProps<any, 'NewScheduleScreen'>;
 
@@ -102,6 +104,12 @@ export default function NewScheduleScreen({ navigation: _navigation }: Props) {
 
   // Settings state
   const [settings, setSettings] = useState<ScheduleSettings>(DEFAULT_SETTINGS);
+
+  // Animation hooks
+  const navigationAnim = useFadeInUp(0);
+  const viewToggleAnim = useFadeInUp(150);
+  const filtersAnim = useFadeInUp(300);
+  const contentAnim = useFadeInUp(450);
 
   // Track screen view
   useEffect(() => {
@@ -789,7 +797,7 @@ export default function NewScheduleScreen({ navigation: _navigation }: Props) {
         onRefresh={refetch}
       >
       {/* Week Navigation */}
-      <View style={styles.navigation}>
+      <Animated.View style={[styles.navigation, navigationAnim]}>
         <TouchableOpacity
           onPress={handlePreviousWeek}
           style={styles.navButton}
@@ -823,10 +831,10 @@ export default function NewScheduleScreen({ navigation: _navigation }: Props) {
             →
           </T>
         </TouchableOpacity>
-      </View>
+      </Animated.View>
 
       {/* View Mode Toggle */}
-      <View style={styles.viewToggle}>
+      <Animated.View style={[styles.viewToggle, viewToggleAnim]}>
         <Chip
           variant="filter"
           label="Week"
@@ -863,22 +871,24 @@ export default function NewScheduleScreen({ navigation: _navigation }: Props) {
             trackAction('switch_view', 'NewScheduleScreen', { view: 'agenda' });
           }}
         />
-      </View>
+      </Animated.View>
 
       {/* Status Filter - FilterChips Component */}
-      <FilterChips
-        options={[
-          { value: 'all', label: 'All' },
-          { value: 'upcoming', label: '⏰ Upcoming' },
-          { value: 'live', label: '🔴 Live' },
-          { value: 'completed', label: '✅ Completed' },
-        ]}
-        selectedValue={statusFilter}
-        onSelect={(value) => {
-          setStatusFilter(value as StatusFilter);
-          trackAction('filter_status', 'NewScheduleScreen', { status: value });
-        }}
-      />
+      <Animated.View style={filtersAnim}>
+        <FilterChips
+          options={[
+            { value: 'all', label: 'All' },
+            { value: 'upcoming', label: '⏰ Upcoming' },
+            { value: 'live', label: '🔴 Live' },
+            { value: 'completed', label: '✅ Completed' },
+          ]}
+          selectedValue={statusFilter}
+          onSelect={(value) => {
+            setStatusFilter(value as StatusFilter);
+            trackAction('filter_status', 'NewScheduleScreen', { status: value });
+          }}
+        />
+      </Animated.View>
 
       {/* Subject Filters and Controls */}
       <ScrollView
@@ -923,12 +933,12 @@ export default function NewScheduleScreen({ navigation: _navigation }: Props) {
       </ScrollView>
 
       {/* Content */}
-      <View style={{ flex: 1 }}>
+      <Animated.View style={[{ flex: 1 }, contentAnim]}>
         {viewMode === 'week' && renderWeekView()}
         {viewMode === 'day' && renderDayView()}
         {viewMode === 'month' && renderMonthView()}
         {viewMode === 'agenda' && renderAgendaView()}
-      </View>
+      </Animated.View>
 
       {/* Sort Modal */}
       <Modal visible={showSortModal} transparent animationType="slide">

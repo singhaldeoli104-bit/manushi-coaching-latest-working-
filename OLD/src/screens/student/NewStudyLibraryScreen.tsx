@@ -17,6 +17,7 @@ import {
   StatusBar,
   Alert,
   Linking,
+  Animated,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
@@ -28,6 +29,7 @@ import HamburgerMenu from './HamburgerMenu';
 import ResourceViewerScreen from './ResourceViewerScreen';
 import { getCache, setCache, CacheDurations } from '../../services/utils/CacheManager';
 import FilterChips from '../../shared/components/FilterChips';
+import { useFadeInUp } from '../../shared/hooks/useAnimations';
 
 interface StudyMaterial {
   id: string;
@@ -55,6 +57,12 @@ export default function NewStudyLibraryScreen() {
   const [selectedFilter, setSelectedFilter] = useState<FilterType>('All');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [viewerResource, setViewerResource] = useState<any>(null);
+
+  // Animation hooks
+  const searchAnim = useFadeInUp(0);
+  const aiCardAnim = useFadeInUp(150);
+  const filtersAnim = useFadeInUp(300);
+  const resourcesAnim = useFadeInUp(450);
 
   useEffect(() => {
     trackScreenView('NewStudyLibraryScreen');
@@ -341,7 +349,7 @@ export default function NewStudyLibraryScreen() {
         }
       >
         {/* Search Bar Section with Blue Gradient */}
-        <View style={styles.searchSection}>
+        <Animated.View style={[styles.searchSection, searchAnim]}>
           <View style={styles.searchCard}>
             <T variant="h3" style={styles.searchIcon}>🔍</T>
             <TextInput
@@ -352,10 +360,10 @@ export default function NewStudyLibraryScreen() {
               onChangeText={setSearchQuery}
             />
           </View>
-        </View>
+        </Animated.View>
 
         {/* AI Assistant Card (Floating) */}
-        <View style={styles.aiContainer}>
+        <Animated.View style={[styles.aiContainer, aiCardAnim]}>
           <View style={styles.aiCard}>
             <View style={styles.aiCardContent}>
               <View style={styles.aiCardLeft}>
@@ -377,29 +385,31 @@ export default function NewStudyLibraryScreen() {
               </View>
             </View>
           </View>
-        </View>
+        </Animated.View>
 
         {/* Filter Chips */}
-        <FilterChips
-          options={filters.map(filter => ({
-            value: filter,
-            label: filter,
-            count: filter === 'All'
-              ? materials?.length
-              : filter === 'Favorites'
-              ? materials?.filter(m => m.isBookmarked).length
-              : materials?.filter(m => m.subject === filter).length
-          }))}
-          selectedValue={selectedFilter}
-          onSelect={(value) => {
-            setSelectedFilter(value);
-            trackAction('select_filter', 'NewStudyLibraryScreen', { filter: value });
-          }}
-          showCounts
-        />
+        <Animated.View style={filtersAnim}>
+          <FilterChips
+            options={filters.map(filter => ({
+              value: filter,
+              label: filter,
+              count: filter === 'All'
+                ? materials?.length
+                : filter === 'Favorites'
+                ? materials?.filter(m => m.isBookmarked).length
+                : materials?.filter(m => m.subject === filter).length
+            }))}
+            selectedValue={selectedFilter}
+            onSelect={(value) => {
+              setSelectedFilter(value);
+              trackAction('select_filter', 'NewStudyLibraryScreen', { filter: value });
+            }}
+            showCounts
+          />
+        </Animated.View>
 
         {/* Resources Header */}
-        <View style={styles.resourcesHeader}>
+        <Animated.View style={[styles.resourcesHeader, resourcesAnim]}>
           <T variant="body" weight="bold" style={styles.resourcesCount}>
             {displayMaterials.length} Resources
           </T>
@@ -415,10 +425,10 @@ export default function NewStudyLibraryScreen() {
               </T>
             </TouchableOpacity>
           </View>
-        </View>
+        </Animated.View>
 
         {/* Resource Cards Grid */}
-        <View style={styles.resourceGrid}>
+        <Animated.View style={[styles.resourceGrid, resourcesAnim]}>
           {displayMaterials.map((material) => (
             <TouchableOpacity
               key={material.id}
@@ -532,7 +542,7 @@ export default function NewStudyLibraryScreen() {
               </View>
             </TouchableOpacity>
           ))}
-        </View>
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );

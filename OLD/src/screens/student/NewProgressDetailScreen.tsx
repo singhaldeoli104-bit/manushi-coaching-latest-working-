@@ -14,6 +14,7 @@ import {
   RefreshControl,
   SafeAreaView,
   StatusBar,
+  Animated,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -26,6 +27,7 @@ import HamburgerMenu from './HamburgerMenu';
 import { getCache, setCache, CacheDurations } from '../../services/utils/CacheManager';
 import FilterChips from '../../shared/components/FilterChips';
 import { ViewToggle } from '../../shared/components/ViewToggle';
+import { useFadeInUp } from '../../shared/hooks/useAnimations';
 
 type Props = NativeStackScreenProps<any, 'NewProgressDetailScreen'>;
 
@@ -59,6 +61,16 @@ export default function NewProgressDetailScreen({ navigation: _navigation }: Pro
   const [menuVisible, setMenuVisible] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState<string>('All');
   const [viewMode, setViewMode] = useState<'summary' | 'detailed'>('detailed');
+
+  // Animation hooks
+  const headerAnim = useFadeInUp(0);
+  const statsAnim = useFadeInUp(150);
+  const gamifiedAnim = useFadeInUp(300);
+  const chartAnim = useFadeInUp(450);
+  const streakAnim = useFadeInUp(600);
+  const filtersAnim = useFadeInUp(750);
+  const testsAnim = useFadeInUp(900);
+  const subjectsAnim = useFadeInUp(1050);
 
   useEffect(() => {
     trackScreenView('NewProgressDetailScreen');
@@ -265,7 +277,7 @@ export default function NewProgressDetailScreen({ navigation: _navigation }: Pro
       >
         <View style={styles.content}>
           {/* Performance Header */}
-          <View style={styles.performanceHeader}>
+          <Animated.View style={[styles.performanceHeader, headerAnim]}>
             <T style={styles.overallGrade}>
               {progress?.overall_grade.toFixed(0) || 88}%
             </T>
@@ -283,10 +295,10 @@ export default function NewProgressDetailScreen({ navigation: _navigation }: Pro
                 </T>
               </View>
             </View>
-          </View>
+          </Animated.View>
 
           {/* Floating Stats - 2x2 Grid */}
-          <View style={styles.statsGrid}>
+          <Animated.View style={[styles.statsGrid, statsAnim]}>
             <View style={styles.statCard}>
               <T variant="caption" style={styles.statLabel}>Tests Taken</T>
               <T style={styles.statValue}>{progress?.assignments_completed || 12}</T>
@@ -303,7 +315,7 @@ export default function NewProgressDetailScreen({ navigation: _navigation }: Pro
               <T variant="caption" style={styles.statLabel}>Achievements</T>
               <T style={styles.statValue}>8</T>
             </View>
-          </View>
+          </Animated.View>
 
           {/* Gamified Learning Hub Card */}
           <TouchableOpacity
@@ -316,23 +328,25 @@ export default function NewProgressDetailScreen({ navigation: _navigation }: Pro
             accessibilityRole="button"
             accessibilityLabel="Open Gamified Learning Hub"
           >
-            <View style={styles.gamifiedHubIconContainer}>
-              <T style={styles.gamifiedHubIcon}>🎮</T>
-            </View>
-            <View style={styles.gamifiedHubContent}>
-              <T variant="body" weight="bold" style={styles.gamifiedHubTitle}>
-                Gamified Learning Hub
-              </T>
-              <T variant="caption" style={styles.gamifiedHubSubtitle}>
-                View XP, badges, leaderboard & challenges
-              </T>
-            </View>
-            <T style={styles.gamifiedHubArrow}>→</T>
+            <Animated.View style={[{ flexDirection: 'row', alignItems: 'center', flex: 1 }, gamifiedAnim]}>
+              <View style={styles.gamifiedHubIconContainer}>
+                <T style={styles.gamifiedHubIcon}>🎮</T>
+              </View>
+              <View style={styles.gamifiedHubContent}>
+                <T variant="body" weight="bold" style={styles.gamifiedHubTitle}>
+                  Gamified Learning Hub
+                </T>
+                <T variant="caption" style={styles.gamifiedHubSubtitle}>
+                  View XP, badges, leaderboard & challenges
+                </T>
+              </View>
+              <T style={styles.gamifiedHubArrow}>→</T>
+            </Animated.View>
           </TouchableOpacity>
 
           {/* Performance Chart Placeholder */}
           {viewMode === 'detailed' && (
-          <View style={styles.chartCard}>
+          <Animated.View style={[styles.chartCard, chartAnim]}>
             <T variant="body" weight="semiBold" style={styles.chartTitle}>
               6-Month Performance Trend
             </T>
@@ -346,12 +360,12 @@ export default function NewProgressDetailScreen({ navigation: _navigation }: Pro
                 Performance chart
               </T>
             </View>
-          </View>
+          </Animated.View>
           )}
 
           {/* Study Streak Tracker */}
           {viewMode === 'detailed' && (
-          <View style={styles.streakCard}>
+          <Animated.View style={[styles.streakCard, streakAnim]}>
             <View style={styles.streakHeader}>
               <T variant="body" weight="semiBold" style={styles.streakTitle}>
                 Study Streak
@@ -385,32 +399,34 @@ export default function NewProgressDetailScreen({ navigation: _navigation }: Pro
                 </View>
               ))}
             </View>
-          </View>
+          </Animated.View>
           )}
 
           {/* Filter Chips */}
           {viewMode === 'detailed' && (
-          <FilterChips
-            options={[
-              { value: 'All', label: 'All Subjects' },
-              ...(progress?.subjects.map(s => ({
-                value: s.name,
-                label: s.name,
-                count: progress.recent_grades.filter(g => g.subject === s.name).length
-              })) || [])
-            ]}
-            selectedValue={selectedSubject}
-            onSelect={(value) => {
-              setSelectedSubject(value);
-              trackAction('filter_subject', 'NewProgressDetailScreen', { subject: value });
-            }}
-            showCounts
-          />
+          <Animated.View style={filtersAnim}>
+            <FilterChips
+              options={[
+                { value: 'All', label: 'All Subjects' },
+                ...(progress?.subjects.map(s => ({
+                  value: s.name,
+                  label: s.name,
+                  count: progress.recent_grades.filter(g => g.subject === s.name).length
+                })) || [])
+              ]}
+              selectedValue={selectedSubject}
+              onSelect={(value) => {
+                setSelectedSubject(value);
+                trackAction('filter_subject', 'NewProgressDetailScreen', { subject: value });
+              }}
+              showCounts
+            />
+          </Animated.View>
           )}
 
           {/* Recent Tests */}
           {viewMode === 'detailed' && (
-          <View style={styles.section}>
+          <Animated.View style={[styles.section, testsAnim]}>
             <T variant="body" weight="semiBold" style={styles.sectionTitle}>
               Recent Tests
             </T>
@@ -466,12 +482,12 @@ export default function NewProgressDetailScreen({ navigation: _navigation }: Pro
                 );
               })}
             </View>
-          </View>
+          </Animated.View>
           )}
 
           {/* Subject Performance */}
           {viewMode === 'detailed' && (
-          <View style={styles.section}>
+          <Animated.View style={[styles.section, subjectsAnim]}>
             <T variant="body" weight="semiBold" style={styles.sectionTitle}>
               Subject Performance
             </T>
@@ -506,7 +522,7 @@ export default function NewProgressDetailScreen({ navigation: _navigation }: Pro
                 );
               })}
             </View>
-          </View>
+          </Animated.View>
           )}
         </View>
       </ScrollView>

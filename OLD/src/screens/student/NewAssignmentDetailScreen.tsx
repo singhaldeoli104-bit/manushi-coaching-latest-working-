@@ -11,10 +11,12 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ScrollView,
+  Animated,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { T } from '../../ui';
 import { trackAction, trackScreenView } from '../../utils/navigationAnalytics';
+import { useFadeInUp } from '../../shared/hooks/useAnimations';
 
 type Props = NativeStackScreenProps<any, 'NewAssignmentDetailScreen'>;
 
@@ -44,6 +46,12 @@ export default function NewAssignmentDetailScreen({ route, navigation }: Props) 
   const teacher = route.params?.teacher || 'Ms. Davison';
   const points = route.params?.points || 100;
   const status = route.params?.status || 'Not Started';
+
+  // Animation hooks
+  const headerCardAnim = useFadeInUp(0);
+  const timerAnim = useFadeInUp(150);
+  const tabsAnim = useFadeInUp(300);
+  const contentAnim = useFadeInUp(450);
 
   useEffect(() => {
     trackScreenView('NewAssignmentDetailScreen');
@@ -152,7 +160,7 @@ export default function NewAssignmentDetailScreen({ route, navigation }: Props) 
         contentContainerStyle={styles.scrollContent}
       >
         {/* Assignment Header Card */}
-        <View style={styles.headerCard}>
+        <Animated.View style={[styles.headerCard, headerCardAnim]}>
           <View style={styles.headerTop}>
             <T variant="caption" weight="semiBold" style={styles.teacherName}>
               {teacher}
@@ -187,10 +195,10 @@ export default function NewAssignmentDetailScreen({ route, navigation }: Props) 
               {points} pts
             </T>
           </View>
-        </View>
+        </Animated.View>
 
         {/* Timer Section */}
-        <View style={styles.timerSection}>
+        <Animated.View style={[styles.timerSection, timerAnim]}>
           <T variant="caption" weight="semiBold" style={styles.timerLabel}>
             Due In
           </T>
@@ -228,10 +236,10 @@ export default function NewAssignmentDetailScreen({ route, navigation }: Props) 
               </T>
             </View>
           </View>
-        </View>
+        </Animated.View>
 
         {/* Tabs */}
-        <View style={styles.tabsContainer}>
+        <Animated.View style={[styles.tabsContainer, tabsAnim]}>
           <TouchableOpacity
             style={[
               styles.tab,
@@ -273,11 +281,11 @@ export default function NewAssignmentDetailScreen({ route, navigation }: Props) 
               My Submission
             </T>
           </TouchableOpacity>
-        </View>
+        </Animated.View>
 
         {/* Tab Content */}
         {activeTab === 'instructions' && (
-          <View style={styles.instructionsContent}>
+          <Animated.View style={[styles.instructionsContent, contentAnim]}>
             {/* Description */}
             <View style={styles.section}>
               <T variant="title" weight="bold" style={styles.sectionTitle}>
@@ -343,11 +351,11 @@ export default function NewAssignmentDetailScreen({ route, navigation }: Props) 
                 ))}
               </View>
             </View>
-          </View>
+          </Animated.View>
         )}
 
         {activeTab === 'submission' && (
-          <View style={styles.submissionContent}>
+          <Animated.View style={[styles.submissionContent, contentAnim]}>
             <View style={styles.emptyState}>
               <T variant="h2" style={styles.emptyIcon}>
                 📝
@@ -359,7 +367,7 @@ export default function NewAssignmentDetailScreen({ route, navigation }: Props) 
                 Tap Submit below to start your assignment
               </T>
             </View>
-          </View>
+          </Animated.View>
         )}
 
         {/* Spacer for sticky footer */}

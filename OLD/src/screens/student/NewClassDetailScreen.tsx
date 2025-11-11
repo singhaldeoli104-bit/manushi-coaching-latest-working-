@@ -11,10 +11,12 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ScrollView,
+  Animated,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { T } from '../../ui';
 import { trackAction, trackScreenView } from '../../utils/navigationAnalytics';
+import { useFadeInUp } from '../../shared/hooks/useAnimations';
 
 type Props = NativeStackScreenProps<any, 'NewClassDetailScreen'>;
 
@@ -38,6 +40,14 @@ export default function NewClassDetailScreen({ route, navigation }: Props) {
   const title = route.params?.title || 'Biology - Cell Structure';
   const teacher = route.params?.teacher || 'Dr. Evelyn Reed';
   const department = route.params?.department || 'Biology Department';
+
+  // Animation hooks
+  const teacherCardAnim = useFadeInUp(0);
+  const detailsGridAnim = useFadeInUp(150);
+  const statusChipsAnim = useFadeInUp(300);
+  const materialsAccordionAnim = useFadeInUp(450);
+  const attendanceAnim = useFadeInUp(600);
+  const assignmentsAccordionAnim = useFadeInUp(750);
 
   useEffect(() => {
     trackScreenView('NewClassDetailScreen');
@@ -103,7 +113,7 @@ export default function NewClassDetailScreen({ route, navigation }: Props) {
         contentContainerStyle={styles.scrollContent}
       >
         {/* Teacher Info Card */}
-        <View style={styles.teacherCard}>
+        <Animated.View style={[styles.teacherCard, teacherCardAnim]}>
           <View style={styles.teacherAvatar}>
             <T style={styles.avatarText}>👩‍🏫</T>
           </View>
@@ -115,10 +125,10 @@ export default function NewClassDetailScreen({ route, navigation }: Props) {
               {department}
             </T>
           </View>
-        </View>
+        </Animated.View>
 
         {/* Details Grid */}
-        <View style={styles.detailsGrid}>
+        <Animated.View style={[styles.detailsGrid, detailsGridAnim]}>
           <View style={styles.detailItem}>
             <T variant="caption" style={styles.detailLabel}>
               Date
@@ -154,10 +164,10 @@ export default function NewClassDetailScreen({ route, navigation }: Props) {
               Room 301
             </T>
           </View>
-        </View>
+        </Animated.View>
 
         {/* Status Chips */}
-        <View style={styles.statusChips}>
+        <Animated.View style={[styles.statusChips, statusChipsAnim]}>
           <View style={styles.liveChip}>
             <View style={styles.pulseDot} />
             <T variant="caption" weight="semiBold" style={styles.liveText}>
@@ -170,10 +180,10 @@ export default function NewClassDetailScreen({ route, navigation }: Props) {
               Recording Available
             </T>
           </View>
-        </View>
+        </Animated.View>
 
         {/* Class Materials Accordion */}
-        <View style={styles.accordion}>
+        <Animated.View style={[styles.accordion, materialsAccordionAnim]}>
           <TouchableOpacity
             style={styles.accordionHeader}
             onPress={() => setMaterialsExpanded(!materialsExpanded)}
@@ -232,10 +242,10 @@ export default function NewClassDetailScreen({ route, navigation }: Props) {
               </TouchableOpacity>
             </View>
           )}
-        </View>
+        </Animated.View>
 
         {/* Attendance Section */}
-        <View style={styles.attendanceSection}>
+        <Animated.View style={[styles.attendanceSection, attendanceAnim]}>
           <T variant="body" weight="semiBold" style={styles.sectionTitle}>
             Your Attendance
           </T>
@@ -250,10 +260,10 @@ export default function NewClassDetailScreen({ route, navigation }: Props) {
               28 / 30 students present
             </T>
           </View>
-        </View>
+        </Animated.View>
 
         {/* Related Assignments Accordion */}
-        <View style={styles.accordion}>
+        <Animated.View style={[styles.accordion, assignmentsAccordionAnim]}>
           <TouchableOpacity
             style={styles.accordionHeader}
             onPress={() => setAssignmentsExpanded(!assignmentsExpanded)}
@@ -305,7 +315,7 @@ export default function NewClassDetailScreen({ route, navigation }: Props) {
               ))}
             </View>
           )}
-        </View>
+        </Animated.View>
 
         {/* Spacer for sticky footer */}
         <View style={styles.footerSpacer} />

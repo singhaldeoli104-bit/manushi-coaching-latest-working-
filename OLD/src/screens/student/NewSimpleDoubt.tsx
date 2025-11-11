@@ -5,7 +5,7 @@
  */
 
 import React, { useState } from 'react';
-import { View, StyleSheet, TextInput, TouchableOpacity, Alert, Modal } from 'react-native';
+import { View, StyleSheet, TextInput, TouchableOpacity, Alert, Modal, Animated } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BaseScreen } from '../../shared/components/BaseScreen';
 import { Card, CardHeader, CardContent } from '../../ui';
@@ -15,6 +15,7 @@ import { T } from '../../ui';
 import { trackAction, trackScreenView } from '../../utils/navigationAnalytics';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../config/supabaseClient';
+import { useFadeInUp, useSlideIn } from '../../shared/hooks/useAnimations';
 
 type Props = NativeStackScreenProps<any, 'NewSimpleDoubt'>;
 
@@ -44,6 +45,10 @@ export default function NewSimpleDoubt({ navigation }: Props) {
   React.useEffect(() => {
     trackScreenView('NewSimpleDoubt');
   }, []);
+
+  // Animation hooks
+  const quickActionsAnim = useFadeInUp(0);
+  const formCardAnim = useFadeInUp(150);
 
   const handleUseTemplate = (template: string) => {
     setQuestion(template);
@@ -123,26 +128,29 @@ export default function NewSimpleDoubt({ navigation }: Props) {
     <BaseScreen scrollable={true}>
       <View style={styles.container}>
         {/* Quick Actions */}
-        <Row gap="xs" style={{ marginBottom: 16 }}>
-          <Button
-            variant="outline"
-            onPress={() => setShowTemplates(true)}
-            style={{ flex: 1 }}
-            disabled={isSubmitting}
-          >
-            📝 Templates
-          </Button>
-          <Button
-            variant="outline"
-            onPress={handleVoiceInput}
-            style={{ flex: 1 }}
-            disabled={isSubmitting}
-          >
-            🎤 Voice
-          </Button>
-        </Row>
+        <Animated.View style={quickActionsAnim}>
+          <Row gap="xs" style={{ marginBottom: 16 }}>
+            <Button
+              variant="outline"
+              onPress={() => setShowTemplates(true)}
+              style={{ flex: 1 }}
+              disabled={isSubmitting}
+            >
+              📝 Templates
+            </Button>
+            <Button
+              variant="outline"
+              onPress={handleVoiceInput}
+              style={{ flex: 1 }}
+              disabled={isSubmitting}
+            >
+              🎤 Voice
+            </Button>
+          </Row>
+        </Animated.View>
 
-        <Card style={styles.formCard}>
+        <Animated.View style={formCardAnim}>
+          <Card style={styles.formCard}>
           <T variant="h2" weight="bold" style={styles.title}>
             Ask a Quick Question
           </T>
@@ -193,6 +201,7 @@ export default function NewSimpleDoubt({ navigation }: Props) {
             </T>
           </TouchableOpacity>
         </Card>
+        </Animated.View>
 
         {/* Related Doubts */}
         {relatedDoubts.length > 0 && (
