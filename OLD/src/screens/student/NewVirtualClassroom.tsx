@@ -11,10 +11,12 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ScrollView,
+  Animated,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { T } from '../../ui';
 import { trackAction, trackScreenView } from '../../utils/navigationAnalytics';
+import { useFadeInUp } from '../../shared/hooks/useAnimations';
 
 type Props = NativeStackScreenProps<any, 'NewVirtualClassroom'>;
 
@@ -68,6 +70,12 @@ export default function NewVirtualClassroom({ route, navigation }: Props) {
     navigation.goBack();
   };
 
+  // Animation hooks
+  const teacherSectionAnim = useFadeInUp(0);
+  const classTitleAnim = useFadeInUp(100);
+  const detailsGridAnim = useFadeInUp(200);
+  const whiteboardAnim = useFadeInUp(300);
+
   return (
     <SafeAreaView style={styles.safeArea}>
       {/* Top Header */}
@@ -100,7 +108,7 @@ export default function NewVirtualClassroom({ route, navigation }: Props) {
 
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         {/* Teacher Profile Section with Timer */}
-        <View style={styles.teacherSection}>
+        <Animated.View style={[styles.teacherSection, teacherSectionAnim]}>
           <View style={styles.teacherAvatar}>
             <T style={styles.teacherAvatarText}>👩‍🏫</T>
           </View>
@@ -131,17 +139,17 @@ export default function NewVirtualClassroom({ route, navigation }: Props) {
               End Class
             </T>
           </TouchableOpacity>
-        </View>
+        </Animated.View>
 
         {/* Class Title */}
-        <View style={styles.classTitleContainer}>
+        <Animated.View style={[styles.classTitleContainer, classTitleAnim]}>
           <T variant="h2" weight="bold" style={styles.classTitle}>
             {classTitle}
           </T>
-        </View>
+        </Animated.View>
 
         {/* Class Details Grid */}
-        <View style={styles.detailsGrid}>
+        <Animated.View style={[styles.detailsGrid, detailsGridAnim]}>
           <View style={styles.detailCard}>
             <T variant="caption" style={styles.detailLabel}>
               Topic
@@ -159,16 +167,16 @@ export default function NewVirtualClassroom({ route, navigation }: Props) {
               {teacherName}
             </T>
           </View>
-        </View>
+        </Animated.View>
 
         {/* Main Whiteboard Area */}
-        <View style={styles.whiteboardContainer}>
+        <Animated.View style={[styles.whiteboardContainer, whiteboardAnim]}>
           <View style={styles.whiteboard}>
             <T variant="body" style={styles.whiteboardInstruction}>
               Tap on tools to start drawing
             </T>
           </View>
-        </View>
+        </Animated.View>
 
         {/* Floating Tool Palette */}
         <View style={styles.toolPalette}>

@@ -5,7 +5,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { ScrollView, View, TouchableOpacity, RefreshControl, StyleSheet, SafeAreaView, StatusBar } from 'react-native';
+import { ScrollView, View, TouchableOpacity, RefreshControl, StyleSheet, SafeAreaView, StatusBar, Animated } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { T } from '../../ui';
@@ -17,6 +17,8 @@ import HamburgerMenu from './HamburgerMenu';
 import { getCache, setCache, CacheKeys, CacheDurations } from '../../services/utils/CacheManager';
 import FilterChips from '../../shared/components/FilterChips';
 import { ViewToggle } from '../../shared/components/ViewToggle';
+import { useFadeInUp, useTransition, useSlideIn } from '../../shared/hooks/useAnimations';
+import { LoadingSkeleton, SkeletonGroup } from '../../shared/components/LoadingSkeleton';
 
 type Props = NativeStackScreenProps<any, 'NewStudentDashboard'>;
 
@@ -216,6 +218,75 @@ const NewStudentDashboard: React.FC<Props> = () => {
     return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
   };
 
+  // Animated Stat Card Component
+  const AnimatedStatCard: React.FC<{
+    delay: number;
+    icon: string;
+    iconColor: any;
+    value: string | number;
+    label: string;
+  }> = ({ delay, icon, iconColor, value, label }) => {
+    const animatedStyle = useFadeInUp(delay);
+    return (
+      <Animated.View style={[styles.statCard, animatedStyle]}>
+        <T style={[iconColor, { marginBottom: 8 }]}>{icon}</T>
+        <T variant="h1" weight="bold" style={[styles.statValue, { marginBottom: 8 }]}>
+          {value}
+        </T>
+        <T variant="caption" style={styles.statLabel}>{label}</T>
+      </Animated.View>
+    );
+  };
+
+  // Animated Class Card Component
+  const AnimatedClassCard: React.FC<{
+    delay: number;
+    children: React.ReactNode;
+    style?: any;
+    onPress?: () => void;
+    accessibilityLabel?: string;
+  }> = ({ delay, children, style, onPress, accessibilityLabel }) => {
+    const animatedStyle = useFadeInUp(delay);
+    return (
+      <TouchableOpacity
+        style={style}
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}
+      >
+        <Animated.View style={animatedStyle}>
+          {children}
+        </Animated.View>
+      </TouchableOpacity>
+    );
+  };
+
+  // Animated Assignment Card Component
+  const AnimatedAssignmentCard: React.FC<{
+    delay: number;
+    children: React.ReactNode;
+  }> = ({ delay, children }) => {
+    const animatedStyle = useFadeInUp(delay);
+    return (
+      <Animated.View style={[styles.assignmentCard, animatedStyle]}>
+        {children}
+      </Animated.View>
+    );
+  };
+
+  // Animated Activity Item Component
+  const AnimatedActivityItem: React.FC<{
+    delay: number;
+    children: React.ReactNode;
+  }> = ({ delay, children }) => {
+    const animatedStyle = useFadeInUp(delay);
+    return (
+      <Animated.View style={[styles.activityItem, animatedStyle]}>
+        {children}
+      </Animated.View>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
@@ -305,43 +376,28 @@ const NewStudentDashboard: React.FC<Props> = () => {
 
           {/* Floating Stats - EXACT grid-cols-2 sm:grid-cols-4 */}
           <View style={styles.statsFloating}>
-            <View style={styles.statsGrid}>
-              {/* Stat 1 - Event Icon */}
-              <View style={styles.statCard}>
-                <T style={[styles.statIconText, { marginBottom: 8 }]}>📅</T>
-                <T variant="h1" weight="bold" style={[styles.statValue, { marginBottom: 8 }]}>
-                  {summary?.classCount.toString().padStart(2, '0') || '04'}
-                </T>
-                <T variant="caption" style={styles.statLabel}>Today's Classes</T>
+            {isLoading ? (
+              <View style={styles.statsGrid}>
+                <LoadingSkeleton variant="card" height={110} style={{ width: '48%', marginBottom: 12 }} />
+                <LoadingSkeleton variant="card" height={110} style={{ width: '48%', marginBottom: 12 }} />
+                <LoadingSkeleton variant="card" height={110} style={{ width: '48%', marginBottom: 12 }} />
+                <LoadingSkeleton variant="card" height={110} style={{ width: '48%', marginBottom: 12 }} />
               </View>
+            ) : (
+              <View style={styles.statsGrid}>
+                {/* Stat 1 - Event Icon */}
+                <AnimatedStatCard delay={0} icon="📅" iconColor={styles.statIconText} value={summary?.classCount.toString().padStart(2, '0') || '04'} label="Today's Classes" />
 
-              {/* Stat 2 - Assignment */}
-              <View style={styles.statCard}>
-                <T style={[styles.statIconTextOrange, { marginBottom: 8 }]}>📝</T>
-                <T variant="h1" weight="bold" style={[styles.statValue, { marginBottom: 8 }]}>
-                  {summary?.assignmentCount.toString().padStart(2, '0') || '03'}
-                </T>
-                <T variant="caption" style={styles.statLabel}>Pending</T>
-              </View>
+                {/* Stat 2 - Assignment */}
+                <AnimatedStatCard delay={100} icon="📝" iconColor={styles.statIconTextOrange} value={summary?.assignmentCount.toString().padStart(2, '0') || '03'} label="Pending" />
 
-              {/* Stat 3 - Check Circle */}
-              <View style={styles.statCard}>
-                <T style={[styles.statIconTextGreen, { marginBottom: 8 }]}>✅</T>
-                <T variant="h1" weight="bold" style={[styles.statValue, { marginBottom: 8 }]}>
-                  {summary?.attendance || 92}%
-                </T>
-                <T variant="caption" style={styles.statLabel}>Attendance</T>
-              </View>
+                {/* Stat 3 - Check Circle */}
+                <AnimatedStatCard delay={200} icon="✅" iconColor={styles.statIconTextGreen} value={`${summary?.attendance || 92}%`} label="Attendance" />
 
-              {/* Stat 4 - Fire */}
-              <View style={styles.statCard}>
-                <T style={[styles.statIconTextRed, { marginBottom: 8 }]}>🔥</T>
-                <T variant="h1" weight="bold" style={[styles.statValue, { marginBottom: 8 }]}>
-                  {summary?.streak || 12}
-                </T>
-                <T variant="caption" style={styles.statLabel}>Streak</T>
+                {/* Stat 4 - Fire */}
+                <AnimatedStatCard delay={300} icon="🔥" iconColor={styles.statIconTextRed} value={summary?.streak || 12} label="Streak" />
               </View>
-            </View>
+            )}
           </View>
 
           {/* Filter Chips */}
@@ -373,8 +429,10 @@ const NewStudentDashboard: React.FC<Props> = () => {
               </TouchableOpacity>
             </View>
 
-            {todaysClasses && todaysClasses.length > 0 ? (
-              todaysClasses.map((cls) => {
+            {classesLoading ? (
+              <SkeletonGroup variant="card" count={2} />
+            ) : todaysClasses && todaysClasses.length > 0 ? (
+              todaysClasses.map((cls, index) => {
                 const now = new Date();
                 const start = new Date(cls.scheduled_start_at);
                 const end = new Date(cls.scheduled_end_at);
@@ -382,8 +440,9 @@ const NewStudentDashboard: React.FC<Props> = () => {
                 const isScheduled = now < start;
 
                 return (
-                  <TouchableOpacity
+                  <AnimatedClassCard
                     key={cls.id}
+                    delay={index * 100}
                     style={[
                       styles.classCard,
                       isLive && styles.classCardLive,
@@ -398,7 +457,6 @@ const NewStudentDashboard: React.FC<Props> = () => {
                         department: 'Biology Department'
                       });
                     }}
-                    accessibilityRole="button"
                     accessibilityLabel={`View details for ${cls.session_name || 'class'}`}
                   >
                     <View style={styles.classCardContent}>
@@ -454,13 +512,14 @@ const NewStudentDashboard: React.FC<Props> = () => {
                         )}
                       </View>
                     </View>
-                  </TouchableOpacity>
+                  </AnimatedClassCard>
                 );
               })
             ) : (
               <>
                 {/* Example Live Class */}
-                <TouchableOpacity
+                <AnimatedClassCard
+                  delay={0}
                   style={[styles.classCard, styles.classCardLive]}
                   onPress={() => {
                     trackAction('view_class_detail_live_example', 'NewStudentDashboard');
@@ -471,7 +530,6 @@ const NewStudentDashboard: React.FC<Props> = () => {
                       department: 'Physics Department'
                     });
                   }}
-                  accessibilityRole="button"
                   accessibilityLabel="View Physics class details"
                 >
                   <View style={styles.classCardContent}>
@@ -507,10 +565,11 @@ const NewStudentDashboard: React.FC<Props> = () => {
                       </TouchableOpacity>
                     </View>
                   </View>
-                </TouchableOpacity>
+                </AnimatedClassCard>
 
                 {/* Example Scheduled Class */}
-                <TouchableOpacity
+                <AnimatedClassCard
+                  delay={100}
                   style={styles.classCard}
                   onPress={() => {
                     trackAction('view_class_detail_scheduled_example', 'NewStudentDashboard');
@@ -521,7 +580,6 @@ const NewStudentDashboard: React.FC<Props> = () => {
                       department: 'Mathematics Department'
                     });
                   }}
-                  accessibilityRole="button"
                   accessibilityLabel="View Mathematics class details"
                 >
                   <View style={styles.classCardContent}>
@@ -547,7 +605,7 @@ const NewStudentDashboard: React.FC<Props> = () => {
                       </View>
                     </View>
                   </View>
-                </TouchableOpacity>
+                </AnimatedClassCard>
               </>
             )}
           </View>
@@ -566,8 +624,10 @@ const NewStudentDashboard: React.FC<Props> = () => {
               </TouchableOpacity>
             </View>
 
-            {pendingAssignments && pendingAssignments.length > 0 ? (
-              pendingAssignments.map((assignment) => {
+            {assignmentsLoading ? (
+              <SkeletonGroup variant="list" count={2} />
+            ) : pendingAssignments && pendingAssignments.length > 0 ? (
+              pendingAssignments.map((assignment, index) => {
                 const dueDate = new Date(assignment.due_date);
                 const today = new Date();
                 const tomorrow = new Date(today);
@@ -575,7 +635,7 @@ const NewStudentDashboard: React.FC<Props> = () => {
                 const isHighPriority = dueDate < tomorrow || assignment.priority === 'high';
 
                 return (
-                  <View key={assignment.id} style={styles.assignmentCard}>
+                  <AnimatedAssignmentCard key={assignment.id} delay={index * 100}>
                     <View style={styles.assignmentContent}>
                       <View style={styles.assignmentInfo}>
                         <View style={styles.assignmentBadgeRow}>
@@ -630,13 +690,13 @@ const NewStudentDashboard: React.FC<Props> = () => {
                         )}
                       </View>
                     </View>
-                  </View>
+                  </AnimatedAssignmentCard>
                 );
               })
             ) : (
               <>
                 {/* Example Assignment 1 - High Priority with Collaboration */}
-                <View style={styles.assignmentCard}>
+                <AnimatedAssignmentCard delay={0}>
                   <View style={styles.assignmentContent}>
                     <View style={styles.assignmentInfo}>
                       <View style={styles.assignmentBadgeRow}>
@@ -672,10 +732,10 @@ const NewStudentDashboard: React.FC<Props> = () => {
                       </TouchableOpacity>
                     </View>
                   </View>
-                </View>
+                </AnimatedAssignmentCard>
 
                 {/* Example Assignment 2 - Medium Priority */}
-                <View style={styles.assignmentCard}>
+                <AnimatedAssignmentCard delay={100}>
                   <View style={styles.assignmentContent}>
                     <View style={styles.assignmentInfo}>
                       <View style={styles.assignmentBadgeRow}>
@@ -693,7 +753,7 @@ const NewStudentDashboard: React.FC<Props> = () => {
                       <T variant="body" weight="semiBold" style={styles.startButtonText}>Start</T>
                     </TouchableOpacity>
                   </View>
-                </View>
+                </AnimatedAssignmentCard>
               </>
             )}
           </View>
@@ -821,7 +881,7 @@ const NewStudentDashboard: React.FC<Props> = () => {
             <T variant="title" weight="bold" style={styles.sectionTitle}>Recent Activity</T>
             <View style={styles.activityList}>
               {/* Activity 1 - Green */}
-              <View style={styles.activityItem}>
+              <AnimatedActivityItem delay={0}>
                 <View style={[styles.activityIcon, styles.activityIconGreen]}>
                   <T style={styles.activityIconText}>🎓</T>
                 </View>
@@ -831,10 +891,10 @@ const NewStudentDashboard: React.FC<Props> = () => {
                   </T>
                   <T variant="caption" style={styles.activityTime}>2h ago</T>
                 </View>
-              </View>
+              </AnimatedActivityItem>
 
               {/* Activity 2 - Blue */}
-              <View style={styles.activityItem}>
+              <AnimatedActivityItem delay={100}>
                 <View style={[styles.activityIcon, styles.activityIconBlue]}>
                   <T style={styles.activityIconText}>✅</T>
                 </View>
@@ -844,10 +904,10 @@ const NewStudentDashboard: React.FC<Props> = () => {
                   </T>
                   <T variant="caption" style={styles.activityTime}>5h ago</T>
                 </View>
-              </View>
+              </AnimatedActivityItem>
 
               {/* Activity 3 - Purple */}
-              <View style={styles.activityItem}>
+              <AnimatedActivityItem delay={200}>
                 <View style={[styles.activityIcon, styles.activityIconPurple]}>
                   <T style={styles.activityIconText}>✔️</T>
                 </View>
@@ -857,7 +917,7 @@ const NewStudentDashboard: React.FC<Props> = () => {
                   </T>
                   <T variant="caption" style={styles.activityTime}>1 day ago</T>
                 </View>
-              </View>
+              </AnimatedActivityItem>
             </View>
           </View>
           )}
