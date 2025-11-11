@@ -23,6 +23,7 @@ import { safeNavigate } from '../../utils/navigationService';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../config/supabaseClient';
 import HamburgerMenu from './HamburgerMenu';
+import { ViewToggle } from '../../shared/components/ViewToggle';
 
 interface Peer {
   id: string;
@@ -57,6 +58,7 @@ export default function NewPeerLearningNetwork() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
   const [activeTab, setActiveTab] = React.useState<'peers' | 'groups'>('peers');
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
 
   useEffect(() => {
     trackScreenView('NewPeerLearningNetwork');
@@ -281,13 +283,18 @@ export default function NewPeerLearningNetwork() {
           <T variant="h2" style={styles.icon}>☰</T>
         </TouchableOpacity>
         <T variant="title" weight="bold" style={styles.topBarTitle}>Study Network</T>
-        <TouchableOpacity
-          style={styles.iconButton}
-          accessibilityRole="button"
-          accessibilityLabel="More options"
-        >
-          <T variant="h2" style={styles.icon}>⋮</T>
-        </TouchableOpacity>
+        <ViewToggle
+          modes={[
+            { value: 'list', icon: '☰', label: 'List' },
+            { value: 'grid', icon: '⊞', label: 'Grid' },
+          ]}
+          selectedMode={viewMode}
+          onModeChange={(mode) => {
+            setViewMode(mode as 'list' | 'grid');
+            trackAction('toggle_view_mode', 'NewPeerLearningNetwork', { mode });
+          }}
+          size="small"
+        />
       </View>
 
       <ScrollView

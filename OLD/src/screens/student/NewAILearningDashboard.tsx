@@ -294,13 +294,18 @@ export default function NewAILearningDashboard() {
         <T variant="title" weight="bold" style={styles.topBarTitle}>
           AI Learning Dashboard
         </T>
-        <TouchableOpacity
-          style={styles.iconButton}
-          accessibilityRole="button"
-          accessibilityLabel="More options"
-        >
-          <T variant="h2" style={styles.icon}>⋮</T>
-        </TouchableOpacity>
+        <ViewToggle
+          modes={[
+            { value: 'compact', icon: '▦', label: 'Compact' },
+            { value: 'detailed', icon: '☰', label: 'Detailed' },
+          ]}
+          selectedMode={viewMode}
+          onModeChange={(mode) => {
+            setViewMode(mode as 'compact' | 'detailed');
+            trackAction('toggle_view_mode', 'NewAILearningDashboard', { mode });
+          }}
+          size="small"
+        />
       </View>
 
       <ScrollView
@@ -325,6 +330,8 @@ export default function NewAILearningDashboard() {
         </View>
 
         {/* Weekly Activity Section */}
+        {viewMode === 'detailed' && (
+        <>
         <T variant="body" weight="bold" style={styles.sectionTitle}>
           Weekly Activity
         </T>
@@ -394,8 +401,12 @@ export default function NewAILearningDashboard() {
             </View>
           </View>
         </View>
+        </>
+        )}
 
         {/* Focus Areas */}
+        {viewMode === 'detailed' && (
+        <>
         <T variant="body" weight="bold" style={styles.sectionTitle}>
           Focus Areas
         </T>
@@ -467,8 +478,12 @@ export default function NewAILearningDashboard() {
             );
           })}
         </View>
+        </>
+        )}
 
         {/* Today's AI Plan */}
+        {viewMode === 'detailed' && (
+        <>
         <T variant="body" weight="bold" style={styles.sectionTitle}>
           Today's AI Plan
         </T>
@@ -514,8 +529,12 @@ export default function NewAILearningDashboard() {
             ))}
           </View>
         </View>
+        </>
+        )}
 
         {/* Grade Predictions */}
+        {viewMode === 'detailed' && (
+        <>
         <T variant="body" weight="bold" style={styles.sectionTitle}>
           Grade Predictions
         </T>
@@ -555,6 +574,8 @@ export default function NewAILearningDashboard() {
             ))}
           </View>
         </View>
+        </>
+        )}
       </ScrollView>
 
       {/* Floating Action Button - Chat with AI Tutor */}
