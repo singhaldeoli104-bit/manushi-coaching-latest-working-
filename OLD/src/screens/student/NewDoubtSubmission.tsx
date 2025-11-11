@@ -27,6 +27,7 @@ import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../config/supabaseClient';
 import { logDatabaseError } from '../../utils/errorLogger';
 import { getCache, setCache, CacheDurations } from '../../services/utils/CacheManager';
+import FilterChips from '../../shared/components/FilterChips';
 
 type Props = NativeStackScreenProps<any, 'NewDoubtSubmission'>;
 
@@ -946,44 +947,31 @@ export default function NewDoubtSubmission({ route, navigation }: Props) {
           </View>
 
           {/* Tabs */}
-          <View style={styles.tabs}>
-            <TouchableOpacity
-              style={[styles.tab, historyTab === 'all' && styles.tabActive]}
-              onPress={() => setHistoryTab('all')}
-            >
-              <T
-                variant="body"
-                weight={historyTab === 'all' ? 'semiBold' : 'medium'}
-                style={historyTab === 'all' ? {...styles.tabText, ...styles.tabTextActive} : styles.tabText}
-              >
-                All
-              </T>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.tab, historyTab === 'pending' && styles.tabActive]}
-              onPress={() => setHistoryTab('pending')}
-            >
-              <T
-                variant="body"
-                weight={historyTab === 'pending' ? 'semiBold' : 'medium'}
-                style={historyTab === 'pending' ? {...styles.tabText, ...styles.tabTextActive} : styles.tabText}
-              >
-                Pending
-              </T>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.tab, historyTab === 'answered' && styles.tabActive]}
-              onPress={() => setHistoryTab('answered')}
-            >
-              <T
-                variant="body"
-                weight={historyTab === 'answered' ? 'semiBold' : 'medium'}
-                style={historyTab === 'answered' ? {...styles.tabText, ...styles.tabTextActive} : styles.tabText}
-              >
-                Answered
-              </T>
-            </TouchableOpacity>
-          </View>
+          <FilterChips
+            options={[
+              {
+                value: 'all',
+                label: 'All',
+                count: doubtHistory?.length || 0
+              },
+              {
+                value: 'pending',
+                label: 'Pending',
+                count: doubtHistory?.filter(d => d.status === 'open' || d.status === 'viewed').length || 0
+              },
+              {
+                value: 'answered',
+                label: 'Answered',
+                count: doubtHistory?.filter(d => d.status === 'answered').length || 0
+              },
+            ]}
+            selectedValue={historyTab}
+            onSelect={(value) => {
+              setHistoryTab(value as HistoryTab);
+              trackAction('switch_history_tab', 'NewDoubtSubmission', { tab: value });
+            }}
+            showCounts
+          />
 
           {/* Doubts List */}
           <View style={styles.doubtsList}>

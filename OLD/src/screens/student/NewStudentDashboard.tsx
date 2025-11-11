@@ -15,6 +15,7 @@ import { supabase } from '../../config/supabaseClient';
 import { useAuth } from '../../context/AuthContext';
 import HamburgerMenu from './HamburgerMenu';
 import { getCache, setCache, CacheKeys, CacheDurations } from '../../services/utils/CacheManager';
+import FilterChips from '../../shared/components/FilterChips';
 
 type Props = NativeStackScreenProps<any, 'NewStudentDashboard'>;
 
@@ -22,6 +23,7 @@ const NewStudentDashboard: React.FC<Props> = () => {
   const { user } = useAuth();
   const studentId = user?.id || 'test-student-id';
   const [menuVisible, setMenuVisible] = useState(false);
+  const [filterType, setFilterType] = useState<'all' | 'classes' | 'assignments' | 'activities'>('all');
 
   useEffect(() => {
     trackScreenView('NewStudentDashboard', { userId: studentId });
@@ -326,7 +328,24 @@ const NewStudentDashboard: React.FC<Props> = () => {
             </View>
           </View>
 
+          {/* Filter Chips */}
+          <FilterChips
+            options={[
+              { value: 'all', label: 'All' },
+              { value: 'classes', label: 'Classes', count: todaysClasses?.length || 0 },
+              { value: 'assignments', label: 'Assignments', count: pendingAssignments?.length || 0 },
+              { value: 'activities', label: 'Activities', count: 3 },
+            ]}
+            selectedValue={filterType}
+            onSelect={(value) => {
+              setFilterType(value as 'all' | 'classes' | 'assignments' | 'activities');
+              trackAction('filter_dashboard', 'NewStudentDashboard', { filterType: value });
+            }}
+            showCounts
+          />
+
           {/* Today's Classes Section - EXACT match */}
+          {(filterType === 'all' || filterType === 'classes') && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <T variant="title" weight="bold" style={styles.sectionTitle}>Today's Classes</T>
@@ -516,8 +535,10 @@ const NewStudentDashboard: React.FC<Props> = () => {
               </>
             )}
           </View>
+          )}
 
           {/* Pending Assignments Section - EXACT match */}
+          {(filterType === 'all' || filterType === 'assignments') && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <T variant="title" weight="bold" style={styles.sectionTitle}>Pending Assignments</T>
@@ -660,8 +681,10 @@ const NewStudentDashboard: React.FC<Props> = () => {
               </>
             )}
           </View>
+          )}
 
           {/* Quick Access - EXACT grid-cols-5 */}
+          {filterType === 'all' && (
           <View style={styles.section}>
             <T variant="title" weight="bold" style={styles.sectionTitle}>Quick Access</T>
             <View style={styles.quickAccessGrid}>
@@ -774,8 +797,10 @@ const NewStudentDashboard: React.FC<Props> = () => {
               </TouchableOpacity>
             </View>
           </View>
+          )}
 
           {/* Recent Activity - EXACT match */}
+          {(filterType === 'all' || filterType === 'activities') && (
           <View style={[styles.section, styles.lastSection]}>
             <T variant="title" weight="bold" style={styles.sectionTitle}>Recent Activity</T>
             <View style={styles.activityList}>
@@ -819,6 +844,7 @@ const NewStudentDashboard: React.FC<Props> = () => {
               </View>
             </View>
           </View>
+          )}
       </ScrollView>
     </SafeAreaView>
   );

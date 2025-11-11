@@ -24,6 +24,7 @@ import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../config/supabaseClient';
 import HamburgerMenu from './HamburgerMenu';
 import { getCache, setCache, CacheDurations } from '../../services/utils/CacheManager';
+import FilterChips from '../../shared/components/FilterChips';
 
 type Props = NativeStackScreenProps<any, 'NewProgressDetailScreen'>;
 
@@ -55,6 +56,7 @@ interface StreakDay {
 export default function NewProgressDetailScreen({ navigation: _navigation }: Props) {
   const { user } = useAuth();
   const [menuVisible, setMenuVisible] = useState(false);
+  const [selectedSubject, setSelectedSubject] = useState<string>('All');
 
   useEffect(() => {
     trackScreenView('NewProgressDetailScreen');
@@ -375,13 +377,33 @@ export default function NewProgressDetailScreen({ navigation: _navigation }: Pro
             </View>
           </View>
 
+          {/* Filter Chips */}
+          <FilterChips
+            options={[
+              { value: 'All', label: 'All Subjects' },
+              ...(progress?.subjects.map(s => ({
+                value: s.name,
+                label: s.name,
+                count: progress.recent_grades.filter(g => g.subject === s.name).length
+              })) || [])
+            ]}
+            selectedValue={selectedSubject}
+            onSelect={(value) => {
+              setSelectedSubject(value);
+              trackAction('filter_subject', 'NewProgressDetailScreen', { subject: value });
+            }}
+            showCounts
+          />
+
           {/* Recent Tests */}
           <View style={styles.section}>
             <T variant="body" weight="semiBold" style={styles.sectionTitle}>
               Recent Tests
             </T>
             <View style={styles.testsList}>
-              {progress?.recent_grades.map((test, index) => {
+              {progress?.recent_grades
+                .filter(test => selectedSubject === 'All' || test.subject === selectedSubject)
+                .map((test, index) => {
                 const percentage = (test.grade / test.total_points) * 100;
                 const gradeColor = getGradeColor(percentage);
                 const gradeLetter = getGradeLetter(percentage);
@@ -438,7 +460,9 @@ export default function NewProgressDetailScreen({ navigation: _navigation }: Pro
               Subject Performance
             </T>
             <View style={styles.subjectsCard}>
-              {progress?.subjects.map((subject, index) => {
+              {progress?.subjects
+                .filter(subject => selectedSubject === 'All' || subject.name === selectedSubject)
+                .map((subject, index) => {
                 const barColor = getGradeColor(subject.average_grade);
 
                 return (

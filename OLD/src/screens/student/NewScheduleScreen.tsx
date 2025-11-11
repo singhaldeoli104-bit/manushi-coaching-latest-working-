@@ -28,6 +28,7 @@ import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../config/supabaseClient';
 import HamburgerMenu from './HamburgerMenu';
 import { getCache, setCache, CacheDurations } from '../../services/utils/CacheManager';
+import FilterChips from '../../shared/components/FilterChips';
 
 type Props = NativeStackScreenProps<any, 'NewScheduleScreen'>;
 
@@ -864,50 +865,27 @@ export default function NewScheduleScreen({ navigation: _navigation }: Props) {
         />
       </View>
 
-      {/* Filters and Controls */}
+      {/* Status Filter - FilterChips Component */}
+      <FilterChips
+        options={[
+          { value: 'all', label: 'All' },
+          { value: 'upcoming', label: '⏰ Upcoming' },
+          { value: 'live', label: '🔴 Live' },
+          { value: 'completed', label: '✅ Completed' },
+        ]}
+        selectedValue={statusFilter}
+        onSelect={(value) => {
+          setStatusFilter(value as StatusFilter);
+          trackAction('filter_status', 'NewScheduleScreen', { status: value });
+        }}
+      />
+
+      {/* Subject Filters and Controls */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.filtersContainer}
       >
-        {/* Status Filter */}
-        <Chip
-          variant="filter"
-          label="All"
-          selected={statusFilter === 'all'}
-          onPress={() => {
-            setStatusFilter('all');
-            trackAction('filter_status', 'NewScheduleScreen', { status: 'all' });
-          }}
-        />
-        <Chip
-          variant="filter"
-          label="⏰ Upcoming"
-          selected={statusFilter === 'upcoming'}
-          onPress={() => {
-            setStatusFilter('upcoming');
-            trackAction('filter_status', 'NewScheduleScreen', { status: 'upcoming' });
-          }}
-        />
-        <Chip
-          variant="filter"
-          label="🔴 Live"
-          selected={statusFilter === 'live'}
-          onPress={() => {
-            setStatusFilter('live');
-            trackAction('filter_status', 'NewScheduleScreen', { status: 'live' });
-          }}
-        />
-        <Chip
-          variant="filter"
-          label="✅ Completed"
-          selected={statusFilter === 'completed'}
-          onPress={() => {
-            setStatusFilter('completed');
-            trackAction('filter_status', 'NewScheduleScreen', { status: 'completed' });
-          }}
-        />
-
         {/* Subject Filter */}
         {subjects.map(subject => (
           <Chip

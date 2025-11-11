@@ -27,6 +27,7 @@ import { supabase } from '../../config/supabaseClient';
 import HamburgerMenu from './HamburgerMenu';
 import ResourceViewerScreen from './ResourceViewerScreen';
 import { getCache, setCache, CacheDurations } from '../../services/utils/CacheManager';
+import FilterChips from '../../shared/components/FilterChips';
 
 interface StudyMaterial {
   id: string;
@@ -379,31 +380,23 @@ export default function NewStudyLibraryScreen() {
         </View>
 
         {/* Filter Chips */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.filtersScroll}
-          contentContainerStyle={styles.filtersContent}
-        >
-          {filters.map((filter) => (
-            <TouchableOpacity
-              key={filter}
-              style={[styles.filterChip, selectedFilter === filter && styles.filterChipActive]}
-              onPress={() => {
-                setSelectedFilter(filter);
-                trackAction('select_filter', 'NewStudyLibraryScreen', { filter });
-              }}
-            >
-              <T
-                variant="caption"
-                weight="medium"
-                style={selectedFilter === filter ? styles.filterChipTextActive : styles.filterChipTextInactive}
-              >
-                {filter}
-              </T>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+        <FilterChips
+          options={filters.map(filter => ({
+            value: filter,
+            label: filter,
+            count: filter === 'All'
+              ? materials?.length
+              : filter === 'Favorites'
+              ? materials?.filter(m => m.isBookmarked).length
+              : materials?.filter(m => m.subject === filter).length
+          }))}
+          selectedValue={selectedFilter}
+          onSelect={(value) => {
+            setSelectedFilter(value);
+            trackAction('select_filter', 'NewStudyLibraryScreen', { filter: value });
+          }}
+          showCounts
+        />
 
         {/* Resources Header */}
         <View style={styles.resourcesHeader}>
