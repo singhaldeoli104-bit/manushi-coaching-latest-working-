@@ -932,9 +932,23 @@ export default function NewDoubtSubmission({ route, navigation }: Props) {
 
         {/* My Doubts History */}
         <View style={styles.historySection}>
-          <T variant="h2" weight="bold" style={styles.historyTitle}>
-            My Doubts History
-          </T>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <T variant="h2" weight="bold" style={styles.historyTitle}>
+              My Doubts History
+            </T>
+            <ViewToggle
+              modes={[
+                { value: 'list', icon: '☰', label: 'List' },
+                { value: 'card', icon: '▦', label: 'Card' },
+              ]}
+              selectedMode={viewMode}
+              onModeChange={(mode) => {
+                setViewMode(mode as 'list' | 'card');
+                trackAction('toggle_view_mode', 'NewDoubtSubmission', { mode });
+              }}
+              size="small"
+            />
+          </View>
 
           {/* Search Bar */}
           <View style={styles.searchContainer}>

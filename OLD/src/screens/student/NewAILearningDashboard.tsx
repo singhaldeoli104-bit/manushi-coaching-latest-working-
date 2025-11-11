@@ -21,10 +21,12 @@ import { safeNavigate } from '../../utils/navigationService';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../config/supabaseClient';
 import HamburgerMenu from './HamburgerMenu';
+import { ViewToggle } from '../../shared/components/ViewToggle';
 
 export default function NewAILearningDashboard() {
   const { user } = useAuth();
   const [menuVisible, setMenuVisible] = useState(false);
+  const [viewMode, setViewMode] = useState<'compact' | 'detailed'>('detailed');
   const [expandedAreas, setExpandedAreas] = useState<Set<string>>(new Set());
 
   useEffect(() => {
