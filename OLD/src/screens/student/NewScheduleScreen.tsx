@@ -2,6 +2,7 @@
  * NewScheduleScreen - Premium Minimal Design
  * Purpose: Display weekly/daily/monthly class schedule with advanced filtering
  * Features: View modes, filters, sorting, settings, caching
+ * ✅ OFFLINE SUPPORT: Caches schedule data for 24 hours
  */
 
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
@@ -26,6 +27,7 @@ import { trackAction, trackScreenView } from '../../utils/navigationAnalytics';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../config/supabaseClient';
 import HamburgerMenu from './HamburgerMenu';
+import { getCache, setCache, CacheDurations } from '../../services/utils/CacheManager';
 
 type Props = NativeStackScreenProps<any, 'NewScheduleScreen'>;
 
@@ -134,7 +136,7 @@ export default function NewScheduleScreen({ navigation: _navigation }: Props) {
     }
   }, []);
 
-  // Fetch classes for the week
+  // Fetch classes for the week (✅ WITH OFFLINE SUPPORT)
   const { data: weekClasses, isLoading, error, refetch, isRefetching } = useQuery({
     queryKey: ['week-classes', user?.id, weekStart.toISOString()],
     queryFn: async () => {
@@ -142,6 +144,14 @@ export default function NewScheduleScreen({ navigation: _navigation }: Props) {
       console.log('🔍 [NewScheduleScreen] User ID:', user?.id);
 
       if (!user?.id) throw new Error('No user ID');
+
+      // ✅ Try cache first
+      const cacheKey = `schedule_week_${user.id}_${weekStart.toISOString()}`;
+      const cached = await getCache(cacheKey);
+      if (cached) {
+        console.log('📦 [Schedule] Using cached week schedule');
+        return cached;
+      }
 
       // First get student's batch_id
       console.log('🔍 [NewScheduleScreen] Fetching student batch_id...');
@@ -228,12 +238,17 @@ export default function NewScheduleScreen({ navigation: _navigation }: Props) {
           classes: dayClasses.map(cls => ({
             ...cls,
             scheduled_at: cls.start_time,
-            teacher_name: cls.teachers 
+            teacher_name: cls.teachers
               ? `${(cls.teachers as any).first_name || ''} ${(cls.teachers as any).last_name || ''}`.trim() || 'Unknown Teacher'
               : 'Unknown Teacher',
           })),
         });
       }
+
+      // ✅ Save to cache (24 hours)
+      const cacheKey = `schedule_week_${user.id}_${weekStart.toISOString()}`;
+      await setCache(cacheKey, days, CacheDurations.PERSISTENT);
+      console.log('💾 [Schedule] Week schedule cached');
 
       return days;
     },

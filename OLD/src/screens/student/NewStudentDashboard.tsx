@@ -1,6 +1,7 @@
 /**
  * NewStudentDashboard - EXACT match to HTML reference
  * Pixel-perfect recreation of the reference design
+ * ✅ OFFLINE SUPPORT: Caches dashboard data for 1 hour
  */
 
 import React, { useEffect, useState } from 'react';
@@ -13,6 +14,7 @@ import { safeNavigate } from '../../utils/navigationService';
 import { supabase } from '../../config/supabaseClient';
 import { useAuth } from '../../context/AuthContext';
 import HamburgerMenu from './HamburgerMenu';
+import { getCache, setCache, CacheKeys, CacheDurations } from '../../services/utils/CacheManager';
 
 type Props = NativeStackScreenProps<any, 'NewStudentDashboard'>;
 
@@ -25,10 +27,18 @@ const NewStudentDashboard: React.FC<Props> = () => {
     trackScreenView('NewStudentDashboard', { userId: studentId });
   }, [studentId]);
 
-  // Fetch summary stats
+  // Fetch summary stats (✅ WITH OFFLINE SUPPORT)
   const { data: summary, isLoading: summaryLoading, refetch: refetchSummary } = useQuery({
     queryKey: ['dashboard-summary', studentId],
     queryFn: async () => {
+      // ✅ Try cache first
+      const cacheKey = CacheKeys.userDashboard(studentId, 'student');
+      const cached = await getCache(cacheKey);
+      if (cached) {
+        console.log('📦 [Dashboard] Using cached summary data');
+        return cached;
+      }
+
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const tomorrow = new Date(today);
@@ -58,23 +68,38 @@ const NewStudentDashboard: React.FC<Props> = () => {
             .gte('due_date', today.toISOString()),
         ]);
 
-        return {
+        const summaryData = {
           classCount: classCount.count || 0,
           assignmentCount: assignmentCount.count || 0,
           attendance: Math.round(student?.attendance_percentage || 0),
           streak: 12,
         };
+
+        // ✅ Save to cache (1 hour)
+        await setCache(cacheKey, summaryData, CacheDurations.MEDIUM);
+        console.log('💾 [Dashboard] Summary data cached');
+
+        return summaryData;
       } catch (error: any) {
         console.error('Error fetching summary:', error);
+        // Return fallback data
         return { classCount: 4, assignmentCount: 3, attendance: 92, streak: 12 };
       }
     },
   });
 
-  // Fetch today's classes
+  // Fetch today's classes (✅ WITH OFFLINE SUPPORT)
   const { data: todaysClasses, isLoading: classesLoading, refetch: refetchClasses } = useQuery({
     queryKey: ['today-classes', studentId],
     queryFn: async () => {
+      // ✅ Try cache first
+      const cacheKey = `today_classes_${studentId}`;
+      const cached = await getCache(cacheKey);
+      if (cached) {
+        console.log('📦 [Dashboard] Using cached today\'s classes');
+        return cached;
+      }
+
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const tomorrow = new Date(today);
@@ -99,7 +124,14 @@ const NewStudentDashboard: React.FC<Props> = () => {
           .limit(3);
 
         if (error) throw error;
-        return data || [];
+
+        const classesData = data || [];
+
+        // ✅ Save to cache (1 hour)
+        await setCache(cacheKey, classesData, CacheDurations.MEDIUM);
+        console.log('💾 [Dashboard] Today\'s classes cached');
+
+        return classesData;
       } catch (error: any) {
         console.error('Error fetching classes:', error);
         return [];
@@ -107,10 +139,18 @@ const NewStudentDashboard: React.FC<Props> = () => {
     },
   });
 
-  // Fetch pending assignments
+  // Fetch pending assignments (✅ WITH OFFLINE SUPPORT)
   const { data: pendingAssignments, isLoading: assignmentsLoading, refetch: refetchAssignments } = useQuery({
     queryKey: ['pending-assignments', studentId],
     queryFn: async () => {
+      // ✅ Try cache first
+      const cacheKey = `pending_assignments_${studentId}`;
+      const cached = await getCache(cacheKey);
+      if (cached) {
+        console.log('📦 [Dashboard] Using cached pending assignments');
+        return cached;
+      }
+
       try {
         const { data: student } = await supabase
           .from('students')
@@ -130,7 +170,14 @@ const NewStudentDashboard: React.FC<Props> = () => {
           .limit(3);
 
         if (error) throw error;
-        return data || [];
+
+        const assignmentsData = data || [];
+
+        // ✅ Save to cache (1 hour)
+        await setCache(cacheKey, assignmentsData, CacheDurations.MEDIUM);
+        console.log('💾 [Dashboard] Pending assignments cached');
+
+        return assignmentsData;
       } catch (error: any) {
         console.error('Error fetching assignments:', error);
         return [];

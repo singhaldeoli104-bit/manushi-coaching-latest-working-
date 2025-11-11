@@ -2,6 +2,7 @@
  * NewStudyLibraryScreen - EXACT match to HTML reference
  * Purpose: Digital resource browser with search, filters, and AI assistant
  * Design: Material Design top bar, search, AI card, filter chips, 2-column resource grid
+ * ✅ OFFLINE SUPPORT: Caches study materials and bookmarks for 7 days
  */
 
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
@@ -25,6 +26,7 @@ import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../config/supabaseClient';
 import HamburgerMenu from './HamburgerMenu';
 import ResourceViewerScreen from './ResourceViewerScreen';
+import { getCache, setCache, CacheDurations } from '../../services/utils/CacheManager';
 
 interface StudyMaterial {
   id: string;
@@ -57,11 +59,19 @@ export default function NewStudyLibraryScreen() {
     trackScreenView('NewStudyLibraryScreen');
   }, []);
 
-  // Fetch study materials
+  // Fetch study materials (✅ WITH OFFLINE SUPPORT)
   const { data: materials, isLoading, refetch } = useQuery({
     queryKey: ['study-materials', user?.id],
     queryFn: async () => {
       if (!user?.id) throw new Error('No user ID');
+
+      // ✅ Try cache first
+      const cacheKey = `study_materials_${user.id}`;
+      const cached = await getCache(cacheKey);
+      if (cached) {
+        console.log('📦 [StudyLibrary] Using cached study materials');
+        return cached;
+      }
 
       const { data, error } = await supabase
         .from('study_materials')
@@ -78,7 +88,7 @@ export default function NewStudyLibraryScreen() {
 
       const bookmarkedIds = new Set(bookmarks?.map(b => b.material_id) || []);
 
-      return (data || []).map((m) => {
+      const materialsData = (data || []).map((m) => {
         // Convert DB type to display format
         const displayType = (m.type || 'pdf').toUpperCase() === 'PRESENTATION' ? 'DOC' :
                            (m.type || 'pdf').toUpperCase();
@@ -103,6 +113,13 @@ export default function NewStudyLibraryScreen() {
           ...typeConfig,
         } as StudyMaterial;
       });
+
+      // ✅ Save to cache (7 days - for downloaded materials)
+      const cacheKey = `study_materials_${user.id}`;
+      await setCache(cacheKey, materialsData, 7 * 24 * 60 * 60 * 1000); // 7 days
+      console.log('💾 [StudyLibrary] Study materials cached');
+
+      return materialsData;
     },
     enabled: !!user?.id,
   });

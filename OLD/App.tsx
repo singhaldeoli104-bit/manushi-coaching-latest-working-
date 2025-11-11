@@ -56,6 +56,7 @@ import {RealtimeProvider} from './src/context/RealtimeContext';
 // Import Sprint 1 providers for confirmations and toasts
 import {ConfirmDialogProvider} from './src/shared/components/ConfirmDialog';
 import {SnackbarProvider} from './src/shared/components/SnackbarProvider';
+import {OfflineBanner} from './src/shared/components/OfflineBanner';
 
 // Import i18n initialization
 import {initI18n} from './src/i18n';
@@ -287,6 +288,7 @@ function App(): React.JSX.Element {
                   <SnackbarProvider>
                     <ConfirmDialogProvider>
                       <AppContent initialState={initialState} />
+                      <OfflineBanner />
                     </ConfirmDialogProvider>
                   </SnackbarProvider>
                 </QueryClientProvider>
