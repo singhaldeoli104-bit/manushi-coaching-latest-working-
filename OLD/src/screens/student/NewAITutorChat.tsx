@@ -25,6 +25,7 @@ import { trackAction, trackScreenView } from '../../utils/navigationAnalytics';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../config/supabaseClient';
 import { getCache, setCache, CacheDurations } from '../../services/utils/CacheManager';
+import { ViewToggle } from '../../shared/components/ViewToggle';
 
 type Props = NativeStackScreenProps<any, 'NewAITutorChat'>;
 
@@ -49,6 +50,7 @@ export default function NewAITutorChat({ navigation }: Props) {
   const flatListRef = useRef<FlatList>(null);
   const [inputText, setInputText] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [viewMode, setViewMode] = useState<'compact' | 'detailed'>('detailed');
 
   // Fetch chat messages from Supabase (✅ WITH OFFLINE SUPPORT)
   const { data: messages = [] } = useQuery({
@@ -311,14 +313,18 @@ export default function NewAITutorChat({ navigation }: Props) {
           </View>
         </View>
 
-        <TouchableOpacity
-          style={styles.iconButton}
-          onPress={() => trackAction('more_options', 'NewAITutorChat')}
-          accessibilityRole="button"
-          accessibilityLabel="More options"
-        >
-          <T variant="h2" style={styles.icon}>⋮</T>
-        </TouchableOpacity>
+        <ViewToggle
+          modes={[
+            { value: 'compact', icon: '▦', label: 'Compact' },
+            { value: 'detailed', icon: '☰', label: 'Detailed' },
+          ]}
+          selectedMode={viewMode}
+          onModeChange={(mode) => {
+            setViewMode(mode as 'compact' | 'detailed');
+            trackAction('toggle_view_mode', 'NewAITutorChat', { mode });
+          }}
+          size="small"
+        />
       </View>
 
       <KeyboardAvoidingView

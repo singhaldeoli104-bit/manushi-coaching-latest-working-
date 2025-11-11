@@ -4,7 +4,7 @@
  * Design: Material Design with centered layout, score card, feedback sections
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -15,10 +15,12 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { T } from '../../ui';
 import { trackAction, trackScreenView } from '../../utils/navigationAnalytics';
+import { ViewToggle } from '../../shared/components/ViewToggle';
 
 type Props = NativeStackScreenProps<any, 'NewActivityDetail'>;
 
 export default function NewActivityDetail({ route, navigation }: Props) {
+  const [viewMode, setViewMode] = useState<'compact' | 'expanded'>('expanded');
   const activityType = route.params?.type || 'grade';
   const activityTitle = route.params?.title || 'Grade Received';
   const activitySubtitle = route.params?.subtitle || 'Mid-Term Physics Exam';
@@ -60,7 +62,18 @@ export default function NewActivityDetail({ route, navigation }: Props) {
           Activity Detail
         </T>
 
-        <View style={styles.placeholder} />
+        <ViewToggle
+          modes={[
+            { value: 'compact', icon: '▦', label: 'Compact' },
+            { value: 'expanded', icon: '☰', label: 'Expanded' },
+          ]}
+          selectedMode={viewMode}
+          onModeChange={(mode) => {
+            setViewMode(mode as 'compact' | 'expanded');
+            trackAction('toggle_view_mode', 'NewActivityDetail', { mode });
+          }}
+          size="small"
+        />
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
