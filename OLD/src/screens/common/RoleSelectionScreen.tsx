@@ -14,7 +14,7 @@ import { T } from '../../ui/typography/T';
 import { Colors, Spacing, BorderRadius } from '../../theme/designSystem';
 
 interface RoleSelectionScreenProps {
-  onSelectRole: (role: 'admin' | 'parent') => void;
+  onSelectRole: (role: 'admin' | 'parent' | 'student' | 'teacher') => void;
 }
 
 export const RoleSelectionScreen: React.FC<RoleSelectionScreenProps> = ({ onSelectRole }) => {
@@ -37,6 +37,54 @@ export const RoleSelectionScreen: React.FC<RoleSelectionScreenProps> = ({ onSele
 
       {/* Role Selection Cards */}
       <View style={styles.rolesContainer}>
+        {/* Student Role */}
+        <View style={styles.roleCard}>
+          <View style={styles.iconContainer}>
+            <T variant="display" style={styles.icon}>
+              🎓
+            </T>
+          </View>
+          <T variant="title" weight="semiBold" align="center" style={styles.roleTitle}>
+            Student Dashboard
+          </T>
+          <T variant="caption" align="center" style={styles.roleDescription}>
+            Access courses, track progress & learn effectively
+          </T>
+          <Button
+            mode="contained"
+            onPress={() => onSelectRole('student')}
+            style={styles.button}
+            contentStyle={styles.buttonContent}
+            labelStyle={styles.buttonLabel}
+          >
+            Continue as Student
+          </Button>
+        </View>
+
+        {/* Teacher Role */}
+        <View style={styles.roleCard}>
+          <View style={styles.iconContainer}>
+            <T variant="display" style={styles.icon}>
+              👩‍🏫
+            </T>
+          </View>
+          <T variant="title" weight="semiBold" align="center" style={styles.roleTitle}>
+            Teacher Dashboard
+          </T>
+          <T variant="caption" align="center" style={styles.roleDescription}>
+            Manage classes, create content & mentor students
+          </T>
+          <Button
+            mode="contained"
+            onPress={() => onSelectRole('teacher')}
+            style={styles.button}
+            contentStyle={styles.buttonContent}
+            labelStyle={styles.buttonLabel}
+          >
+            Continue as Teacher
+          </Button>
+        </View>
+
         {/* Admin Role */}
         <View style={styles.roleCard}>
           <View style={styles.iconContainer}>

@@ -1,0 +1,116 @@
+{
+  "screensChecked": 27,
+  "totalButtons": 51,
+  "buttonsWithoutHandlers": [],
+  "cleanScreens": [
+    {
+      "file": "NewStudentDashboard.tsx",
+      "buttons": 9
+    },
+    {
+      "file": "NewScheduleScreen.tsx",
+      "buttons": 6
+    },
+    {
+      "file": "NewClassDetailScreen.tsx",
+      "buttons": 4
+    },
+    {
+      "file": "NewAssignmentDetailScreen.tsx",
+      "buttons": 1
+    },
+    {
+      "file": "NewProgressDetailScreen.tsx",
+      "buttons": 0
+    },
+    {
+      "file": "NewStudyLibraryScreen.tsx",
+      "buttons": 2
+    },
+    {
+      "file": "NewAIStudyScreen.tsx",
+      "buttons": 1
+    },
+    {
+      "file": "NewSimpleDoubt.tsx",
+      "buttons": 1
+    },
+    {
+      "file": "NewAITutorChat.tsx",
+      "buttons": 2
+    },
+    {
+      "file": "NewDoubtSubmission.tsx",
+      "buttons": 2
+    },
+    {
+      "file": "NewActivityDetail.tsx",
+      "buttons": 0
+    },
+    {
+      "file": "NewAILearningDashboard.tsx",
+      "buttons": 0
+    },
+    {
+      "file": "NewCollaborativeAssignment.tsx",
+      "buttons": 0
+    },
+    {
+      "file": "NewPeerLearningNetwork.tsx",
+      "buttons": 1
+    },
+    {
+      "file": "NewVirtualClassroom.tsx",
+      "buttons": 1
+    },
+    {
+      "file": "NewLiveClassScreen.tsx",
+      "buttons": 0
+    },
+    {
+      "file": "NewEnhancedSchedule.tsx",
+      "buttons": 0
+    },
+    {
+      "file": "NewEnhancedLiveClass.tsx",
+      "buttons": 1
+    },
+    {
+      "file": "NewEnhancedAIStudy.tsx",
+      "buttons": 1
+    },
+    {
+      "file": "NewGamifiedLearningHub.tsx",
+      "buttons": 0
+    },
+    {
+      "file": "NewInteractiveClassroom.tsx",
+      "buttons": 1
+    },
+    {
+      "file": "AIPracticeProblems.tsx",
+      "buttons": 3
+    },
+    {
+      "file": "AIStudySummaries.tsx",
+      "buttons": 4
+    },
+    {
+      "file": "PeerDetail.tsx",
+      "buttons": 1
+    },
+    {
+      "file": "Whiteboard.tsx",
+      "buttons": 4
+    },
+    {
+      "file": "ClassChat.tsx",
+      "buttons": 1
+    },
+    {
+      "file": "ClassNotes.tsx",
+      "buttons": 5
+    }
+  ],
+  "issueScreens": []
+}

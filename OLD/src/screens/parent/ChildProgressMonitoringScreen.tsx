@@ -615,7 +615,13 @@ export const ChildProgressMonitoringScreen: React.FC<ChildProgressMonitoringScre
     <ScrollView style={styles.tabContent}>
       <View style={styles.tabHeader}>
         <Text style={styles.tabTitle}>Goals & Milestones</Text>
-        <TouchableOpacity style={styles.addButton}>
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => showSnackbar('Add Goal feature - Coming soon! This will allow you to create custom goals for your child.')}
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel="Add new goal"
+        >
           <Text style={styles.addButtonText}>+ Add Goal</Text>
         </TouchableOpacity>
       </View>
@@ -701,10 +707,26 @@ export const ChildProgressMonitoringScreen: React.FC<ChildProgressMonitoringScre
                 Based on recent performance trends, scheduling 2-3 extra math practice sessions per week could help improve algebra scores by 15-20%.
               </Text>
               <View style={styles.recommendationActions}>
-                <TouchableOpacity style={styles.recommendationButton}>
+                <TouchableOpacity
+                  style={styles.recommendationButton}
+                  onPress={() => {
+                    showSnackbar('Redirecting to scheduling...');
+                    // TODO: Navigate to scheduling screen when available
+                    // onNavigate('schedule-tutoring');
+                  }}
+                  accessible={true}
+                  accessibilityRole="button"
+                  accessibilityLabel="Schedule extra math practice sessions"
+                >
                   <Text style={styles.recommendationButtonText}>Schedule Now</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.recommendationDismiss}>
+                <TouchableOpacity
+                  style={styles.recommendationDismiss}
+                  onPress={() => showSnackbar('Recommendation dismissed')}
+                  accessible={true}
+                  accessibilityRole="button"
+                  accessibilityLabel="Dismiss recommendation"
+                >
                   <Text style={styles.recommendationDismissText}>Dismiss</Text>
                 </TouchableOpacity>
               </View>
@@ -719,10 +741,26 @@ export const ChildProgressMonitoringScreen: React.FC<ChildProgressMonitoringScre
                 Your child could benefit from joining the Science study group. Students in similar situations have shown 25% improvement in understanding.
               </Text>
               <View style={styles.recommendationActions}>
-                <TouchableOpacity style={styles.recommendationButton}>
+                <TouchableOpacity
+                  style={styles.recommendationButton}
+                  onPress={() => {
+                    showSnackbar('Loading study group information...');
+                    // TODO: Navigate to study groups screen when available
+                    // onNavigate('study-groups');
+                  }}
+                  accessible={true}
+                  accessibilityRole="button"
+                  accessibilityLabel="Learn more about study group"
+                >
                   <Text style={styles.recommendationButtonText}>Learn More</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.recommendationDismiss}>
+                <TouchableOpacity
+                  style={styles.recommendationDismiss}
+                  onPress={() => showSnackbar('Recommendation dismissed')}
+                  accessible={true}
+                  accessibilityRole="button"
+                  accessibilityLabel="Dismiss study group recommendation"
+                >
                   <Text style={styles.recommendationDismissText}>Not Now</Text>
                 </TouchableOpacity>
               </View>
@@ -827,7 +865,15 @@ export const ChildProgressMonitoringScreen: React.FC<ChildProgressMonitoringScre
             <Text style={styles.modalCancel}>Cancel</Text>
           </TouchableOpacity>
           <Text style={styles.modalTitle}>Goal Details</Text>
-          <TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              showSnackbar('Edit goal feature - Coming soon!');
+              // TODO: Navigate to goal edit screen when available
+            }}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel="Edit goal"
+          >
             <Text style={styles.modalSave}>Edit</Text>
           </TouchableOpacity>
         </View>
@@ -879,14 +925,32 @@ export const ChildProgressMonitoringScreen: React.FC<ChildProgressMonitoringScre
 
             <View style={styles.milestoneActions}>
               {selectedMilestone.status !== 'completed' && (
-                <TouchableOpacity style={styles.milestoneActionButton}>
+                <TouchableOpacity
+                  style={styles.milestoneActionButton}
+                  onPress={() => showSnackbar('Update Progress feature - Coming soon! You will be able to track goal progress here.')}
+                  accessible={true}
+                  accessibilityRole="button"
+                  accessibilityLabel="Update goal progress"
+                >
                   <Text style={styles.milestoneActionText}>Update Progress</Text>
                 </TouchableOpacity>
               )}
-              <TouchableOpacity style={styles.milestoneActionButton}>
+              <TouchableOpacity
+                style={styles.milestoneActionButton}
+                onPress={() => showSnackbar('Add Note feature - Coming soon! You will be able to add notes to goals here.')}
+                accessible={true}
+                accessibilityRole="button"
+                accessibilityLabel="Add note to goal"
+              >
                 <Text style={styles.milestoneActionText}>Add Note</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.milestoneActionButton}>
+              <TouchableOpacity
+                style={styles.milestoneActionButton}
+                onPress={() => showSnackbar('Share with Teacher feature - Coming soon! You will be able to share goals with teachers.')}
+                accessible={true}
+                accessibilityRole="button"
+                accessibilityLabel="Share goal with teacher"
+              >
                 <Text style={styles.milestoneActionText}>Share with Teacher</Text>
               </TouchableOpacity>
             </View>

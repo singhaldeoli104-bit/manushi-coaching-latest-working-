@@ -57,7 +57,10 @@
       "Bash(npx jest:*)",
       "Bash(timeout 5 adb logcat:*)",
       "mcp__supabase__get_project_url",
-      "Bash(./gradlew:*)"
+      "Bash(./gradlew:*)",
+      "Bash(git pull:*)",
+      "Bash(do sed -i \"s|from ''../../config/supabase''|from ''../../config/supabaseClient''|g\" \"$file\")",
+      "Bash(git fetch:*)"
     ],
     "deny": [],
     "ask": []

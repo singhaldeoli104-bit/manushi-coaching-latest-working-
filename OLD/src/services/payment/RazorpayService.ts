@@ -1,7 +1,7 @@
 import RazorpayCheckout from 'react-native-razorpay';
 import { supabase } from '../../lib/supabase';
 import { PaymentTransaction, SubscriptionPlan, PaymentOptions } from '../../types/payment';
-import { RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET } from '@env';
+import { RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET } from '../../config/env.config';
 
 export class RazorpayService {
   private static instance: RazorpayService;

@@ -60,11 +60,11 @@ export function trackScreenView(screenName: string, params?: Record<string, any>
   analytics.currentScreen = screenName;
 
   // Log to console (replace with your analytics service)
-  console.log('📊 [Analytics] Screen View:', {
-    screen: screenName,
-    from: analytics.previousScreen || 'App Start',
-    sessionTime: `${Math.round((Date.now() - analytics.sessionStart) / 1000)}s`,
-  });
+  console.log(
+    `📊 [Analytics] Screen View: ${screenName}`,
+    `| From: ${analytics.previousScreen || 'App Start'}`,
+    `| Session: ${Math.round((Date.now() - analytics.sessionStart) / 1000)}s`
+  );
 
   // TODO: Send to analytics service (Firebase, Mixpanel, etc.)
   // Example:
@@ -94,7 +94,8 @@ export function trackEvent(
   eventName: string,
   properties?: Record<string, any>
 ) {
-  console.log('📊 [Analytics] Event:', eventName, properties);
+  const propsStr = properties ? JSON.stringify(properties) : '';
+  console.log(`📊 [Analytics] Event: ${eventName}`, propsStr);
 
   // TODO: Send to analytics service
   // firebase.analytics().logEvent(eventName, properties);

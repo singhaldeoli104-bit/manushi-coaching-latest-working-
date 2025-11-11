@@ -1,0 +1,1295 @@
+[
+  {
+    "newScreen": "NewStudentDashboard.tsx",
+    "oldScreen": "StudentDashboard.tsx",
+    "old": {
+      "lines": 1638,
+      "components": 120,
+      "states": 15,
+      "effects": 3,
+      "functions": 52,
+      "features": {
+        "search": 0,
+        "filter": 5,
+        "sort": 0,
+        "download": 0,
+        "bookmark": 0,
+        "notes": 0,
+        "modal": 0,
+        "viewToggle": 3,
+        "cache": 13,
+        "refresh": 33,
+        "animations": 7,
+        "icons": 7,
+        "stats": 2,
+        "tags": 0
+      }
+    },
+    "new": {
+      "lines": 588,
+      "components": 37,
+      "states": 1,
+      "effects": 2,
+      "functions": 15,
+      "features": {
+        "search": 0,
+        "filter": 1,
+        "sort": 0,
+        "download": 0,
+        "bookmark": 0,
+        "notes": 0,
+        "modal": 0,
+        "viewToggle": 1,
+        "cache": 0,
+        "refresh": 17,
+        "animations": 0,
+        "icons": 0,
+        "stats": 1,
+        "tags": 0
+      }
+    },
+    "missing": {
+      "filter": "INCOMPLETE",
+      "viewToggle": "INCOMPLETE",
+      "cache": "MISSING",
+      "animations": "MISSING",
+      "icons": "MISSING"
+    },
+    "complexity": {
+      "old": 1638,
+      "new": 588,
+      "reduction": "64.1%"
+    }
+  },
+  {
+    "newScreen": "NewScheduleScreen.tsx",
+    "oldScreen": "ScheduleScreen.tsx",
+    "old": {
+      "lines": 2141,
+      "components": 147,
+      "states": 15,
+      "effects": 3,
+      "functions": 83,
+      "features": {
+        "search": 0,
+        "filter": 15,
+        "sort": 2,
+        "download": 0,
+        "bookmark": 0,
+        "notes": 0,
+        "modal": 54,
+        "viewToggle": 36,
+        "cache": 3,
+        "refresh": 36,
+        "animations": 0,
+        "icons": 0,
+        "stats": 0,
+        "tags": 12
+      }
+    },
+    "new": {
+      "lines": 565,
+      "components": 27,
+      "states": 4,
+      "effects": 1,
+      "functions": 28,
+      "features": {
+        "search": 0,
+        "filter": 1,
+        "sort": 0,
+        "download": 0,
+        "bookmark": 0,
+        "notes": 0,
+        "modal": 0,
+        "viewToggle": 14,
+        "cache": 0,
+        "refresh": 8,
+        "animations": 0,
+        "icons": 0,
+        "stats": 0,
+        "tags": 0
+      }
+    },
+    "missing": {
+      "filter": "INCOMPLETE",
+      "sort": "MISSING",
+      "modal": "MISSING",
+      "viewToggle": "INCOMPLETE",
+      "cache": "MISSING",
+      "refresh": "INCOMPLETE",
+      "tags": "MISSING"
+    },
+    "complexity": {
+      "old": 2141,
+      "new": 565,
+      "reduction": "73.6%"
+    }
+  },
+  {
+    "newScreen": "NewStudyLibraryScreen.tsx",
+    "oldScreen": "StudyLibraryScreen.tsx",
+    "old": {
+      "lines": 1401,
+      "components": 181,
+      "states": 19,
+      "effects": 3,
+      "functions": 33,
+      "features": {
+        "search": 21,
+        "filter": 64,
+        "sort": 19,
+        "download": 49,
+        "bookmark": 26,
+        "notes": 77,
+        "modal": 37,
+        "viewToggle": 31,
+        "cache": 8,
+        "refresh": 0,
+        "animations": 9,
+        "icons": 27,
+        "stats": 19,
+        "tags": 9
+      }
+    },
+    "new": {
+      "lines": 307,
+      "components": 10,
+      "states": 2,
+      "effects": 1,
+      "functions": 8,
+      "features": {
+        "search": 0,
+        "filter": 21,
+        "sort": 0,
+        "download": 0,
+        "bookmark": 0,
+        "notes": 0,
+        "modal": 0,
+        "viewToggle": 9,
+        "cache": 0,
+        "refresh": 5,
+        "animations": 0,
+        "icons": 0,
+        "stats": 0,
+        "tags": 0
+      }
+    },
+    "missing": {
+      "search": "MISSING",
+      "filter": "INCOMPLETE",
+      "sort": "MISSING",
+      "download": "MISSING",
+      "bookmark": "MISSING",
+      "notes": "MISSING",
+      "modal": "MISSING",
+      "viewToggle": "INCOMPLETE",
+      "cache": "MISSING",
+      "animations": "MISSING",
+      "icons": "MISSING",
+      "stats": "MISSING",
+      "tags": "MISSING"
+    },
+    "complexity": {
+      "old": 1401,
+      "new": 307,
+      "reduction": "78.1%"
+    }
+  },
+  {
+    "newScreen": "NewAIStudyScreen.tsx",
+    "oldScreen": "AIStudyScreen.tsx",
+    "old": {
+      "lines": 1278,
+      "components": 135,
+      "states": 17,
+      "effects": 2,
+      "functions": 20,
+      "features": {
+        "search": 1,
+        "filter": 1,
+        "sort": 0,
+        "download": 0,
+        "bookmark": 7,
+        "notes": 1,
+        "modal": 15,
+        "viewToggle": 1,
+        "cache": 0,
+        "refresh": 2,
+        "animations": 0,
+        "icons": 0,
+        "stats": 0,
+        "tags": 0
+      }
+    },
+    "new": {
+      "lines": 204,
+      "components": 13,
+      "states": 0,
+      "effects": 1,
+      "functions": 2,
+      "features": {
+        "search": 0,
+        "filter": 0,
+        "sort": 0,
+        "download": 0,
+        "bookmark": 0,
+        "notes": 0,
+        "modal": 0,
+        "viewToggle": 5,
+        "cache": 0,
+        "refresh": 0,
+        "animations": 0,
+        "icons": 0,
+        "stats": 0,
+        "tags": 0
+      }
+    },
+    "missing": {
+      "search": "MISSING",
+      "filter": "MISSING",
+      "bookmark": "MISSING",
+      "notes": "MISSING",
+      "modal": "MISSING",
+      "refresh": "MISSING"
+    },
+    "complexity": {
+      "old": 1278,
+      "new": 204,
+      "reduction": "84.0%"
+    }
+  },
+  {
+    "newScreen": "NewAITutorChat.tsx",
+    "oldScreen": "AITutorChatInterface.tsx",
+    "old": {
+      "lines": 919,
+      "components": 71,
+      "states": 12,
+      "effects": 3,
+      "functions": 21,
+      "features": {
+        "search": 1,
+        "filter": 2,
+        "sort": 0,
+        "download": 0,
+        "bookmark": 0,
+        "notes": 0,
+        "modal": 0,
+        "viewToggle": 3,
+        "cache": 0,
+        "refresh": 0,
+        "animations": 1,
+        "icons": 0,
+        "stats": 0,
+        "tags": 0
+      }
+    },
+    "new": {
+      "lines": 397,
+      "components": 14,
+      "states": 4,
+      "effects": 1,
+      "functions": 5,
+      "features": {
+        "search": 1,
+        "filter": 1,
+        "sort": 1,
+        "download": 0,
+        "bookmark": 0,
+        "notes": 0,
+        "modal": 0,
+        "viewToggle": 7,
+        "cache": 0,
+        "refresh": 0,
+        "animations": 0,
+        "icons": 0,
+        "stats": 0,
+        "tags": 0
+      }
+    },
+    "missing": {
+      "animations": "MISSING"
+    },
+    "complexity": {
+      "old": 919,
+      "new": 397,
+      "reduction": "56.8%"
+    }
+  },
+  {
+    "newScreen": "NewClassDetailScreen.tsx",
+    "oldScreen": "ClassDetailScreen.tsx",
+    "old": {
+      "lines": 861,
+      "components": 85,
+      "states": 8,
+      "effects": 3,
+      "functions": 38,
+      "features": {
+        "search": 0,
+        "filter": 0,
+        "sort": 0,
+        "download": 8,
+        "bookmark": 0,
+        "notes": 0,
+        "modal": 0,
+        "viewToggle": 1,
+        "cache": 0,
+        "refresh": 17,
+        "animations": 0,
+        "icons": 0,
+        "stats": 0,
+        "tags": 0
+      }
+    },
+    "new": {
+      "lines": 465,
+      "components": 24,
+      "states": 0,
+      "effects": 1,
+      "functions": 12,
+      "features": {
+        "search": 0,
+        "filter": 0,
+        "sort": 0,
+        "download": 4,
+        "bookmark": 0,
+        "notes": 0,
+        "modal": 0,
+        "viewToggle": 0,
+        "cache": 0,
+        "refresh": 4,
+        "animations": 0,
+        "icons": 0,
+        "stats": 0,
+        "tags": 0
+      }
+    },
+    "missing": {
+      "viewToggle": "MISSING",
+      "refresh": "INCOMPLETE"
+    },
+    "complexity": {
+      "old": 861,
+      "new": 465,
+      "reduction": "46.0%"
+    }
+  },
+  {
+    "newScreen": "NewAssignmentDetailScreen.tsx",
+    "oldScreen": "AssignmentDetailScreen.tsx",
+    "old": {
+      "lines": 1302,
+      "components": 101,
+      "states": 9,
+      "effects": 3,
+      "functions": 31,
+      "features": {
+        "search": 1,
+        "filter": 1,
+        "sort": 0,
+        "download": 12,
+        "bookmark": 0,
+        "notes": 0,
+        "modal": 34,
+        "viewToggle": 1,
+        "cache": 1,
+        "refresh": 5,
+        "animations": 0,
+        "icons": 0,
+        "stats": 0,
+        "tags": 0
+      }
+    },
+    "new": {
+      "lines": 466,
+      "components": 17,
+      "states": 3,
+      "effects": 2,
+      "functions": 13,
+      "features": {
+        "search": 1,
+        "filter": 0,
+        "sort": 0,
+        "download": 0,
+        "bookmark": 0,
+        "notes": 0,
+        "modal": 0,
+        "viewToggle": 0,
+        "cache": 0,
+        "refresh": 6,
+        "animations": 0,
+        "icons": 0,
+        "stats": 0,
+        "tags": 0
+      }
+    },
+    "missing": {
+      "filter": "MISSING",
+      "download": "MISSING",
+      "modal": "MISSING",
+      "viewToggle": "MISSING",
+      "cache": "MISSING"
+    },
+    "complexity": {
+      "old": 1302,
+      "new": 466,
+      "reduction": "64.2%"
+    }
+  },
+  {
+    "newScreen": "NewProgressDetailScreen.tsx",
+    "oldScreen": "ProgressDetailScreen.tsx",
+    "old": {
+      "lines": 1902,
+      "components": 194,
+      "states": 9,
+      "effects": 2,
+      "functions": 24,
+      "features": {
+        "search": 1,
+        "filter": 0,
+        "sort": 0,
+        "download": 0,
+        "bookmark": 0,
+        "notes": 0,
+        "modal": 0,
+        "viewToggle": 1,
+        "cache": 0,
+        "refresh": 0,
+        "animations": 0,
+        "icons": 0,
+        "stats": 5,
+        "tags": 0
+      }
+    },
+    "new": {
+      "lines": 422,
+      "components": 20,
+      "states": 0,
+      "effects": 1,
+      "functions": 17,
+      "features": {
+        "search": 0,
+        "filter": 1,
+        "sort": 0,
+        "download": 0,
+        "bookmark": 0,
+        "notes": 0,
+        "modal": 0,
+        "viewToggle": 6,
+        "cache": 0,
+        "refresh": 4,
+        "animations": 0,
+        "icons": 0,
+        "stats": 6,
+        "tags": 0
+      }
+    },
+    "missing": {
+      "search": "MISSING"
+    },
+    "complexity": {
+      "old": 1902,
+      "new": 422,
+      "reduction": "77.8%"
+    }
+  },
+  {
+    "newScreen": "NewActivityDetail.tsx",
+    "oldScreen": "ActivityDetailScreen.tsx",
+    "old": {
+      "lines": 1156,
+      "components": 102,
+      "states": 11,
+      "effects": 3,
+      "functions": 32,
+      "features": {
+        "search": 0,
+        "filter": 96,
+        "sort": 0,
+        "download": 0,
+        "bookmark": 0,
+        "notes": 0,
+        "modal": 69,
+        "viewToggle": 1,
+        "cache": 0,
+        "refresh": 16,
+        "animations": 0,
+        "icons": 0,
+        "stats": 4,
+        "tags": 0
+      }
+    },
+    "new": {
+      "lines": 169,
+      "components": 9,
+      "states": 0,
+      "effects": 1,
+      "functions": 3,
+      "features": {
+        "search": 0,
+        "filter": 0,
+        "sort": 0,
+        "download": 0,
+        "bookmark": 0,
+        "notes": 0,
+        "modal": 0,
+        "viewToggle": 0,
+        "cache": 0,
+        "refresh": 0,
+        "animations": 0,
+        "icons": 0,
+        "stats": 0,
+        "tags": 0
+      }
+    },
+    "missing": {
+      "filter": "MISSING",
+      "modal": "MISSING",
+      "viewToggle": "MISSING",
+      "refresh": "MISSING",
+      "stats": "MISSING"
+    },
+    "complexity": {
+      "old": 1156,
+      "new": 169,
+      "reduction": "85.4%"
+    }
+  },
+  {
+    "newScreen": "NewDoubtSubmission.tsx",
+    "oldScreen": "DoubtSubmissionScreen.tsx",
+    "old": {
+      "lines": 538,
+      "components": 22,
+      "states": 8,
+      "effects": 2,
+      "functions": 33,
+      "features": {
+        "search": 0,
+        "filter": 1,
+        "sort": 0,
+        "download": 0,
+        "bookmark": 0,
+        "notes": 1,
+        "modal": 0,
+        "viewToggle": 9,
+        "cache": 3,
+        "refresh": 0,
+        "animations": 0,
+        "icons": 0,
+        "stats": 0,
+        "tags": 0
+      }
+    },
+    "new": {
+      "lines": 215,
+      "components": 11,
+      "states": 5,
+      "effects": 1,
+      "functions": 3,
+      "features": {
+        "search": 2,
+        "filter": 0,
+        "sort": 0,
+        "download": 0,
+        "bookmark": 0,
+        "notes": 0,
+        "modal": 0,
+        "viewToggle": 2,
+        "cache": 0,
+        "refresh": 0,
+        "animations": 0,
+        "icons": 0,
+        "stats": 0,
+        "tags": 0
+      }
+    },
+    "missing": {
+      "filter": "MISSING",
+      "notes": "MISSING",
+      "viewToggle": "INCOMPLETE",
+      "cache": "MISSING"
+    },
+    "complexity": {
+      "old": 538,
+      "new": 215,
+      "reduction": "60.0%"
+    }
+  },
+  {
+    "newScreen": "NewSimpleDoubt.tsx",
+    "oldScreen": "SimpleDoubtSubmissionScreen.tsx",
+    "old": {
+      "lines": 435,
+      "components": 40,
+      "states": 8,
+      "effects": 3,
+      "functions": 17,
+      "features": {
+        "search": 2,
+        "filter": 1,
+        "sort": 0,
+        "download": 0,
+        "bookmark": 0,
+        "notes": 0,
+        "modal": 0,
+        "viewToggle": 1,
+        "cache": 0,
+        "refresh": 0,
+        "animations": 0,
+        "icons": 1,
+        "stats": 0,
+        "tags": 0
+      }
+    },
+    "new": {
+      "lines": 164,
+      "components": 8,
+      "states": 4,
+      "effects": 1,
+      "functions": 2,
+      "features": {
+        "search": 2,
+        "filter": 0,
+        "sort": 0,
+        "download": 0,
+        "bookmark": 0,
+        "notes": 0,
+        "modal": 0,
+        "viewToggle": 0,
+        "cache": 0,
+        "refresh": 0,
+        "animations": 0,
+        "icons": 0,
+        "stats": 0,
+        "tags": 0
+      }
+    },
+    "missing": {
+      "filter": "MISSING",
+      "viewToggle": "MISSING",
+      "icons": "MISSING"
+    },
+    "complexity": {
+      "old": 435,
+      "new": 164,
+      "reduction": "62.3%"
+    }
+  },
+  {
+    "newScreen": "NewLiveClassScreen.tsx",
+    "oldScreen": "LiveClassParticipationScreen.tsx",
+    "old": {
+      "lines": 1187,
+      "components": 109,
+      "states": 32,
+      "effects": 2,
+      "functions": 39,
+      "features": {
+        "search": 2,
+        "filter": 1,
+        "sort": 0,
+        "download": 0,
+        "bookmark": 0,
+        "notes": 34,
+        "modal": 38,
+        "viewToggle": 8,
+        "cache": 0,
+        "refresh": 0,
+        "animations": 8,
+        "icons": 0,
+        "stats": 25,
+        "tags": 0
+      }
+    },
+    "new": {
+      "lines": 147,
+      "components": 6,
+      "states": 0,
+      "effects": 1,
+      "functions": 2,
+      "features": {
+        "search": 0,
+        "filter": 0,
+        "sort": 0,
+        "download": 0,
+        "bookmark": 0,
+        "notes": 0,
+        "modal": 0,
+        "viewToggle": 0,
+        "cache": 0,
+        "refresh": 0,
+        "animations": 0,
+        "icons": 0,
+        "stats": 0,
+        "tags": 0
+      }
+    },
+    "missing": {
+      "search": "MISSING",
+      "filter": "MISSING",
+      "notes": "MISSING",
+      "modal": "MISSING",
+      "viewToggle": "MISSING",
+      "animations": "MISSING",
+      "stats": "MISSING"
+    },
+    "complexity": {
+      "old": 1187,
+      "new": 147,
+      "reduction": "87.6%"
+    }
+  },
+  {
+    "newScreen": "NewEnhancedLiveClass.tsx",
+    "oldScreen": "EnhancedLiveClassParticipationScreen.tsx",
+    "old": {
+      "lines": 1137,
+      "components": 97,
+      "states": 17,
+      "effects": 2,
+      "functions": 32,
+      "features": {
+        "search": 2,
+        "filter": 1,
+        "sort": 0,
+        "download": 0,
+        "bookmark": 0,
+        "notes": 0,
+        "modal": 26,
+        "viewToggle": 7,
+        "cache": 0,
+        "refresh": 0,
+        "animations": 18,
+        "icons": 13,
+        "stats": 0,
+        "tags": 0
+      }
+    },
+    "new": {
+      "lines": 211,
+      "components": 8,
+      "states": 0,
+      "effects": 1,
+      "functions": 7,
+      "features": {
+        "search": 0,
+        "filter": 0,
+        "sort": 0,
+        "download": 0,
+        "bookmark": 0,
+        "notes": 6,
+        "modal": 0,
+        "viewToggle": 2,
+        "cache": 0,
+        "refresh": 0,
+        "animations": 0,
+        "icons": 0,
+        "stats": 0,
+        "tags": 0
+      }
+    },
+    "missing": {
+      "search": "MISSING",
+      "filter": "MISSING",
+      "modal": "MISSING",
+      "viewToggle": "INCOMPLETE",
+      "animations": "MISSING",
+      "icons": "MISSING"
+    },
+    "complexity": {
+      "old": 1137,
+      "new": 211,
+      "reduction": "81.4%"
+    }
+  },
+  {
+    "newScreen": "NewVirtualClassroom.tsx",
+    "oldScreen": "VirtualClassroomInterface.tsx",
+    "old": {
+      "lines": 1040,
+      "components": 86,
+      "states": 12,
+      "effects": 2,
+      "functions": 24,
+      "features": {
+        "search": 0,
+        "filter": 0,
+        "sort": 0,
+        "download": 35,
+        "bookmark": 0,
+        "notes": 0,
+        "modal": 0,
+        "viewToggle": 6,
+        "cache": 0,
+        "refresh": 0,
+        "animations": 0,
+        "icons": 0,
+        "stats": 7,
+        "tags": 0
+      }
+    },
+    "new": {
+      "lines": 147,
+      "components": 6,
+      "states": 3,
+      "effects": 1,
+      "functions": 4,
+      "features": {
+        "search": 0,
+        "filter": 0,
+        "sort": 0,
+        "download": 0,
+        "bookmark": 0,
+        "notes": 0,
+        "modal": 0,
+        "viewToggle": 2,
+        "cache": 0,
+        "refresh": 0,
+        "animations": 0,
+        "icons": 0,
+        "stats": 0,
+        "tags": 0
+      }
+    },
+    "missing": {
+      "download": "MISSING",
+      "viewToggle": "INCOMPLETE",
+      "stats": "MISSING"
+    },
+    "complexity": {
+      "old": 1040,
+      "new": 147,
+      "reduction": "85.9%"
+    }
+  },
+  {
+    "newScreen": "NewPeerLearningNetwork.tsx",
+    "oldScreen": "PeerLearningNetwork.tsx",
+    "old": {
+      "lines": 1527,
+      "components": 225,
+      "states": 32,
+      "effects": 2,
+      "functions": 19,
+      "features": {
+        "search": 17,
+        "filter": 22,
+        "sort": 0,
+        "download": 0,
+        "bookmark": 0,
+        "notes": 0,
+        "modal": 16,
+        "viewToggle": 6,
+        "cache": 0,
+        "refresh": 2,
+        "animations": 0,
+        "icons": 9,
+        "stats": 2,
+        "tags": 7
+      }
+    },
+    "new": {
+      "lines": 180,
+      "components": 7,
+      "states": 0,
+      "effects": 1,
+      "functions": 1,
+      "features": {
+        "search": 0,
+        "filter": 0,
+        "sort": 0,
+        "download": 0,
+        "bookmark": 0,
+        "notes": 0,
+        "modal": 0,
+        "viewToggle": 4,
+        "cache": 0,
+        "refresh": 5,
+        "animations": 0,
+        "icons": 0,
+        "stats": 0,
+        "tags": 0
+      }
+    },
+    "missing": {
+      "search": "MISSING",
+      "filter": "MISSING",
+      "modal": "MISSING",
+      "icons": "MISSING",
+      "stats": "MISSING",
+      "tags": "MISSING"
+    },
+    "complexity": {
+      "old": 1527,
+      "new": 180,
+      "reduction": "88.2%"
+    }
+  },
+  {
+    "newScreen": "NewCollaborativeAssignment.tsx",
+    "oldScreen": "CollaborativeAssignmentWorkspace.tsx",
+    "old": {
+      "lines": 1052,
+      "components": 74,
+      "states": 17,
+      "effects": 4,
+      "functions": 38,
+      "features": {
+        "search": 1,
+        "filter": 6,
+        "sort": 0,
+        "download": 0,
+        "bookmark": 0,
+        "notes": 0,
+        "modal": 0,
+        "viewToggle": 20,
+        "cache": 0,
+        "refresh": 0,
+        "animations": 10,
+        "icons": 7,
+        "stats": 0,
+        "tags": 0
+      }
+    },
+    "new": {
+      "lines": 253,
+      "components": 8,
+      "states": 0,
+      "effects": 1,
+      "functions": 9,
+      "features": {
+        "search": 1,
+        "filter": 0,
+        "sort": 0,
+        "download": 0,
+        "bookmark": 0,
+        "notes": 0,
+        "modal": 0,
+        "viewToggle": 0,
+        "cache": 0,
+        "refresh": 0,
+        "animations": 0,
+        "icons": 0,
+        "stats": 0,
+        "tags": 0
+      }
+    },
+    "missing": {
+      "filter": "MISSING",
+      "viewToggle": "MISSING",
+      "animations": "MISSING",
+      "icons": "MISSING"
+    },
+    "complexity": {
+      "old": 1052,
+      "new": 253,
+      "reduction": "76.0%"
+    }
+  },
+  {
+    "newScreen": "NewAILearningDashboard.tsx",
+    "oldScreen": "StudentAILearningDashboard.tsx",
+    "old": {
+      "lines": 1057,
+      "components": 126,
+      "states": 9,
+      "effects": 2,
+      "functions": 21,
+      "features": {
+        "search": 0,
+        "filter": 0,
+        "sort": 0,
+        "download": 0,
+        "bookmark": 0,
+        "notes": 0,
+        "modal": 0,
+        "viewToggle": 3,
+        "cache": 0,
+        "refresh": 0,
+        "animations": 0,
+        "icons": 0,
+        "stats": 0,
+        "tags": 0
+      }
+    },
+    "new": {
+      "lines": 206,
+      "components": 8,
+      "states": 0,
+      "effects": 1,
+      "functions": 4,
+      "features": {
+        "search": 0,
+        "filter": 0,
+        "sort": 0,
+        "download": 0,
+        "bookmark": 0,
+        "notes": 0,
+        "modal": 0,
+        "viewToggle": 0,
+        "cache": 0,
+        "refresh": 0,
+        "animations": 0,
+        "icons": 0,
+        "stats": 0,
+        "tags": 0
+      }
+    },
+    "missing": {
+      "viewToggle": "MISSING"
+    },
+    "complexity": {
+      "old": 1057,
+      "new": 206,
+      "reduction": "80.5%"
+    }
+  },
+  {
+    "newScreen": "NewGamifiedLearningHub.tsx",
+    "oldScreen": "GamifiedLearningHub.tsx",
+    "old": {
+      "lines": 1446,
+      "components": 132,
+      "states": 11,
+      "effects": 2,
+      "functions": 23,
+      "features": {
+        "search": 0,
+        "filter": 3,
+        "sort": 0,
+        "download": 0,
+        "bookmark": 0,
+        "notes": 0,
+        "modal": 0,
+        "viewToggle": 1,
+        "cache": 0,
+        "refresh": 0,
+        "animations": 0,
+        "icons": 0,
+        "stats": 6,
+        "tags": 0
+      }
+    },
+    "new": {
+      "lines": 187,
+      "components": 6,
+      "states": 0,
+      "effects": 1,
+      "functions": 2,
+      "features": {
+        "search": 0,
+        "filter": 1,
+        "sort": 0,
+        "download": 0,
+        "bookmark": 0,
+        "notes": 0,
+        "modal": 0,
+        "viewToggle": 2,
+        "cache": 0,
+        "refresh": 0,
+        "animations": 0,
+        "icons": 0,
+        "stats": 2,
+        "tags": 0
+      }
+    },
+    "missing": {
+      "filter": "INCOMPLETE",
+      "stats": "INCOMPLETE"
+    },
+    "complexity": {
+      "old": 1446,
+      "new": 187,
+      "reduction": "87.1%"
+    }
+  },
+  {
+    "newScreen": "NewInteractiveClassroom.tsx",
+    "oldScreen": "EnhancedInteractiveClassroomScreen.tsx",
+    "old": {
+      "lines": 986,
+      "components": 86,
+      "states": 16,
+      "effects": 2,
+      "functions": 41,
+      "features": {
+        "search": 1,
+        "filter": 2,
+        "sort": 0,
+        "download": 0,
+        "bookmark": 0,
+        "notes": 0,
+        "modal": 0,
+        "viewToggle": 23,
+        "cache": 0,
+        "refresh": 0,
+        "animations": 20,
+        "icons": 16,
+        "stats": 0,
+        "tags": 0
+      }
+    },
+    "new": {
+      "lines": 173,
+      "components": 4,
+      "states": 2,
+      "effects": 1,
+      "functions": 4,
+      "features": {
+        "search": 0,
+        "filter": 0,
+        "sort": 0,
+        "download": 0,
+        "bookmark": 0,
+        "notes": 0,
+        "modal": 0,
+        "viewToggle": 0,
+        "cache": 0,
+        "refresh": 2,
+        "animations": 0,
+        "icons": 0,
+        "stats": 0,
+        "tags": 0
+      }
+    },
+    "missing": {
+      "search": "MISSING",
+      "filter": "MISSING",
+      "viewToggle": "MISSING",
+      "animations": "MISSING",
+      "icons": "MISSING"
+    },
+    "complexity": {
+      "old": 986,
+      "new": 173,
+      "reduction": "82.5%"
+    }
+  },
+  {
+    "newScreen": "NewEnhancedSchedule.tsx",
+    "oldScreen": "EnhancedScheduleScreen.tsx",
+    "old": {
+      "lines": 940,
+      "components": 84,
+      "states": 8,
+      "effects": 3,
+      "functions": 30,
+      "features": {
+        "search": 0,
+        "filter": 3,
+        "sort": 0,
+        "download": 0,
+        "bookmark": 0,
+        "notes": 0,
+        "modal": 0,
+        "viewToggle": 18,
+        "cache": 0,
+        "refresh": 1,
+        "animations": 25,
+        "icons": 12,
+        "stats": 0,
+        "tags": 0
+      }
+    },
+    "new": {
+      "lines": 200,
+      "components": 10,
+      "states": 0,
+      "effects": 1,
+      "functions": 8,
+      "features": {
+        "search": 0,
+        "filter": 0,
+        "sort": 0,
+        "download": 0,
+        "bookmark": 0,
+        "notes": 0,
+        "modal": 0,
+        "viewToggle": 0,
+        "cache": 0,
+        "refresh": 8,
+        "animations": 0,
+        "icons": 0,
+        "stats": 0,
+        "tags": 0
+      }
+    },
+    "missing": {
+      "filter": "MISSING",
+      "viewToggle": "MISSING",
+      "animations": "MISSING",
+      "icons": "MISSING"
+    },
+    "complexity": {
+      "old": 940,
+      "new": 200,
+      "reduction": "78.7%"
+    }
+  },
+  {
+    "newScreen": "NewEnhancedAIStudy.tsx",
+    "oldScreen": "EnhancedAIStudyAssistantScreen.tsx",
+    "old": {
+      "lines": 1164,
+      "components": 122,
+      "states": 13,
+      "effects": 2,
+      "functions": 22,
+      "features": {
+        "search": 2,
+        "filter": 0,
+        "sort": 0,
+        "download": 0,
+        "bookmark": 0,
+        "notes": 2,
+        "modal": 25,
+        "viewToggle": 5,
+        "cache": 0,
+        "refresh": 0,
+        "animations": 19,
+        "icons": 13,
+        "stats": 7,
+        "tags": 0
+      }
+    },
+    "new": {
+      "lines": 103,
+      "components": 6,
+      "states": 0,
+      "effects": 1,
+      "functions": 2,
+      "features": {
+        "search": 0,
+        "filter": 0,
+        "sort": 0,
+        "download": 0,
+        "bookmark": 0,
+        "notes": 3,
+        "modal": 0,
+        "viewToggle": 0,
+        "cache": 0,
+        "refresh": 0,
+        "animations": 0,
+        "icons": 0,
+        "stats": 0,
+        "tags": 0
+      }
+    },
+    "missing": {
+      "search": "MISSING",
+      "modal": "MISSING",
+      "viewToggle": "MISSING",
+      "animations": "MISSING",
+      "icons": "MISSING",
+      "stats": "MISSING"
+    },
+    "complexity": {
+      "old": 1164,
+      "new": 103,
+      "reduction": "91.2%"
+    }
+  }
+]
