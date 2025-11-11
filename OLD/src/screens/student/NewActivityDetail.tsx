@@ -11,16 +11,24 @@ import {
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
+  Animated,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { T } from '../../ui';
 import { trackAction, trackScreenView } from '../../utils/navigationAnalytics';
 import { ViewToggle } from '../../shared/components/ViewToggle';
+import { useFadeInUp } from '../../shared/hooks/useAnimations';
 
 type Props = NativeStackScreenProps<any, 'NewActivityDetail'>;
 
 export default function NewActivityDetail({ route, navigation }: Props) {
   const [viewMode, setViewMode] = useState<'compact' | 'expanded'>('expanded');
+
+  // Animation hooks
+  const activityAnim = useFadeInUp(0);
+  const scoreAnim = useFadeInUp(150);
+  const feedbackAnim = useFadeInUp(300);
+  const buttonAnim = useFadeInUp(450);
   const activityType = route.params?.type || 'grade';
   const activityTitle = route.params?.title || 'Grade Received';
   const activitySubtitle = route.params?.subtitle || 'Mid-Term Physics Exam';
@@ -79,7 +87,7 @@ export default function NewActivityDetail({ route, navigation }: Props) {
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
           {/* Activity Card */}
-          <View style={styles.activityCard}>
+          <Animated.View style={[styles.activityCard, activityAnim]}>
             <View style={styles.activityHeader}>
               <View style={styles.activityLeft}>
                 <View style={styles.iconContainer}>
@@ -107,10 +115,10 @@ export default function NewActivityDetail({ route, navigation }: Props) {
             <T variant="caption" style={styles.timestamp}>
               {timestamp}
             </T>
-          </View>
+          </Animated.View>
 
           {/* Score Card */}
-          <View style={styles.scoreCard}>
+          <Animated.View style={[styles.scoreCard, scoreAnim]}>
             <T variant="body" weight="semiBold" style={styles.scoreLabel}>
               Your Score
             </T>
@@ -123,10 +131,10 @@ export default function NewActivityDetail({ route, navigation }: Props) {
                 Grade: {grade}
               </T>
             </View>
-          </View>
+          </Animated.View>
 
           {/* Feedback Card */}
-          <View style={styles.feedbackCard}>
+          <Animated.View style={[styles.feedbackCard, feedbackAnim]}>
             <View style={styles.feedbackSection}>
               <T variant="body" weight="semiBold" style={styles.sectionTitle}>
                 Teacher Feedback
@@ -149,11 +157,12 @@ export default function NewActivityDetail({ route, navigation }: Props) {
                 points for each section of the exam.
               </T>
             </View>
-          </View>
+          </Animated.View>
 
           {/* View Full Test Button */}
-          <TouchableOpacity
-            style={styles.viewTestButton}
+          <Animated.View style={buttonAnim}>
+            <TouchableOpacity
+              style={styles.viewTestButton}
             onPress={() => {
               trackAction('view_full_test', 'NewActivityDetail');
             }}
@@ -165,6 +174,7 @@ export default function NewActivityDetail({ route, navigation }: Props) {
               View Full Test
             </T>
           </TouchableOpacity>
+          </Animated.View>
         </View>
       </ScrollView>
     </SafeAreaView>

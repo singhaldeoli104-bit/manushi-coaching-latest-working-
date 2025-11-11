@@ -15,6 +15,7 @@ import {
   SafeAreaView,
   StatusBar,
   Image,
+  Animated,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { T } from '../../ui';
@@ -24,6 +25,7 @@ import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../config/supabaseClient';
 import HamburgerMenu from './HamburgerMenu';
 import { ViewToggle } from '../../shared/components/ViewToggle';
+import { useFadeInUp } from '../../shared/hooks/useAnimations';
 
 interface Peer {
   id: string;
@@ -59,6 +61,13 @@ export default function NewPeerLearningNetwork() {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [activeTab, setActiveTab] = React.useState<'peers' | 'groups'>('peers');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
+
+  // Animation hooks
+  const headerAnim = useFadeInUp(0);
+  const searchAnim = useFadeInUp(150);
+  const connectionsAnim = useFadeInUp(300);
+  const groupsAnim = useFadeInUp(450);
+  const suggestedAnim = useFadeInUp(600);
 
   useEffect(() => {
     trackScreenView('NewPeerLearningNetwork');
@@ -311,7 +320,7 @@ export default function NewPeerLearningNetwork() {
         }
       >
         {/* Gradient Header */}
-        <View style={styles.gradientHeader}>
+        <Animated.View style={[styles.gradientHeader, headerAnim]}>
           <T style={styles.headerTitle}>Connect & Collaborate</T>
           <T variant="body" style={styles.headerSubtitle}>
             Find study partners and groups for your courses.
@@ -340,10 +349,10 @@ export default function NewPeerLearningNetwork() {
               </T>
             </TouchableOpacity>
           </View>
-        </View>
+        </Animated.View>
 
         {/* Floating Search Bar */}
-        <View style={styles.searchContainer}>
+        <Animated.View style={[styles.searchContainer, searchAnim]}>
           <View style={styles.searchCard}>
             <T variant="h3" style={styles.searchIcon}>🔍</T>
             <TextInput
@@ -354,11 +363,11 @@ export default function NewPeerLearningNetwork() {
               onChangeText={setSearchQuery}
             />
           </View>
-        </View>
+        </Animated.View>
 
         <View style={styles.content}>
           {/* My Connections Section */}
-          <View style={styles.section}>
+          <Animated.View style={[styles.section, connectionsAnim]}>
             <View style={styles.sectionHeader}>
               <T variant="body" weight="bold" style={styles.sectionTitle}>My Connections</T>
               <TouchableOpacity onPress={() => trackAction('view_all_connections', 'NewPeerLearningNetwork')}>
@@ -428,10 +437,10 @@ export default function NewPeerLearningNetwork() {
                 </View>
               ))}
             </ScrollView>
-          </View>
+          </Animated.View>
 
           {/* Study Groups Section */}
-          <View style={styles.section}>
+          <Animated.View style={[styles.section, groupsAnim]}>
             <View style={styles.sectionHeader}>
               <T variant="body" weight="bold" style={styles.sectionTitle}>Study Groups</T>
               <TouchableOpacity onPress={() => trackAction('view_all_groups', 'NewPeerLearningNetwork')}>
@@ -478,10 +487,10 @@ export default function NewPeerLearningNetwork() {
                 </View>
               ))}
             </View>
-          </View>
+          </Animated.View>
 
           {/* Suggested for You Section */}
-          <View style={styles.section}>
+          <Animated.View style={[styles.section, suggestedAnim]}>
             <View style={styles.sectionHeader}>
               <T variant="body" weight="bold" style={styles.sectionTitle}>Suggested for You</T>
             </View>
@@ -552,7 +561,7 @@ export default function NewPeerLearningNetwork() {
                 </TouchableOpacity>
               </View>
             </ScrollView>
-          </View>
+          </Animated.View>
         </View>
       </ScrollView>
     </SafeAreaView>

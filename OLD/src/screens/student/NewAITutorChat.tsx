@@ -17,6 +17,7 @@ import {
   SafeAreaView,
   ScrollView,
   Alert,
+  Animated,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -26,6 +27,7 @@ import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../config/supabaseClient';
 import { getCache, setCache, CacheDurations } from '../../services/utils/CacheManager';
 import { ViewToggle } from '../../shared/components/ViewToggle';
+import { useFadeInUp } from '../../shared/hooks/useAnimations';
 
 type Props = NativeStackScreenProps<any, 'NewAITutorChat'>;
 
@@ -51,6 +53,9 @@ export default function NewAITutorChat({ navigation }: Props) {
   const [inputText, setInputText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [viewMode, setViewMode] = useState<'compact' | 'detailed'>('detailed');
+
+  // Animation hooks
+  const quickActionsAnim = useFadeInUp(0);
 
   // Fetch chat messages from Supabase (✅ WITH OFFLINE SUPPORT)
   const { data: messages = [] } = useQuery({
@@ -344,12 +349,13 @@ export default function NewAITutorChat({ navigation }: Props) {
         />
 
         {/* Quick Action Chips */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.quickActionsContainer}
-          contentContainerStyle={styles.quickActionsContent}
-        >
+        <Animated.View style={quickActionsAnim}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.quickActionsContainer}
+            contentContainerStyle={styles.quickActionsContent}
+          >
           {QUICK_ACTIONS.map((action) => (
             <TouchableOpacity
               key={action.id}
@@ -366,7 +372,8 @@ export default function NewAITutorChat({ navigation }: Props) {
               </T>
             </TouchableOpacity>
           ))}
-        </ScrollView>
+          </ScrollView>
+        </Animated.View>
 
         {/* Input Area */}
         <View style={styles.inputContainer}>

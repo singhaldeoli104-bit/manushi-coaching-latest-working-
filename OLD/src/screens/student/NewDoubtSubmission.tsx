@@ -16,6 +16,7 @@ import {
   Alert,
   Image,
   Platform,
+  Animated,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useQuery } from '@tanstack/react-query';
@@ -29,6 +30,7 @@ import { logDatabaseError } from '../../utils/errorLogger';
 import { getCache, setCache, CacheDurations } from '../../services/utils/CacheManager';
 import FilterChips from '../../shared/components/FilterChips';
 import { ViewToggle } from '../../shared/components/ViewToggle';
+import { useFadeInUp } from '../../shared/hooks/useAnimations';
 
 type Props = NativeStackScreenProps<any, 'NewDoubtSubmission'>;
 
@@ -65,6 +67,13 @@ export default function NewDoubtSubmission({ route, navigation }: Props) {
   const { user } = useAuth();
   const editDoubtId = route.params?.editDoubtId;
   const isEditMode = !!editDoubtId;
+
+  // Animation hooks
+  const formAnim = useFadeInUp(0);
+  const uploadAnim = useFadeInUp(150);
+  const priorityAnim = useFadeInUp(300);
+  const aiAnim = useFadeInUp(450);
+  const historyAnim = useFadeInUp(600);
 
   const [subject, setSubject] = useState('');
   const [doubtTitle, setDoubtTitle] = useState('');
@@ -676,7 +685,7 @@ export default function NewDoubtSubmission({ route, navigation }: Props) {
 
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         {/* Subject Selection */}
-        <View style={styles.section}>
+        <Animated.View style={[styles.section, formAnim]}>
           <T variant="body" weight="medium" style={styles.label}>
             Select Subject
           </T>
@@ -774,10 +783,10 @@ export default function NewDoubtSubmission({ route, navigation }: Props) {
               textAlignVertical="top"
             />
           </View>
-        </View>
+        </Animated.View>
 
         {/* Image Uploader */}
-        <View style={styles.section}>
+        <Animated.View style={[styles.section, uploadAnim]}>
           <T variant="body" weight="medium" style={styles.sectionTitle}>
             Attach Images or Files
           </T>
@@ -824,10 +833,10 @@ export default function NewDoubtSubmission({ route, navigation }: Props) {
               ))}
             </ScrollView>
           )}
-        </View>
+        </Animated.View>
 
         {/* Priority Level */}
-        <View style={styles.section}>
+        <Animated.View style={[styles.section, priorityAnim]}>
           <T variant="body" weight="medium" style={styles.sectionTitle}>
             Set Priority Level
           </T>
@@ -884,10 +893,10 @@ export default function NewDoubtSubmission({ route, navigation }: Props) {
               </T>
             </TouchableOpacity>
           </View>
-        </View>
+        </Animated.View>
 
         {/* AI Suggestions */}
-        <View style={styles.aiSuggestionsContainer}>
+        <Animated.View style={[styles.aiSuggestionsContainer, aiAnim]}>
           <TouchableOpacity
             style={styles.aiSuggestionsHeader}
             onPress={() => setAiSuggestionsExpanded(!aiSuggestionsExpanded)}
@@ -928,10 +937,10 @@ export default function NewDoubtSubmission({ route, navigation }: Props) {
               )}
             </View>
           )}
-        </View>
+        </Animated.View>
 
         {/* My Doubts History */}
-        <View style={styles.historySection}>
+        <Animated.View style={[styles.historySection, historyAnim]}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <T variant="h2" weight="bold" style={styles.historyTitle}>
               My Doubts History
@@ -1111,7 +1120,7 @@ export default function NewDoubtSubmission({ route, navigation }: Props) {
               })
             )}
           </View>
-        </View>
+        </Animated.View>
 
         {/* Bottom padding for submit button */}
         <View style={{ height: 80 }} />

@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ScrollView,
+  Animated,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useQuery } from '@tanstack/react-query';
@@ -19,12 +20,22 @@ import { useAuth } from '../../context/AuthContext';
 import { T } from '../../ui';
 import { trackAction, trackScreenView } from '../../utils/navigationAnalytics';
 import { ViewToggle } from '../../shared/components/ViewToggle';
+import { useFadeInUp } from '../../shared/hooks/useAnimations';
 
 type Props = NativeStackScreenProps<any, 'NewGamifiedLearningHub'>;
 
 export default function NewGamifiedLearningHub({ navigation }: Props) {
   const { user } = useAuth();
   const [viewMode, setViewMode] = useState<'compact' | 'detailed'>('detailed');
+
+  // Animation hooks
+  const profileAnim = useFadeInUp(0);
+  const streakAnim = useFadeInUp(150);
+  const badgesAnim = useFadeInUp(300);
+  const leaderboardAnim = useFadeInUp(450);
+  const challengesAnim = useFadeInUp(600);
+  const rewardsAnim = useFadeInUp(750);
+  const activityAnim = useFadeInUp(900);
 
   // Fetch student stats
   const { data: studentStats } = useQuery({
@@ -272,7 +283,7 @@ export default function NewGamifiedLearningHub({ navigation }: Props) {
 
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         {/* User Profile Card */}
-        <View style={styles.profileCard}>
+        <Animated.View style={[styles.profileCard, profileAnim]}>
           <View style={styles.profileHeader}>
             <View style={styles.avatar}>
               <T style={styles.avatarText}>
@@ -307,10 +318,10 @@ export default function NewGamifiedLearningHub({ navigation }: Props) {
               <View style={[styles.progressBar, { width: `${progressPercent}%` }]} />
             </View>
           </View>
-        </View>
+        </Animated.View>
 
         {/* Streak Banner */}
-        <View style={styles.streakBanner}>
+        <Animated.View style={[styles.streakBanner, streakAnim]}>
           <View style={styles.streakIcon}>
             <T style={styles.streakIconText}>🔥</T>
           </View>
@@ -326,10 +337,10 @@ export default function NewGamifiedLearningHub({ navigation }: Props) {
             <T style={styles.rewardIcon}>🏆</T>
             <T style={styles.rewardIcon}>💰</T>
           </View>
-        </View>
+        </Animated.View>
 
         {/* My Badges */}
-        <View style={styles.section}>
+        <Animated.View style={[styles.section, badgesAnim]}>
           <T variant="h2" weight="bold" style={styles.sectionTitle}>
             My Badges
           </T>
@@ -365,10 +376,10 @@ export default function NewGamifiedLearningHub({ navigation }: Props) {
               </View>
             ))}
           </View>
-        </View>
+        </Animated.View>
 
         {/* Weekly Leaderboard */}
-        <View style={styles.section}>
+        <Animated.View style={[styles.section, leaderboardAnim]}>
           <T variant="h2" weight="bold" style={styles.sectionTitle}>
             Weekly Leaderboard
           </T>
@@ -412,10 +423,10 @@ export default function NewGamifiedLearningHub({ navigation }: Props) {
               </View>
             ))}
           </View>
-        </View>
+        </Animated.View>
 
         {/* Active Challenges */}
-        <View style={styles.section}>
+        <Animated.View style={[styles.section, challengesAnim]}>
           <T variant="h2" weight="bold" style={styles.sectionTitle}>
             Active Challenges
           </T>
@@ -454,10 +465,10 @@ export default function NewGamifiedLearningHub({ navigation }: Props) {
               </View>
             ))}
           </View>
-        </View>
+        </Animated.View>
 
         {/* Rewards Shop */}
-        <View style={styles.section}>
+        <Animated.View style={[styles.section, rewardsAnim]}>
           <T variant="h2" weight="bold" style={styles.sectionTitle}>
             Rewards Shop
           </T>
@@ -491,10 +502,10 @@ export default function NewGamifiedLearningHub({ navigation }: Props) {
               </TouchableOpacity>
             ))}
           </View>
-        </View>
+        </Animated.View>
 
         {/* Activity Feed */}
-        <View style={styles.section}>
+        <Animated.View style={[styles.section, activityAnim]}>
           <T variant="h2" weight="bold" style={styles.sectionTitle}>
             Activity Feed
           </T>
@@ -524,7 +535,7 @@ export default function NewGamifiedLearningHub({ navigation }: Props) {
               </View>
             ))}
           </View>
-        </View>
+        </Animated.View>
 
         {/* Bottom padding */}
         <View style={{ height: 24 }} />

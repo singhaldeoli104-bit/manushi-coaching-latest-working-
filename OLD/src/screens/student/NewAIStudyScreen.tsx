@@ -13,6 +13,7 @@ import {
   TextInput,
   Modal,
   Alert,
+  Animated,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -34,6 +35,7 @@ import { safeNavigate } from '../../utils/navigationService';
 import { trackAction, trackScreenView } from '../../utils/navigationAnalytics';
 import { useAuth } from '../../context/AuthContext';
 import { ViewToggle } from '../../shared/components/ViewToggle';
+import { useFadeInUp } from '../../shared/hooks/useAnimations';
 
 type Props = NativeStackScreenProps<any, 'NewAIStudyScreen'>;
 
@@ -99,6 +101,10 @@ const CACHE_KEY_ANALYTICS = 'ai_study_analytics';
 
 export default function NewAIStudyScreen({ navigation }: Props) {
   const { user } = useAuth();
+
+  // Animation hooks
+  const analyticsAnim = useFadeInUp(0);
+  const cardAnim = useFadeInUp(150);
 
   // View mode state
   const [viewMode, setViewMode] = useState<'compact' | 'detailed'>('detailed');
@@ -368,7 +374,8 @@ export default function NewAIStudyScreen({ navigation }: Props) {
     <View style={styles.tabContent}>
       {/* Learning Analytics Card - Only in detailed mode */}
       {viewMode === 'detailed' && (
-        <Card variant="filled" style={{ marginBottom: 16 }}>
+        <Animated.View style={analyticsAnim}>
+          <Card variant="filled" style={{ marginBottom: 16 }}>
           <CardHeader title="Your Learning Profile" />
           <CardContent>
             <Row gap="md" style={{ justifyContent: 'space-around' }}>
@@ -409,14 +416,16 @@ export default function NewAIStudyScreen({ navigation }: Props) {
             </Row>
           </CardContent>
         </Card>
+        </Animated.View>
       )}
 
       {/* AI Recommendations */}
       <T variant="title" weight="bold" style={{ marginBottom: 12 }}>
         AI Recommendations
       </T>
-      {recommendations.map((rec) => (
-        <Card key={rec.id} variant="outlined" style={{ marginBottom: 12 }}>
+      {recommendations.map((rec, index) => (
+        <Animated.View key={rec.id} style={useFadeInUp(index * 100)}>
+          <Card variant="outlined" style={{ marginBottom: 12 }}>
           <CardContent>
             <Row gap="sm" align="flex-start" style={{ marginBottom: 8 }}>
               <T variant="h2">{getTypeEmoji(rec.type)}</T>
@@ -490,6 +499,7 @@ export default function NewAIStudyScreen({ navigation }: Props) {
             </Button>
           </CardActions>
         </Card>
+        </Animated.View>
       ))}
     </View>
   );

@@ -13,6 +13,7 @@ import {
   RefreshControl,
   SafeAreaView,
   StatusBar,
+  Animated,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { T } from '../../ui';
@@ -22,12 +23,20 @@ import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../config/supabaseClient';
 import HamburgerMenu from './HamburgerMenu';
 import { ViewToggle } from '../../shared/components/ViewToggle';
+import { useFadeInUp } from '../../shared/hooks/useAnimations';
 
 export default function NewAILearningDashboard() {
   const { user } = useAuth();
   const [menuVisible, setMenuVisible] = useState(false);
   const [viewMode, setViewMode] = useState<'compact' | 'detailed'>('detailed');
   const [expandedAreas, setExpandedAreas] = useState<Set<string>>(new Set());
+
+  // Animation hooks
+  const headerAnim = useFadeInUp(0);
+  const chartsAnim = useFadeInUp(150);
+  const focusAnim = useFadeInUp(300);
+  const planAnim = useFadeInUp(450);
+  const predictionsAnim = useFadeInUp(600);
 
   useEffect(() => {
     trackScreenView('NewAILearningDashboard');
@@ -322,12 +331,12 @@ export default function NewAILearningDashboard() {
         }
       >
         {/* Gradient Header Card */}
-        <View style={styles.headerContainer}>
+        <Animated.View style={[styles.headerContainer, headerAnim]}>
           <View style={styles.gradientCard}>
             <T style={styles.psychologyIcon}>🧠</T>
             <T style={styles.gradientTitle}>Your AI Study Insights</T>
           </View>
-        </View>
+        </Animated.View>
 
         {/* Weekly Activity Section */}
         {viewMode === 'detailed' && (
@@ -336,7 +345,7 @@ export default function NewAILearningDashboard() {
           Weekly Activity
         </T>
 
-        <View style={styles.chartsRow}>
+        <Animated.View style={[styles.chartsRow, chartsAnim]}>
           {/* Weekly Study Time Chart */}
           <View style={styles.chartCard}>
             <T variant="body" weight="medium" style={styles.chartCardTitle}>
@@ -400,7 +409,7 @@ export default function NewAILearningDashboard() {
               ))}
             </View>
           </View>
-        </View>
+        </Animated.View>
         </>
         )}
 
@@ -411,7 +420,7 @@ export default function NewAILearningDashboard() {
           Focus Areas
         </T>
 
-        <View style={styles.focusAreasContainer}>
+        <Animated.View style={[styles.focusAreasContainer, focusAnim]}>
           {focusAreas.map((area, index) => {
             const isExpanded = index === 0 ? !expandedAreas.has(area.id) : expandedAreas.has(area.id);
             return (
@@ -477,7 +486,7 @@ export default function NewAILearningDashboard() {
               </View>
             );
           })}
-        </View>
+        </Animated.View>
         </>
         )}
 
@@ -488,7 +497,7 @@ export default function NewAILearningDashboard() {
           Today's AI Plan
         </T>
 
-        <View style={styles.planContainer}>
+        <Animated.View style={[styles.planContainer, planAnim]}>
           <View style={styles.planCard}>
             {studyPlan.map((session, index) => (
               <View key={index} style={styles.planItem}>
@@ -528,7 +537,7 @@ export default function NewAILearningDashboard() {
               </View>
             ))}
           </View>
-        </View>
+        </Animated.View>
         </>
         )}
 
@@ -539,7 +548,7 @@ export default function NewAILearningDashboard() {
           Grade Predictions
         </T>
 
-        <View style={styles.predictionsContainer}>
+        <Animated.View style={[styles.predictionsContainer, predictionsAnim]}>
           <View style={styles.predictionsCard}>
             {gradePredictions.map((prediction, index) => (
               <View key={index} style={styles.predictionItem}>
@@ -573,7 +582,7 @@ export default function NewAILearningDashboard() {
               </View>
             ))}
           </View>
-        </View>
+        </Animated.View>
         </>
         )}
       </ScrollView>
