@@ -2,6 +2,7 @@
  * NewAITutorChat - EXACT match to HTML reference
  * Purpose: AI tutor chat interface with comprehensive UI
  * Design: Material Design top bar, styled message bubbles, code blocks, quick actions, enhanced input
+ * ✅ OFFLINE SUPPORT: Caches chat history for 24 hours
  */
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
@@ -23,6 +24,7 @@ import { T } from '../../ui';
 import { trackAction, trackScreenView } from '../../utils/navigationAnalytics';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../config/supabaseClient';
+import { getCache, setCache, CacheDurations } from '../../services/utils/CacheManager';
 
 type Props = NativeStackScreenProps<any, 'NewAITutorChat'>;
 
@@ -48,11 +50,19 @@ export default function NewAITutorChat({ navigation }: Props) {
   const [inputText, setInputText] = useState('');
   const [isSending, setIsSending] = useState(false);
 
-  // Fetch chat messages from Supabase
+  // Fetch chat messages from Supabase (✅ WITH OFFLINE SUPPORT)
   const { data: messages = [] } = useQuery({
     queryKey: ['ai-chat-messages', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
+
+      // ✅ Try cache first
+      const cacheKey = `ai_chat_messages_${user.id}`;
+      const cached = await getCache(cacheKey);
+      if (cached) {
+        console.log('📦 [AITutorChat] Using cached messages');
+        return cached;
+      }
 
       const { data, error } = await supabase
         .from('ai_chat_messages')
@@ -65,7 +75,7 @@ export default function NewAITutorChat({ navigation }: Props) {
         return [];
       }
 
-      return (data || []).map(m => ({
+      const messagesData = (data || []).map(m => ({
         id: m.id,
         text: m.message_text,
         isUser: m.is_user_message,
@@ -73,6 +83,12 @@ export default function NewAITutorChat({ navigation }: Props) {
         hasCodeBlock: m.has_code_block,
         codeContent: m.code_content || undefined,
       })) as Message[];
+
+      // ✅ Save to cache (24 hours)
+      await setCache(cacheKey, messagesData, CacheDurations.PERSISTENT);
+      console.log('💾 [AITutorChat] Chat messages cached');
+
+      return messagesData;
     },
     enabled: !!user?.id,
   });

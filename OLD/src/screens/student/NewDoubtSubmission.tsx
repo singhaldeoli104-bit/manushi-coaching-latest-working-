@@ -2,6 +2,7 @@
  * NewDoubtSubmission - EXACT match to HTML reference
  * Purpose: Comprehensive doubt submission with history and AI suggestions
  * Design: Material Design with rich editor, image upload, priority, history
+ * ✅ OFFLINE SUPPORT: Caches doubt history for 1 hour
  */
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -25,6 +26,7 @@ import { trackAction, trackScreenView } from '../../utils/navigationAnalytics';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../config/supabaseClient';
 import { logDatabaseError } from '../../utils/errorLogger';
+import { getCache, setCache, CacheDurations } from '../../services/utils/CacheManager';
 
 type Props = NativeStackScreenProps<any, 'NewDoubtSubmission'>;
 
@@ -76,11 +78,19 @@ export default function NewDoubtSubmission({ route, navigation }: Props) {
   const [selectionEnd, setSelectionEnd] = useState(0);
   const textInputRef = useRef<TextInput>(null);
 
-  // Fetch doubt history from Supabase
+  // Fetch doubt history from Supabase (✅ WITH OFFLINE SUPPORT)
   const { data: doubtHistory } = useQuery({
     queryKey: ['doubt-history', user?.id, historyTab],
     queryFn: async () => {
       if (!user?.id) return [];
+
+      // ✅ Try cache first
+      const cacheKey = `doubt_history_${user.id}_${historyTab}`;
+      const cached = await getCache(cacheKey);
+      if (cached) {
+        console.log('📦 [DoubtSubmission] Using cached doubt history');
+        return cached;
+      }
 
       let query = supabase
         .from('doubts')
@@ -120,13 +130,20 @@ export default function NewDoubtSubmission({ route, navigation }: Props) {
         return `${diffWeeks} week${diffWeeks > 1 ? 's' : ''} ago`;
       };
 
-      return (data || []).map(d => ({
+      const doubtHistoryData = (data || []).map(d => ({
         id: d.id,
         title: d.title,
         subject: d.subject_code,
         timestamp: formatTimeAgo(d.created_at),
         status: d.status as DoubtStatus,
       })) as DoubtHistory[];
+
+      // ✅ Save to cache (1 hour)
+      const cacheKey = `doubt_history_${user.id}_${historyTab}`;
+      await setCache(cacheKey, doubtHistoryData, CacheDurations.MEDIUM);
+      console.log('💾 [DoubtSubmission] Doubt history cached');
+
+      return doubtHistoryData;
     },
     enabled: !!user?.id,
   });
