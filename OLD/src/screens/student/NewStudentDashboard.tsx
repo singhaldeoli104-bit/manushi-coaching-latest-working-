@@ -16,6 +16,7 @@ import { useAuth } from '../../context/AuthContext';
 import HamburgerMenu from './HamburgerMenu';
 import { getCache, setCache, CacheKeys, CacheDurations } from '../../services/utils/CacheManager';
 import FilterChips from '../../shared/components/FilterChips';
+import { ViewToggle } from '../../shared/components/ViewToggle';
 
 type Props = NativeStackScreenProps<any, 'NewStudentDashboard'>;
 
@@ -24,6 +25,7 @@ const NewStudentDashboard: React.FC<Props> = () => {
   const studentId = user?.id || 'test-student-id';
   const [menuVisible, setMenuVisible] = useState(false);
   const [filterType, setFilterType] = useState<'all' | 'classes' | 'assignments' | 'activities'>('all');
+  const [viewMode, setViewMode] = useState<'compact' | 'detailed'>('detailed');
 
   useEffect(() => {
     trackScreenView('NewStudentDashboard', { userId: studentId });
@@ -240,18 +242,32 @@ const NewStudentDashboard: React.FC<Props> = () => {
           <T variant="h2" style={styles.headerIcon}>☰</T>
         </TouchableOpacity>
         <T variant="title" weight="bold" style={styles.headerTitle}>Dashboard</T>
-        <TouchableOpacity
-          style={styles.headerIconButton}
-          onPress={() => {
-            trackAction('open_profile', 'NewStudentDashboard');
-            // @ts-expect-error - Student routes not yet in ParentStackParamList
-            safeNavigate('StudentProfileScreen');
-          }}
-          accessibilityRole="button"
-          accessibilityLabel="Open profile"
-        >
-          <T variant="h2" style={styles.headerIcon}>⋮</T>
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <ViewToggle
+            modes={[
+              { value: 'compact', icon: '▦', label: 'Compact' },
+              { value: 'detailed', icon: '☰', label: 'Detailed' },
+            ]}
+            selectedMode={viewMode}
+            onModeChange={(mode) => {
+              setViewMode(mode as 'compact' | 'detailed');
+              trackAction('toggle_view_mode', 'NewStudentDashboard', { mode });
+            }}
+            size="small"
+          />
+          <TouchableOpacity
+            style={styles.headerIconButton}
+            onPress={() => {
+              trackAction('open_profile', 'NewStudentDashboard');
+              // @ts-expect-error - Student routes not yet in ParentStackParamList
+              safeNavigate('StudentProfileScreen');
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Open profile"
+          >
+            <T variant="h2" style={styles.headerIcon}>⋮</T>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView
@@ -345,7 +361,7 @@ const NewStudentDashboard: React.FC<Props> = () => {
           />
 
           {/* Today's Classes Section - EXACT match */}
-          {(filterType === 'all' || filterType === 'classes') && (
+          {viewMode === 'detailed' && (filterType === 'all' || filterType === 'classes') && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <T variant="title" weight="bold" style={styles.sectionTitle}>Today's Classes</T>
@@ -538,7 +554,7 @@ const NewStudentDashboard: React.FC<Props> = () => {
           )}
 
           {/* Pending Assignments Section - EXACT match */}
-          {(filterType === 'all' || filterType === 'assignments') && (
+          {viewMode === 'detailed' && (filterType === 'all' || filterType === 'assignments') && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <T variant="title" weight="bold" style={styles.sectionTitle}>Pending Assignments</T>
@@ -800,7 +816,7 @@ const NewStudentDashboard: React.FC<Props> = () => {
           )}
 
           {/* Recent Activity - EXACT match */}
-          {(filterType === 'all' || filterType === 'activities') && (
+          {viewMode === 'detailed' && (filterType === 'all' || filterType === 'activities') && (
           <View style={[styles.section, styles.lastSection]}>
             <T variant="title" weight="bold" style={styles.sectionTitle}>Recent Activity</T>
             <View style={styles.activityList}>

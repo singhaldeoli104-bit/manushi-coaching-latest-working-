@@ -28,6 +28,7 @@ import { supabase } from '../../config/supabaseClient';
 import { logDatabaseError } from '../../utils/errorLogger';
 import { getCache, setCache, CacheDurations } from '../../services/utils/CacheManager';
 import FilterChips from '../../shared/components/FilterChips';
+import { ViewToggle } from '../../shared/components/ViewToggle';
 
 type Props = NativeStackScreenProps<any, 'NewDoubtSubmission'>;
 
@@ -73,6 +74,7 @@ export default function NewDoubtSubmission({ route, navigation }: Props) {
   const [aiSuggestionsExpanded, setAiSuggestionsExpanded] = useState(false);
   const [historyTab, setHistoryTab] = useState<HistoryTab>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState<'list' | 'card'>('list');
   const [submissionBannerVisible, setSubmissionBannerVisible] = useState(false);
   const [isLoadingEdit, setIsLoadingEdit] = useState(false);
   const [selectionStart, setSelectionStart] = useState(0);

@@ -25,6 +25,7 @@ import { supabase } from '../../config/supabaseClient';
 import HamburgerMenu from './HamburgerMenu';
 import { getCache, setCache, CacheDurations } from '../../services/utils/CacheManager';
 import FilterChips from '../../shared/components/FilterChips';
+import { ViewToggle } from '../../shared/components/ViewToggle';
 
 type Props = NativeStackScreenProps<any, 'NewProgressDetailScreen'>;
 
@@ -57,6 +58,7 @@ export default function NewProgressDetailScreen({ navigation: _navigation }: Pro
   const { user } = useAuth();
   const [menuVisible, setMenuVisible] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState<string>('All');
+  const [viewMode, setViewMode] = useState<'summary' | 'detailed'>('detailed');
 
   useEffect(() => {
     trackScreenView('NewProgressDetailScreen');
@@ -234,13 +236,18 @@ export default function NewProgressDetailScreen({ navigation: _navigation }: Pro
           <T variant="h2" style={styles.icon}>☰</T>
         </TouchableOpacity>
         <T variant="title" weight="bold" style={styles.topBarTitle}>My Progress</T>
-        <TouchableOpacity
-          style={styles.iconButton}
-          accessibilityRole="button"
-          accessibilityLabel="More options"
-        >
-          <T variant="h2" style={styles.icon}>⋮</T>
-        </TouchableOpacity>
+        <ViewToggle
+          modes={[
+            { value: 'summary', icon: '▦', label: 'Summary' },
+            { value: 'detailed', icon: '☰', label: 'Detailed' },
+          ]}
+          selectedMode={viewMode}
+          onModeChange={(mode) => {
+            setViewMode(mode as 'summary' | 'detailed');
+            trackAction('toggle_view_mode', 'NewProgressDetailScreen', { mode });
+          }}
+          size="small"
+        />
       </View>
 
       <ScrollView
@@ -324,6 +331,7 @@ export default function NewProgressDetailScreen({ navigation: _navigation }: Pro
           </TouchableOpacity>
 
           {/* Performance Chart Placeholder */}
+          {viewMode === 'detailed' && (
           <View style={styles.chartCard}>
             <T variant="body" weight="semiBold" style={styles.chartTitle}>
               6-Month Performance Trend
@@ -339,8 +347,10 @@ export default function NewProgressDetailScreen({ navigation: _navigation }: Pro
               </T>
             </View>
           </View>
+          )}
 
           {/* Study Streak Tracker */}
+          {viewMode === 'detailed' && (
           <View style={styles.streakCard}>
             <View style={styles.streakHeader}>
               <T variant="body" weight="semiBold" style={styles.streakTitle}>
@@ -376,8 +386,10 @@ export default function NewProgressDetailScreen({ navigation: _navigation }: Pro
               ))}
             </View>
           </View>
+          )}
 
           {/* Filter Chips */}
+          {viewMode === 'detailed' && (
           <FilterChips
             options={[
               { value: 'All', label: 'All Subjects' },
@@ -394,8 +406,10 @@ export default function NewProgressDetailScreen({ navigation: _navigation }: Pro
             }}
             showCounts
           />
+          )}
 
           {/* Recent Tests */}
+          {viewMode === 'detailed' && (
           <View style={styles.section}>
             <T variant="body" weight="semiBold" style={styles.sectionTitle}>
               Recent Tests
@@ -453,8 +467,10 @@ export default function NewProgressDetailScreen({ navigation: _navigation }: Pro
               })}
             </View>
           </View>
+          )}
 
           {/* Subject Performance */}
+          {viewMode === 'detailed' && (
           <View style={styles.section}>
             <T variant="body" weight="semiBold" style={styles.sectionTitle}>
               Subject Performance
@@ -491,6 +507,7 @@ export default function NewProgressDetailScreen({ navigation: _navigation }: Pro
               })}
             </View>
           </View>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
