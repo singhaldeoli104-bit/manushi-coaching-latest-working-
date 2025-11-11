@@ -5,7 +5,7 @@
  */
 
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Alert, Animated } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BaseScreen } from '../../shared/components/BaseScreen';
 import { Card } from '../../ui';
@@ -17,6 +17,7 @@ import { T } from '../../ui';
 import { trackScreenView, trackAction } from '../../utils/navigationAnalytics';
 import { safeNavigate } from '../../utils/navigationService';
 import { ViewToggle } from '../../shared/components/ViewToggle';
+import { useFadeInUp } from '../../shared/hooks/useAnimations';
 
 type Props = NativeStackScreenProps<any, 'NewEnhancedAIStudy'>;
 
@@ -77,6 +78,12 @@ interface PracticeTest {
 export default function NewEnhancedAIStudy({ navigation }: Props) {
   const [viewMode, setViewMode] = useState<'compact' | 'detailed'>('detailed');
   const [activeTab, setActiveTab] = useState<'dashboard' | 'flashcards' | 'notes' | 'tests'>('dashboard');
+
+  // Animation hooks
+  const headerAnim = useFadeInUp(0);
+  const card1Anim = useFadeInUp(150);
+  const card2Anim = useFadeInUp(300);
+  const card3Anim = useFadeInUp(450);
 
   // Mock data for all features
   const [weakAreas] = useState<WeakArea[]>([
@@ -243,13 +250,16 @@ export default function NewEnhancedAIStudy({ navigation }: Props) {
           {/* Dashboard Tab */}
           {activeTab === 'dashboard' && (
             <View style={styles.tabContent}>
-              <Card style={styles.headerCard}>
-                <T variant="h1" weight="bold">Enhanced AI Study</T>
-                <T variant="body" style={styles.subtitle}>AI-powered learning tools & insights</T>
-              </Card>
+              <Animated.View style={headerAnim}>
+                <Card style={styles.headerCard}>
+                  <T variant="h1" weight="bold">Enhanced AI Study</T>
+                  <T variant="body" style={styles.subtitle}>AI-powered learning tools & insights</T>
+                </Card>
+              </Animated.View>
 
               {/* 4. Progress Tracking */}
-              <Card style={styles.progressCard}>
+              <Animated.View style={card1Anim}>
+                <Card style={styles.progressCard}>
                 <T variant="title" weight="semiBold" style={{ marginBottom: 12 }}>
                   📈 Study Progress
                 </T>
@@ -271,10 +281,12 @@ export default function NewEnhancedAIStudy({ navigation }: Props) {
                     </View>
                   </View>
                 ))}
-              </Card>
+                </Card>
+              </Animated.View>
 
               {/* 5. Weak Areas Analysis */}
-              <Card style={styles.weakAreasCard}>
+              <Animated.View style={card2Anim}>
+                <Card style={styles.weakAreasCard}>
                 <T variant="title" weight="semiBold" style={{ marginBottom: 12 }}>
                   🎯 AI-Identified Weak Areas
                 </T>
@@ -310,10 +322,12 @@ export default function NewEnhancedAIStudy({ navigation }: Props) {
                     </Button>
                   </Card>
                 ))}
-              </Card>
+                </Card>
+              </Animated.View>
 
               {/* 6. Study Plan Generator */}
-              <Card style={styles.studyPlansCard}>
+              <Animated.View style={card3Anim}>
+                <Card style={styles.studyPlansCard}>
                 <View style={styles.cardHeader}>
                   <T variant="title" weight="semiBold">📅 AI Study Plans</T>
                   <Button variant="ghost" onPress={handleGenerateStudyPlan}>+ Generate</Button>
@@ -338,14 +352,16 @@ export default function NewEnhancedAIStudy({ navigation }: Props) {
                     )}
                   </Card>
                 ))}
-              </Card>
+                </Card>
+              </Animated.View>
             </View>
           )}
 
           {/* 3. Flashcard Generator Tab */}
           {activeTab === 'flashcards' && (
             <View style={styles.tabContent}>
-              <Card style={styles.featureHeader}>
+              <Animated.View style={headerAnim}>
+                <Card style={styles.featureHeader}>
                 <T variant="title" weight="semiBold">🎴 AI Flashcards</T>
                 <T variant="caption" style={{ color: '#6B7280', marginTop: 4 }}>
                   Automatically generated from your study materials
@@ -353,10 +369,12 @@ export default function NewEnhancedAIStudy({ navigation }: Props) {
                 <Button variant="primary" onPress={() => handleGenerateFlashcards('Mathematics')} style={{ marginTop: 12 }}>
                   Generate New Flashcards
                 </Button>
-              </Card>
+                </Card>
+              </Animated.View>
 
-              {flashcards.map((card) => (
-                <Card key={card.id} style={styles.flashcardItem}>
+              {flashcards.map((card, index) => (
+                <Animated.View key={card.id} style={useFadeInUp(150 + index * 100)}>
+                  <Card style={styles.flashcardItem}>
                   <View style={styles.flashcardHeader}>
                     <Badge variant="info" label={card.subject} />
                     <Badge
@@ -371,7 +389,8 @@ export default function NewEnhancedAIStudy({ navigation }: Props) {
                       <T variant="body">A: {card.answer}</T>
                     </View>
                   )}
-                </Card>
+                  </Card>
+                </Animated.View>
               ))}
             </View>
           )}
@@ -379,7 +398,8 @@ export default function NewEnhancedAIStudy({ navigation }: Props) {
           {/* 1. Smart Notes Tab */}
           {activeTab === 'notes' && (
             <View style={styles.tabContent}>
-              <Card style={styles.featureHeader}>
+              <Animated.View style={headerAnim}>
+                <Card style={styles.featureHeader}>
                 <T variant="title" weight="semiBold">📝 Smart Notes</T>
                 <T variant="caption" style={{ color: '#6B7280', marginTop: 4 }}>
                   AI-generated summaries and key points
@@ -387,10 +407,12 @@ export default function NewEnhancedAIStudy({ navigation }: Props) {
                 <Button variant="primary" onPress={() => handleGenerateNotes('Physics')} style={{ marginTop: 12 }}>
                   Generate Smart Notes
                 </Button>
-              </Card>
+                </Card>
+              </Animated.View>
 
-              {smartNotes.map((note) => (
-                <Card key={note.id} style={styles.noteItem}>
+              {smartNotes.map((note, index) => (
+                <Animated.View key={note.id} style={useFadeInUp(150 + index * 100)}>
+                  <Card style={styles.noteItem}>
                   <View style={styles.noteHeader}>
                     <Badge variant="info" label={note.subject} />
                     <T variant="caption" style={{ color: '#9CA3AF' }}>{note.createdAt}</T>
@@ -407,7 +429,8 @@ export default function NewEnhancedAIStudy({ navigation }: Props) {
                       ))}
                     </View>
                   )}
-                </Card>
+                  </Card>
+                </Animated.View>
               ))}
             </View>
           )}
@@ -415,15 +438,18 @@ export default function NewEnhancedAIStudy({ navigation }: Props) {
           {/* 2. Practice Tests Tab */}
           {activeTab === 'tests' && (
             <View style={styles.tabContent}>
-              <Card style={styles.featureHeader}>
+              <Animated.View style={headerAnim}>
+                <Card style={styles.featureHeader}>
                 <T variant="title" weight="semiBold">🧪 Practice Tests</T>
                 <T variant="caption" style={{ color: '#6B7280', marginTop: 4 }}>
                   Adaptive quizzes tailored to your level
                 </T>
-              </Card>
+                </Card>
+              </Animated.View>
 
-              {practiceTests.map((test) => (
-                <Card key={test.id} style={styles.testItem}>
+              {practiceTests.map((test, index) => (
+                <Animated.View key={test.id} style={useFadeInUp(150 + index * 100)}>
+                  <Card style={styles.testItem}>
                   <View style={styles.testHeader}>
                     <View style={{ flex: 1 }}>
                       <T variant="body" weight="semiBold">{test.title}</T>
@@ -450,7 +476,8 @@ export default function NewEnhancedAIStudy({ navigation }: Props) {
                   >
                     {test.score ? 'Retake Test' : 'Start Test'}
                   </Button>
-                </Card>
+                  </Card>
+                </Animated.View>
               ))}
             </View>
           )}

@@ -5,7 +5,7 @@
  */
 
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Alert, Animated } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BaseScreen } from '../../shared/components/BaseScreen';
@@ -20,6 +20,7 @@ import { getAvatarEmoji } from '../../utils/avatarUtils';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../config/supabaseClient';
 import { ViewToggle } from '../../shared/components/ViewToggle';
+import { useFadeInUp } from '../../shared/hooks/useAnimations';
 
 type Props = NativeStackScreenProps<any, 'NewCollaborativeAssignment'>;
 
@@ -69,6 +70,13 @@ export default function NewCollaborativeAssignment({ route, navigation }: Props)
 
   // View mode state
   const [viewMode, setViewMode] = useState<'compact' | 'detailed'>('detailed');
+
+  // Animation hooks
+  const headerAnim = useFadeInUp(0);
+  const teamAnim = useFadeInUp(150);
+  const editorsAnim = useFadeInUp(300);
+  const versionsAnim = useFadeInUp(450);
+  const contributionsAnim = useFadeInUp(600);
 
   // State for new features
   const [showVersionHistory, setShowVersionHistory] = useState(false);
@@ -230,16 +238,19 @@ export default function NewCollaborativeAssignment({ route, navigation }: Props)
 
       {assignment && (
         <ScrollView style={styles.container}>
-          <Card style={styles.headerCard}>
+          <Animated.View style={headerAnim}>
+            <Card style={styles.headerCard}>
             <T variant="h2" weight="bold">
               {assignment.title}
             </T>
             <T variant="caption" style={styles.subject}>
               {assignment.subject} • Due in {daysRemaining} {daysRemaining === 1 ? 'day' : 'days'}
             </T>
-          </Card>
+            </Card>
+          </Animated.View>
 
-          <Card style={styles.teamCard}>
+          <Animated.View style={teamAnim}>
+            <Card style={styles.teamCard}>
             <T variant="title" weight="semiBold" style={styles.sectionTitle}>
               Team Members ({teamMembers?.length || 0})
             </T>
@@ -264,11 +275,13 @@ export default function NewCollaborativeAssignment({ route, navigation }: Props)
                 No team members found
               </T>
             )}
-          </Card>
+            </Card>
+          </Animated.View>
 
           {/* 1. Real-time Collaboration & 4. Live Cursors */}
           {activeEditors.length > 0 && (
-            <Card style={styles.activeEditorsCard}>
+            <Animated.View style={editorsAnim}>
+              <Card style={styles.activeEditorsCard}>
               <View style={styles.cardHeader}>
                 <T variant="title" weight="semiBold">
                   🟢 Active Now ({activeEditors.length})
@@ -288,11 +301,13 @@ export default function NewCollaborativeAssignment({ route, navigation }: Props)
                   </View>
                 </View>
               ))}
-            </Card>
+              </Card>
+            </Animated.View>
           )}
 
           {/* 2. Version History */}
-          <Card style={styles.versionCard}>
+          <Animated.View style={versionsAnim}>
+            <Card style={styles.versionCard}>
             <View style={styles.cardHeader}>
               <T variant="title" weight="semiBold">
                 📜 Version History
@@ -330,10 +345,12 @@ export default function NewCollaborativeAssignment({ route, navigation }: Props)
                 ))}
               </View>
             )}
-          </Card>
+            </Card>
+          </Animated.View>
 
           {/* 3. Member Contributions Tracking */}
-          <Card style={styles.contributionsCard}>
+          <Animated.View style={contributionsAnim}>
+            <Card style={styles.contributionsCard}>
             <View style={styles.cardHeader}>
               <T variant="title" weight="semiBold">
                 📊 Contributions
@@ -366,7 +383,8 @@ export default function NewCollaborativeAssignment({ route, navigation }: Props)
                 ))}
               </View>
             )}
-          </Card>
+            </Card>
+          </Animated.View>
 
           <Card style={styles.progressCard}>
             <T variant="title" weight="semiBold" style={styles.sectionTitle}>

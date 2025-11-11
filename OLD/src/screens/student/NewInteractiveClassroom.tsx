@@ -5,7 +5,7 @@
  */
 
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Animated } from 'react-native';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BaseScreen } from '../../shared/components/BaseScreen';
@@ -19,6 +19,7 @@ import { trackScreenView, trackAction } from '../../utils/navigationAnalytics';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../config/supabaseClient';
 import { ViewToggle } from '../../shared/components/ViewToggle';
+import { useFadeInUp } from '../../shared/hooks/useAnimations';
 
 type Props = NativeStackScreenProps<any, 'NewInteractiveClassroom'>;
 
@@ -65,6 +66,11 @@ export default function NewInteractiveClassroom({ route, navigation }: Props) {
 
   // View mode state
   const [viewMode, setViewMode] = useState<'compact' | 'detailed'>('detailed');
+
+  // Animation hooks
+  const cardAnim = useFadeInUp(0);
+  const item1Anim = useFadeInUp(150);
+  const item2Anim = useFadeInUp(300);
 
   // State for tabs and features
   const [activeTab, setActiveTab] = useState<'poll' | 'qa' | 'whiteboard' | 'breakout'>('poll');
@@ -308,7 +314,8 @@ export default function NewInteractiveClassroom({ route, navigation }: Props) {
           {activeTab === 'poll' && (
             <View style={styles.tabContent}>
               {poll ? (
-                <Card style={styles.pollCard}>
+                <Animated.View style={cardAnim}>
+                  <Card style={styles.pollCard}>
                   <T variant="title" weight="semiBold">
                     📊 Live Poll
                   </T>
@@ -340,14 +347,16 @@ export default function NewInteractiveClassroom({ route, navigation }: Props) {
                     <T variant="caption" style={styles.submittingText}>
                       Submitting your response...
                     </T>
-                  )}
-                </Card>
+                  </Card>
+                </Animated.View>
               ) : (
-                <Card style={styles.emptyCard}>
+                <Animated.View style={cardAnim}>
+                  <Card style={styles.emptyCard}>
                   <T variant="body" style={styles.emptyText}>
                     No active poll at the moment. Stay tuned!
                   </T>
-                </Card>
+                  </Card>
+                </Animated.View>
               )}
             </View>
           )}
@@ -355,7 +364,8 @@ export default function NewInteractiveClassroom({ route, navigation }: Props) {
           {/* 2. Q&A During Class */}
           {activeTab === 'qa' && (
             <View style={styles.tabContent}>
-              <Card style={styles.qaCard}>
+              <Animated.View style={cardAnim}>
+                <Card style={styles.qaCard}>
                 <T variant="title" weight="semiBold" style={{ marginBottom: 12 }}>
                   💬 Ask a Question
                 </T>
@@ -375,10 +385,12 @@ export default function NewInteractiveClassroom({ route, navigation }: Props) {
                 >
                   Submit Question
                 </Button>
-              </Card>
+                </Card>
+              </Animated.View>
 
-              {questions.map((q) => (
-                <Card key={q.id} style={styles.questionCard}>
+              {questions.map((q, index) => (
+                <Animated.View key={q.id} style={index === 0 ? item1Anim : item2Anim}>
+                  <Card style={styles.questionCard}>
                   <View style={styles.questionHeader}>
                     <View style={styles.studentInfo}>
                       <T variant="h3">{q.studentAvatar}</T>
@@ -418,7 +430,8 @@ export default function NewInteractiveClassroom({ route, navigation }: Props) {
                       <T variant="caption">👍 {q.likes}</T>
                     </TouchableOpacity>
                   </Row>
-                </Card>
+                  </Card>
+                </Animated.View>
               ))}
             </View>
           )}
@@ -426,17 +439,20 @@ export default function NewInteractiveClassroom({ route, navigation }: Props) {
           {/* 3. Whiteboard Viewing */}
           {activeTab === 'whiteboard' && (
             <View style={styles.tabContent}>
-              <Card style={styles.whiteboardHeader}>
+              <Animated.View style={cardAnim}>
+                <Card style={styles.whiteboardHeader}>
                 <T variant="title" weight="semiBold">
                   📋 Whiteboard Slides
                 </T>
                 <T variant="caption" style={styles.slideCount}>
                   {whiteboardSlides.length} slides available
                 </T>
-              </Card>
+                </Card>
+              </Animated.View>
 
-              {whiteboardSlides.map((slide) => (
-                <Card key={slide.id} style={styles.slideCard}>
+              {whiteboardSlides.map((slide, index) => (
+                <Animated.View key={slide.id} style={useFadeInUp(150 + index * 100)}>
+                  <Card style={styles.slideCard}>
                   <View style={styles.slideHeader}>
                     <Badge variant="info" label={`Slide ${slide.pageNumber}`} />
                     {viewMode === 'detailed' && (
@@ -455,7 +471,8 @@ export default function NewInteractiveClassroom({ route, navigation }: Props) {
                       </T>
                     </View>
                   )}
-                </Card>
+                  </Card>
+                </Animated.View>
               ))}
             </View>
           )}
@@ -463,17 +480,20 @@ export default function NewInteractiveClassroom({ route, navigation }: Props) {
           {/* 4. Breakout Rooms */}
           {activeTab === 'breakout' && (
             <View style={styles.tabContent}>
-              <Card style={styles.breakoutHeader}>
+              <Animated.View style={cardAnim}>
+                <Card style={styles.breakoutHeader}>
                 <T variant="title" weight="semiBold">
                   👥 Breakout Rooms
                 </T>
                 <T variant="caption" style={styles.breakoutInfo}>
                   Join a room to collaborate with peers
                 </T>
-              </Card>
+                </Card>
+              </Animated.View>
 
-              {breakoutRooms.map((room) => (
-                <Card key={room.id} style={styles.roomCard}>
+              {breakoutRooms.map((room, index) => (
+                <Animated.View key={room.id} style={useFadeInUp(150 + index * 100)}>
+                  <Card style={styles.roomCard}>
                   <View style={styles.roomHeader}>
                     <View style={{ flex: 1 }}>
                       <T variant="body" weight="semiBold">
@@ -494,7 +514,8 @@ export default function NewInteractiveClassroom({ route, navigation }: Props) {
                       {room.isJoined ? 'Leave' : room.members >= room.maxMembers ? 'Full' : 'Join'}
                     </Button>
                   </View>
-                </Card>
+                  </Card>
+                </Animated.View>
               ))}
             </View>
           )}

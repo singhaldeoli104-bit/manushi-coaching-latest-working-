@@ -5,7 +5,7 @@
  */
 
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, TextInput, ScrollView, FlatList } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, TextInput, ScrollView, FlatList, Animated } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BaseScreen } from '../../shared/components/BaseScreen';
@@ -20,6 +20,7 @@ import { trackScreenView, trackAction } from '../../utils/navigationAnalytics';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../config/supabaseClient';
 import { ViewToggle } from '../../shared/components/ViewToggle';
+import { useFadeInUp } from '../../shared/hooks/useAnimations';
 
 type Props = NativeStackScreenProps<any, 'NewLiveClassScreen'>;
 
@@ -62,6 +63,12 @@ export default function NewLiveClassScreen({ route, navigation }: Props) {
 
   // View mode state
   const [viewMode, setViewMode] = useState<'compact' | 'detailed'>('detailed');
+
+  // Animation hooks
+  const headerAnim = useFadeInUp(0);
+  const videoAnim = useFadeInUp(150);
+  const participantsAnim = useFadeInUp(300);
+  const controlsAnim = useFadeInUp(450);
 
   // State for new features
   const [showChat, setShowChat] = useState(false);
@@ -188,7 +195,8 @@ export default function NewLiveClassScreen({ route, navigation }: Props) {
       {liveClass && (
         <View style={styles.container}>
           {/* Header with indicators */}
-          <Card style={styles.headerCard}>
+          <Animated.View style={headerAnim}>
+            <Card style={styles.headerCard}>
             <View style={styles.headerRow}>
               <View style={{ flex: 1 }}>
                 <Row gap="xs" style={{ marginBottom: 8 }}>
@@ -219,10 +227,12 @@ export default function NewLiveClassScreen({ route, navigation }: Props) {
                 size="small"
               />
             </View>
-          </Card>
+            </Card>
+          </Animated.View>
 
           {/* Main Video / Screen Share */}
-          <Card style={styles.videoCard}>
+          <Animated.View style={videoAnim}>
+            <Card style={styles.videoCard}>
             {showScreenShare ? (
               <View style={styles.screenShareView}>
                 <T variant="h3" style={{ color: '#F3F4F6' }}>📺</T>
@@ -241,11 +251,13 @@ export default function NewLiveClassScreen({ route, navigation }: Props) {
                 placeholderMessage="Live Class in Progress"
               />
             )}
-          </Card>
+            </Card>
+          </Animated.View>
 
           {/* Participant Video Grid - Only in detailed mode */}
           {viewMode === 'detailed' && showParticipants && (
-            <Card style={styles.participantsGridCard}>
+            <Animated.View style={participantsAnim}>
+              <Card style={styles.participantsGridCard}>
               <View style={styles.participantsGridHeader}>
                 <T variant="body" weight="semiBold">
                   Participants ({participants.length})
@@ -276,7 +288,8 @@ export default function NewLiveClassScreen({ route, navigation }: Props) {
                   </View>
                 ))}
               </View>
-            </Card>
+              </Card>
+            </Animated.View>
           )}
 
           {/* Chat Panel */}
@@ -325,7 +338,8 @@ export default function NewLiveClassScreen({ route, navigation }: Props) {
           )}
 
           {/* Control Bar */}
-          <Card style={styles.controlBar}>
+          <Animated.View style={controlsAnim}>
+            <Card style={styles.controlBar}>
             <Row gap="xs" wrap>
               <Button
                 variant={showParticipants ? 'primary' : 'outline'}
@@ -377,7 +391,8 @@ export default function NewLiveClassScreen({ route, navigation }: Props) {
                 ))}
               </View>
             )}
-          </Card>
+            </Card>
+          </Animated.View>
         </View>
       )}
     </BaseScreen>

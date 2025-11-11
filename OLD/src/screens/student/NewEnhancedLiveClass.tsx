@@ -12,12 +12,14 @@ import {
   SafeAreaView,
   ScrollView,
   TextInput,
+  Animated,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { T } from '../../ui';
 import { trackAction, trackScreenView } from '../../utils/navigationAnalytics';
 import { safeNavigate } from '../../utils/navigationService';
 import { ViewToggle } from '../../shared/components/ViewToggle';
+import { useFadeInUp } from '../../shared/hooks/useAnimations';
 
 type Props = NativeStackScreenProps<any, 'NewEnhancedLiveClass'>;
 
@@ -36,6 +38,12 @@ export default function NewEnhancedLiveClass({ route, navigation }: Props) {
   const [elapsedTime, setElapsedTime] = useState(0);
 
   const classTitle = route.params?.title || 'Physics 101: Newton\'s Laws';
+
+  // Animation hooks
+  const chipsAnim = useFadeInUp(0);
+  const videoAnim = useFadeInUp(150);
+  const gridAnim = useFadeInUp(300);
+  const controlsAnim = useFadeInUp(450);
 
   // Track screen view
   useEffect(() => {
@@ -131,27 +139,29 @@ export default function NewEnhancedLiveClass({ route, navigation }: Props) {
 
       {/* Status Chips - Only in detailed mode */}
       {viewMode === 'detailed' && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.chipsContainer}
-          contentContainerStyle={styles.chipsContent}
-        >
-          <View style={[styles.chip, styles.recordingChip]}>
-            <T style={styles.recordingDot}>●</T>
-            <T variant="caption" style={styles.recordingText}>Recording</T>
-          </View>
+        <Animated.View style={chipsAnim}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.chipsContainer}
+            contentContainerStyle={styles.chipsContent}
+          >
+            <View style={[styles.chip, styles.recordingChip]}>
+              <T style={styles.recordingDot}>●</T>
+              <T variant="caption" style={styles.recordingText}>Recording</T>
+            </View>
 
-          <View style={[styles.chip, styles.primaryChip]}>
-            <T style={styles.chipIcon}>⏱</T>
-            <T variant="caption" style={styles.primaryText}>{formatTime(elapsedTime)}</T>
-          </View>
+            <View style={[styles.chip, styles.primaryChip]}>
+              <T style={styles.chipIcon}>⏱</T>
+              <T variant="caption" style={styles.primaryText}>{formatTime(elapsedTime)}</T>
+            </View>
 
-          <View style={[styles.chip, styles.primaryChip]}>
-            <T style={styles.chipIcon}>👥</T>
-            <T variant="caption" style={styles.primaryText}>32 Students</T>
-          </View>
-        </ScrollView>
+            <View style={[styles.chip, styles.primaryChip]}>
+              <T style={styles.chipIcon}>👥</T>
+              <T variant="caption" style={styles.primaryText}>32 Students</T>
+            </View>
+          </ScrollView>
+        </Animated.View>
       )}
 
       {/* Main Video Grid */}
@@ -161,7 +171,7 @@ export default function NewEnhancedLiveClass({ route, navigation }: Props) {
         showsVerticalScrollIndicator={false}
       >
         {/* Teacher's Pinned Video */}
-        <View style={styles.teacherVideoContainer}>
+        <Animated.View style={[styles.teacherVideoContainer, videoAnim]}>
           <View style={styles.teacherVideo}>
             <View style={styles.videoPlaceholder}>
               <T style={styles.videoPlaceholderIcon}>👨‍🏫</T>
@@ -175,11 +185,11 @@ export default function NewEnhancedLiveClass({ route, navigation }: Props) {
               <T style={styles.pinIcon}>📌</T>
             </View>
           </View>
-        </View>
+        </Animated.View>
 
         {/* Student Videos Grid - Only in detailed mode */}
         {viewMode === 'detailed' && (
-          <View style={styles.studentsGrid}>
+          <Animated.View style={[styles.studentsGrid, gridAnim]}>
             {participants.map((participant) => (
               <View key={participant.id} style={styles.studentVideoContainer}>
                 <View style={styles.studentVideo}>
@@ -199,7 +209,7 @@ export default function NewEnhancedLiveClass({ route, navigation }: Props) {
                 </View>
               </View>
             ))}
-          </View>
+          </Animated.View>
         )}
 
         {/* Self Video (PiP) */}
@@ -216,7 +226,7 @@ export default function NewEnhancedLiveClass({ route, navigation }: Props) {
       </ScrollView>
 
       {/* Bottom Controls */}
-      <View style={styles.bottomContainer}>
+      <Animated.View style={[styles.bottomContainer, controlsAnim]}>
         {/* Action Buttons */}
         <View style={styles.actionsGrid}>
           <TouchableOpacity
@@ -345,7 +355,7 @@ export default function NewEnhancedLiveClass({ route, navigation }: Props) {
             </View>
           </View>
         </View>
-      </View>
+      </Animated.View>
     </SafeAreaView>
   );
 }

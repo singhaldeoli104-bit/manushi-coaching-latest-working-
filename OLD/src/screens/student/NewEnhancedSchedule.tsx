@@ -13,6 +13,7 @@ import {
   RefreshControl,
   SafeAreaView,
   StatusBar,
+  Animated,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { T } from '../../ui';
@@ -20,6 +21,7 @@ import { trackScreenView, trackAction } from '../../utils/navigationAnalytics';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../config/supabaseClient';
 import { ViewToggle } from '../../shared/components/ViewToggle';
+import { useFadeInUp } from '../../shared/hooks/useAnimations';
 
 interface DayItem {
   day: string;
@@ -52,6 +54,12 @@ export default function NewEnhancedSchedule() {
   const { user } = useAuth();
   const [viewMode, setViewMode] = useState<'compact' | 'detailed'>('detailed');
   const [, setSelectedDay] = useState(1); // For future use
+
+  // Animation hooks
+  const calendarAnim = useFadeInUp(0);
+  const liveCardAnim = useFadeInUp(150);
+  const event1Anim = useFadeInUp(300);
+  const event2Anim = useFadeInUp(450);
 
   useEffect(() => {
     trackScreenView('NewEnhancedSchedule');
@@ -218,13 +226,14 @@ export default function NewEnhancedSchedule() {
         )}
 
         {/* 7-Day Horizontal Calendar */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.weekCalendar}
-        >
-          {weekDays.map((item, index) => (
-            <TouchableOpacity
+        <Animated.View style={calendarAnim}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.weekCalendar}
+          >
+            {weekDays.map((item, index) => (
+              <TouchableOpacity
               key={index}
               style={[
                 styles.dayCard,
@@ -251,7 +260,8 @@ export default function NewEnhancedSchedule() {
               </T>
             </TouchableOpacity>
           ))}
-        </ScrollView>
+          </ScrollView>
+        </Animated.View>
 
         {/* Content Container */}
         <View style={styles.contentContainer}>
@@ -261,7 +271,7 @@ export default function NewEnhancedSchedule() {
           </T>
 
           {/* Live Class Card - Gradient Background */}
-          <View style={[styles.liveCard, { marginBottom: 24 }]}>
+          <Animated.View style={[styles.liveCard, { marginBottom: 24 }, liveCardAnim]}>
             <View style={styles.liveCardHeader}>
               <View>
                 <View style={styles.liveIndicator}>
@@ -305,11 +315,11 @@ export default function NewEnhancedSchedule() {
                 </T>
               </TouchableOpacity>
             </View>
-          </View>
+          </Animated.View>
 
           {/* Scheduled Event Cards */}
-          {scheduledClasses.map((classItem) => (
-            <View key={classItem.id} style={styles.scheduledItem}>
+          {scheduledClasses.map((classItem, index) => (
+            <Animated.View key={classItem.id} style={[styles.scheduledItem, index === 0 ? event1Anim : event2Anim]}>
               <T variant="caption" weight="medium" style={[styles.timeLabel, { marginRight: 16 }]}>
                 {classItem.time}
               </T>
@@ -348,7 +358,7 @@ export default function NewEnhancedSchedule() {
                   </T>
                 </View>
               </View>
-            </View>
+            </Animated.View>
           ))}
 
           {/* Section Header: Upcoming This Week - Only in detailed mode */}
