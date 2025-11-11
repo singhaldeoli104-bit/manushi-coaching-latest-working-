@@ -16,6 +16,7 @@ import { Row } from '../../ui';
 import { T } from '../../ui';
 import { trackScreenView, trackAction } from '../../utils/navigationAnalytics';
 import { safeNavigate } from '../../utils/navigationService';
+import { ViewToggle } from '../../shared/components/ViewToggle';
 
 type Props = NativeStackScreenProps<any, 'NewEnhancedAIStudy'>;
 
@@ -74,6 +75,7 @@ interface PracticeTest {
 }
 
 export default function NewEnhancedAIStudy({ navigation }: Props) {
+  const [viewMode, setViewMode] = useState<'compact' | 'detailed'>('detailed');
   const [activeTab, setActiveTab] = useState<'dashboard' | 'flashcards' | 'notes' | 'tests'>('dashboard');
 
   // Mock data for all features
@@ -193,6 +195,38 @@ export default function NewEnhancedAIStudy({ navigation }: Props) {
 
   return (
     <BaseScreen scrollable={false}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => {
+            trackAction('back_button', 'NewEnhancedAIStudy');
+            navigation.goBack();
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <T variant="h2" style={styles.backIcon}>←</T>
+        </TouchableOpacity>
+
+        <T variant="body" weight="semiBold" style={styles.headerTitle}>
+          Enhanced AI Study
+        </T>
+
+        <ViewToggle
+          modes={[
+            { value: 'compact', icon: '▦', label: 'Compact' },
+            { value: 'detailed', icon: '☰', label: 'Detailed' },
+          ]}
+          selectedMode={viewMode}
+          onModeChange={(mode) => {
+            setViewMode(mode as 'compact' | 'detailed');
+            trackAction('toggle_view_mode', 'NewEnhancedAIStudy', { mode });
+          }}
+          size="small"
+        />
+      </View>
+
       <View style={styles.container}>
         {/* Tab Navigation */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabScroll}>
@@ -229,9 +263,11 @@ export default function NewEnhancedAIStudy({ navigation }: Props) {
                       <View style={styles.progressBar}>
                         <View style={[styles.progressFill, { width: `${progress.percentage}%` }]} />
                       </View>
-                      <T variant="caption" style={{ color: '#6B7280', marginTop: 4 }}>
-                        {progress.completed}/{progress.total} topics • {progress.timeSpent}
-                      </T>
+                      {viewMode === 'detailed' && (
+                        <T variant="caption" style={{ color: '#6B7280', marginTop: 4 }}>
+                          {progress.completed}/{progress.total} topics • {progress.timeSpent}
+                        </T>
+                      )}
                     </View>
                   </View>
                 ))}
@@ -259,14 +295,16 @@ export default function NewEnhancedAIStudy({ navigation }: Props) {
                         </T>
                       )}
                     </View>
-                    <View style={styles.suggestions}>
-                      <T variant="caption" weight="semiBold" style={{ marginBottom: 4 }}>AI Suggestions:</T>
-                      {area.suggestions.map((suggestion, i) => (
-                        <T key={i} variant="caption" style={{ color: '#6B7280', marginLeft: 8 }}>
-                          • {suggestion}
-                        </T>
-                      ))}
-                    </View>
+                    {viewMode === 'detailed' && (
+                      <View style={styles.suggestions}>
+                        <T variant="caption" weight="semiBold" style={{ marginBottom: 4 }}>AI Suggestions:</T>
+                        {area.suggestions.map((suggestion, i) => (
+                          <T key={i} variant="caption" style={{ color: '#6B7280', marginLeft: 8 }}>
+                            • {suggestion}
+                          </T>
+                        ))}
+                      </View>
+                    )}
                     <Button variant="primary" onPress={() => handleImproveWeakArea(area)} style={{ marginTop: 8 }}>
                       Start Practice
                     </Button>
@@ -289,13 +327,15 @@ export default function NewEnhancedAIStudy({ navigation }: Props) {
                       </View>
                       {plan.completed && <Badge variant="success" label="✓ Complete" />}
                     </View>
-                    <View style={styles.studyPlanTasks}>
-                      {plan.tasks.map((task, i) => (
-                        <T key={i} variant="caption" style={{ color: '#6B7280' }}>
-                          {i + 1}. {task}
-                        </T>
-                      ))}
-                    </View>
+                    {viewMode === 'detailed' && (
+                      <View style={styles.studyPlanTasks}>
+                        {plan.tasks.map((task, i) => (
+                          <T key={i} variant="caption" style={{ color: '#6B7280' }}>
+                            {i + 1}. {task}
+                          </T>
+                        ))}
+                      </View>
+                    )}
                   </Card>
                 ))}
               </Card>
@@ -326,9 +366,11 @@ export default function NewEnhancedAIStudy({ navigation }: Props) {
                     {card.mastered && <T variant="caption">✓ Mastered</T>}
                   </View>
                   <T variant="body" weight="semiBold" style={{ marginTop: 8 }}>Q: {card.question}</T>
-                  <View style={styles.flashcardAnswer}>
-                    <T variant="body">A: {card.answer}</T>
-                  </View>
+                  {viewMode === 'detailed' && (
+                    <View style={styles.flashcardAnswer}>
+                      <T variant="body">A: {card.answer}</T>
+                    </View>
+                  )}
                 </Card>
               ))}
             </View>
@@ -355,14 +397,16 @@ export default function NewEnhancedAIStudy({ navigation }: Props) {
                   </View>
                   <T variant="body" weight="semiBold" style={{ marginTop: 8 }}>{note.title}</T>
                   <T variant="caption" style={{ color: '#6B7280', marginTop: 4 }}>{note.summary}</T>
-                  <View style={styles.keyPoints}>
-                    <T variant="caption" weight="semiBold">Key Points:</T>
-                    {note.keyPoints.map((point, i) => (
-                      <T key={i} variant="caption" style={{ color: '#6B7280', marginLeft: 8 }}>
-                        • {point}
-                      </T>
-                    ))}
-                  </View>
+                  {viewMode === 'detailed' && (
+                    <View style={styles.keyPoints}>
+                      <T variant="caption" weight="semiBold">Key Points:</T>
+                      {note.keyPoints.map((point, i) => (
+                        <T key={i} variant="caption" style={{ color: '#6B7280', marginLeft: 8 }}>
+                          • {point}
+                        </T>
+                      ))}
+                    </View>
+                  )}
                 </Card>
               ))}
             </View>
@@ -417,6 +461,32 @@ export default function NewEnhancedAIStudy({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backIcon: {
+    fontSize: 20,
+    color: '#111827',
+  },
+  headerTitle: {
+    fontSize: 18,
+    color: '#111827',
+  },
   container: {
     flex: 1,
   },

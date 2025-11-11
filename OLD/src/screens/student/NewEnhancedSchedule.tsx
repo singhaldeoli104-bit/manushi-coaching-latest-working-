@@ -19,6 +19,7 @@ import { T } from '../../ui';
 import { trackScreenView, trackAction } from '../../utils/navigationAnalytics';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../config/supabaseClient';
+import { ViewToggle } from '../../shared/components/ViewToggle';
 
 interface DayItem {
   day: string;
@@ -49,6 +50,7 @@ interface UpcomingEvent {
 
 export default function NewEnhancedSchedule() {
   const { user } = useAuth();
+  const [viewMode, setViewMode] = useState<'compact' | 'detailed'>('detailed');
   const [, setSelectedDay] = useState(1); // For future use
 
   useEffect(() => {
@@ -172,9 +174,18 @@ export default function NewEnhancedSchedule() {
           <T variant="h2" style={styles.icon}>☰</T>
         </TouchableOpacity>
         <T variant="title" weight="bold" style={styles.topBarTitle}>My Schedule</T>
-        <TouchableOpacity style={styles.iconButton}>
-          <T variant="h2" style={styles.icon}>⋮</T>
-        </TouchableOpacity>
+        <ViewToggle
+          modes={[
+            { value: 'compact', icon: '▦', label: 'Compact' },
+            { value: 'detailed', icon: '☰', label: 'Detailed' },
+          ]}
+          selectedMode={viewMode}
+          onModeChange={(mode) => {
+            setViewMode(mode as 'compact' | 'detailed');
+            trackAction('toggle_view_mode', 'NewEnhancedSchedule', { mode });
+          }}
+          size="small"
+        />
       </View>
 
       <ScrollView
@@ -184,25 +195,27 @@ export default function NewEnhancedSchedule() {
           <RefreshControl refreshing={isLoading} onRefresh={refetch} />
         }
       >
-        {/* Week Navigation Header */}
-        <View style={styles.weekNavHeader}>
-          <T variant="title" weight="bold" style={styles.weekRange}>
-            Oct 21 - Oct 27
-          </T>
-          <View style={styles.weekNavButtons}>
-            <TouchableOpacity style={[styles.navButton, { marginRight: 8 }]}>
-              <T variant="body" style={styles.navIcon}>‹</T>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.navButton, { marginRight: 8 }]}>
-              <T variant="body" style={styles.navIcon}>›</T>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.todayButton}>
-              <T variant="caption" weight="medium" style={styles.todayButtonText}>
-                Today
-              </T>
-            </TouchableOpacity>
+        {/* Week Navigation Header - Only in detailed mode */}
+        {viewMode === 'detailed' && (
+          <View style={styles.weekNavHeader}>
+            <T variant="title" weight="bold" style={styles.weekRange}>
+              Oct 21 - Oct 27
+            </T>
+            <View style={styles.weekNavButtons}>
+              <TouchableOpacity style={[styles.navButton, { marginRight: 8 }]}>
+                <T variant="body" style={styles.navIcon}>‹</T>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.navButton, { marginRight: 8 }]}>
+                <T variant="body" style={styles.navIcon}>›</T>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.todayButton}>
+                <T variant="caption" weight="medium" style={styles.todayButtonText}>
+                  Today
+                </T>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        )}
 
         {/* 7-Day Horizontal Calendar */}
         <ScrollView
@@ -338,38 +351,42 @@ export default function NewEnhancedSchedule() {
             </View>
           ))}
 
-          {/* Section Header: Upcoming This Week */}
-          <T variant="h2" weight="bold" style={[styles.upcomingSectionTitle, { marginTop: 16, marginBottom: 16 }]}>
-            Upcoming This Week
-          </T>
+          {/* Section Header: Upcoming This Week - Only in detailed mode */}
+          {viewMode === 'detailed' && (
+            <>
+              <T variant="h2" weight="bold" style={[styles.upcomingSectionTitle, { marginTop: 16, marginBottom: 16 }]}>
+                Upcoming This Week
+              </T>
 
-          {/* Upcoming Events */}
-          <View>
-            {upcomingEvents.map((event) => (
-              <View key={event.id} style={styles.upcomingCard}>
-                <View style={[styles.upcomingContent, { marginRight: 16 }]}>
-                  <T variant="body" weight="bold" style={styles.upcomingEventTitle}>
-                    {event.title}
-                  </T>
-                  <T variant="caption" style={styles.upcomingEventTime}>
-                    {event.date} - {event.time}
-                  </T>
-                </View>
-                <View
-                  style={[
-                    styles.statusBadge,
-                    event.type === 'scheduled'
-                      ? styles.statusBadgeScheduled
-                      : styles.statusBadgeAssignment,
-                  ]}
-                >
-                  <T variant="caption" weight="medium" style={styles.statusBadgeText}>
-                    {event.type === 'scheduled' ? 'Scheduled' : 'Assignment'}
-                  </T>
-                </View>
+              {/* Upcoming Events */}
+              <View>
+                {upcomingEvents.map((event) => (
+                  <View key={event.id} style={styles.upcomingCard}>
+                    <View style={[styles.upcomingContent, { marginRight: 16 }]}>
+                      <T variant="body" weight="bold" style={styles.upcomingEventTitle}>
+                        {event.title}
+                      </T>
+                      <T variant="caption" style={styles.upcomingEventTime}>
+                        {event.date} - {event.time}
+                      </T>
+                    </View>
+                    <View
+                      style={[
+                        styles.statusBadge,
+                        event.type === 'scheduled'
+                          ? styles.statusBadgeScheduled
+                          : styles.statusBadgeAssignment,
+                      ]}
+                    >
+                      <T variant="caption" weight="medium" style={styles.statusBadgeText}>
+                        {event.type === 'scheduled' ? 'Scheduled' : 'Assignment'}
+                      </T>
+                    </View>
+                  </View>
+                ))}
               </View>
-            ))}
-          </View>
+            </>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>

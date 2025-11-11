@@ -17,6 +17,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { T } from '../../ui';
 import { trackAction, trackScreenView } from '../../utils/navigationAnalytics';
 import { safeNavigate } from '../../utils/navigationService';
+import { ViewToggle } from '../../shared/components/ViewToggle';
 
 type Props = NativeStackScreenProps<any, 'NewEnhancedLiveClass'>;
 
@@ -27,6 +28,7 @@ interface Participant {
 }
 
 export default function NewEnhancedLiveClass({ route, navigation }: Props) {
+  const [viewMode, setViewMode] = useState<'compact' | 'detailed'>('detailed');
   const [messageText, setMessageText] = useState('');
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOn, setIsVideoOn] = useState(true);
@@ -113,38 +115,44 @@ export default function NewEnhancedLiveClass({ route, navigation }: Props) {
           {classTitle}
         </T>
 
-        <TouchableOpacity
-          style={styles.iconButton}
-          onPress={() => trackAction('more_options', 'NewEnhancedLiveClass')}
-          accessibilityRole="button"
-          accessibilityLabel="More options"
-        >
-          <T style={styles.icon}>⋮</T>
-        </TouchableOpacity>
+        <ViewToggle
+          modes={[
+            { value: 'compact', icon: '▦', label: 'Compact' },
+            { value: 'detailed', icon: '☰', label: 'Detailed' },
+          ]}
+          selectedMode={viewMode}
+          onModeChange={(mode) => {
+            setViewMode(mode as 'compact' | 'detailed');
+            trackAction('toggle_view_mode', 'NewEnhancedLiveClass', { mode });
+          }}
+          size="small"
+        />
       </View>
 
-      {/* Status Chips */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.chipsContainer}
-        contentContainerStyle={styles.chipsContent}
-      >
-        <View style={[styles.chip, styles.recordingChip]}>
-          <T style={styles.recordingDot}>●</T>
-          <T variant="caption" style={styles.recordingText}>Recording</T>
-        </View>
+      {/* Status Chips - Only in detailed mode */}
+      {viewMode === 'detailed' && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.chipsContainer}
+          contentContainerStyle={styles.chipsContent}
+        >
+          <View style={[styles.chip, styles.recordingChip]}>
+            <T style={styles.recordingDot}>●</T>
+            <T variant="caption" style={styles.recordingText}>Recording</T>
+          </View>
 
-        <View style={[styles.chip, styles.primaryChip]}>
-          <T style={styles.chipIcon}>⏱</T>
-          <T variant="caption" style={styles.primaryText}>{formatTime(elapsedTime)}</T>
-        </View>
+          <View style={[styles.chip, styles.primaryChip]}>
+            <T style={styles.chipIcon}>⏱</T>
+            <T variant="caption" style={styles.primaryText}>{formatTime(elapsedTime)}</T>
+          </View>
 
-        <View style={[styles.chip, styles.primaryChip]}>
-          <T style={styles.chipIcon}>👥</T>
-          <T variant="caption" style={styles.primaryText}>32 Students</T>
-        </View>
-      </ScrollView>
+          <View style={[styles.chip, styles.primaryChip]}>
+            <T style={styles.chipIcon}>👥</T>
+            <T variant="caption" style={styles.primaryText}>32 Students</T>
+          </View>
+        </ScrollView>
+      )}
 
       {/* Main Video Grid */}
       <ScrollView
@@ -169,28 +177,30 @@ export default function NewEnhancedLiveClass({ route, navigation }: Props) {
           </View>
         </View>
 
-        {/* Student Videos Grid */}
-        <View style={styles.studentsGrid}>
-          {participants.map((participant) => (
-            <View key={participant.id} style={styles.studentVideoContainer}>
-              <View style={styles.studentVideo}>
-                <View style={styles.videoPlaceholder}>
-                  <T style={styles.videoPlaceholderIcon}>👤</T>
-                </View>
-                <View style={styles.videoLabel}>
-                  <T variant="caption" style={styles.videoLabelText}>
-                    {participant.name}
-                  </T>
-                </View>
-                {participant.isMuted && (
-                  <View style={styles.muteBadge}>
-                    <T style={styles.muteIcon}>🔇</T>
+        {/* Student Videos Grid - Only in detailed mode */}
+        {viewMode === 'detailed' && (
+          <View style={styles.studentsGrid}>
+            {participants.map((participant) => (
+              <View key={participant.id} style={styles.studentVideoContainer}>
+                <View style={styles.studentVideo}>
+                  <View style={styles.videoPlaceholder}>
+                    <T style={styles.videoPlaceholderIcon}>👤</T>
                   </View>
-                )}
+                  <View style={styles.videoLabel}>
+                    <T variant="caption" style={styles.videoLabelText}>
+                      {participant.name}
+                    </T>
+                  </View>
+                  {participant.isMuted && (
+                    <View style={styles.muteBadge}>
+                      <T style={styles.muteIcon}>🔇</T>
+                    </View>
+                  )}
+                </View>
               </View>
-            </View>
-          ))}
-        </View>
+            ))}
+          </View>
+        )}
 
         {/* Self Video (PiP) */}
         <View style={styles.pipContainer}>

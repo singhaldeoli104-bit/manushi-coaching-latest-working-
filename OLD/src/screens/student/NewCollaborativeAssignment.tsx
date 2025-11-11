@@ -19,6 +19,7 @@ import { trackScreenView, trackAction } from '../../utils/navigationAnalytics';
 import { getAvatarEmoji } from '../../utils/avatarUtils';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../config/supabaseClient';
+import { ViewToggle } from '../../shared/components/ViewToggle';
 
 type Props = NativeStackScreenProps<any, 'NewCollaborativeAssignment'>;
 
@@ -65,6 +66,9 @@ interface Contribution {
 export default function NewCollaborativeAssignment({ route, navigation }: Props) {
   const { user } = useAuth();
   const assignmentId = route.params?.assignmentId;
+
+  // View mode state
+  const [viewMode, setViewMode] = useState<'compact' | 'detailed'>('detailed');
 
   // State for new features
   const [showVersionHistory, setShowVersionHistory] = useState(false);
@@ -192,6 +196,38 @@ export default function NewCollaborativeAssignment({ route, navigation }: Props)
       empty={!assignment}
       emptyMessage="Assignment not found"
     >
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => {
+            trackAction('back_button', 'NewCollaborativeAssignment');
+            navigation.goBack();
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <T variant="h2" style={styles.backIcon}>←</T>
+        </TouchableOpacity>
+
+        <T variant="body" weight="semiBold" style={styles.headerTitle}>
+          Collaborative Assignment
+        </T>
+
+        <ViewToggle
+          modes={[
+            { value: 'compact', icon: '▦', label: 'Compact' },
+            { value: 'detailed', icon: '☰', label: 'Detailed' },
+          ]}
+          selectedMode={viewMode}
+          onModeChange={(mode) => {
+            setViewMode(mode as 'compact' | 'detailed');
+            trackAction('toggle_view_mode', 'NewCollaborativeAssignment', { mode });
+          }}
+          size="small"
+        />
+      </View>
+
       {assignment && (
         <ScrollView style={styles.container}>
           <Card style={styles.headerCard}>
@@ -268,7 +304,7 @@ export default function NewCollaborativeAssignment({ route, navigation }: Props)
                 {showVersionHistory ? 'Hide' : 'Show'}
               </Button>
             </View>
-            {showVersionHistory && (
+            {viewMode === 'detailed' && showVersionHistory && (
               <View style={styles.versionsContainer}>
                 {versionHistory.map((version) => (
                   <View key={version.id} style={styles.versionItem}>
@@ -309,7 +345,7 @@ export default function NewCollaborativeAssignment({ route, navigation }: Props)
                 {showContributions ? 'Hide' : 'Show'}
               </Button>
             </View>
-            {showContributions && (
+            {viewMode === 'detailed' && showContributions && (
               <View style={styles.contributionsContainer}>
                 {contributions.map((contribution) => (
                   <View key={contribution.memberId} style={styles.contributionItem}>
@@ -357,6 +393,32 @@ export default function NewCollaborativeAssignment({ route, navigation }: Props)
 }
 
 const styles = StyleSheet.create({
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backIcon: {
+    fontSize: 20,
+    color: '#111827',
+  },
+  headerTitle: {
+    fontSize: 18,
+    color: '#111827',
+  },
   container: {
     padding: 16,
   },

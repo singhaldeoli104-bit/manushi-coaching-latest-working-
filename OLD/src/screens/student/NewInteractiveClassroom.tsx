@@ -18,6 +18,7 @@ import { T } from '../../ui';
 import { trackScreenView, trackAction } from '../../utils/navigationAnalytics';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../config/supabaseClient';
+import { ViewToggle } from '../../shared/components/ViewToggle';
 
 type Props = NativeStackScreenProps<any, 'NewInteractiveClassroom'>;
 
@@ -61,6 +62,9 @@ export default function NewInteractiveClassroom({ route, navigation }: Props) {
   const { user } = useAuth();
   const classId = route.params?.classId || '1';
   const pollId = route.params?.pollId;
+
+  // View mode state
+  const [viewMode, setViewMode] = useState<'compact' | 'detailed'>('detailed');
 
   // State for tabs and features
   const [activeTab, setActiveTab] = useState<'poll' | 'qa' | 'whiteboard' | 'breakout'>('poll');
@@ -235,6 +239,38 @@ export default function NewInteractiveClassroom({ route, navigation }: Props) {
 
   return (
     <BaseScreen scrollable={false} loading={isLoading}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => {
+            trackAction('back_button', 'NewInteractiveClassroom');
+            navigation.goBack();
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <T variant="h2" style={styles.backIcon}>←</T>
+        </TouchableOpacity>
+
+        <T variant="body" weight="semiBold" style={styles.headerTitle}>
+          Interactive Classroom
+        </T>
+
+        <ViewToggle
+          modes={[
+            { value: 'compact', icon: '▦', label: 'Compact' },
+            { value: 'detailed', icon: '☰', label: 'Detailed' },
+          ]}
+          selectedMode={viewMode}
+          onModeChange={(mode) => {
+            setViewMode(mode as 'compact' | 'detailed');
+            trackAction('toggle_view_mode', 'NewInteractiveClassroom', { mode });
+          }}
+          size="small"
+        />
+      </View>
+
       <View style={styles.container}>
         {/* Tab Navigation */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabScroll}>
@@ -350,9 +386,11 @@ export default function NewInteractiveClassroom({ route, navigation }: Props) {
                         <T variant="body" weight="semiBold">
                           {q.studentName}
                         </T>
-                        <T variant="caption" style={styles.timestamp}>
-                          {q.timestamp}
-                        </T>
+                        {viewMode === 'detailed' && (
+                          <T variant="caption" style={styles.timestamp}>
+                            {q.timestamp}
+                          </T>
+                        )}
                       </View>
                     </View>
                     {q.answered && <Badge variant="success" label="Answered" />}
@@ -360,7 +398,7 @@ export default function NewInteractiveClassroom({ route, navigation }: Props) {
                   <T variant="body" style={styles.questionText}>
                     {q.question}
                   </T>
-                  {q.answer && (
+                  {viewMode === 'detailed' && q.answer && (
                     <View style={styles.answerBox}>
                       <T variant="caption" weight="semiBold" style={styles.answerLabel}>
                         Teacher's Answer:
@@ -401,18 +439,22 @@ export default function NewInteractiveClassroom({ route, navigation }: Props) {
                 <Card key={slide.id} style={styles.slideCard}>
                   <View style={styles.slideHeader}>
                     <Badge variant="info" label={`Slide ${slide.pageNumber}`} />
-                    <T variant="caption" style={styles.timestamp}>
-                      {slide.timestamp}
-                    </T>
+                    {viewMode === 'detailed' && (
+                      <T variant="caption" style={styles.timestamp}>
+                        {slide.timestamp}
+                      </T>
+                    )}
                   </View>
                   <T variant="body" weight="semiBold" style={{ marginVertical: 8 }}>
                     {slide.title}
                   </T>
-                  <View style={styles.slidePlaceholder}>
-                    <T variant="caption" style={{ color: '#6B7280' }}>
-                      📄 Slide Content
-                    </T>
-                  </View>
+                  {viewMode === 'detailed' && (
+                    <View style={styles.slidePlaceholder}>
+                      <T variant="caption" style={{ color: '#6B7280' }}>
+                        📄 Slide Content
+                      </T>
+                    </View>
+                  )}
                 </Card>
               ))}
             </View>
@@ -473,6 +515,32 @@ export default function NewInteractiveClassroom({ route, navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backIcon: {
+    fontSize: 20,
+    color: '#111827',
+  },
+  headerTitle: {
+    fontSize: 18,
+    color: '#111827',
+  },
   container: {
     flex: 1,
   },

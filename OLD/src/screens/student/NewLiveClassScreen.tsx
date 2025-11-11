@@ -19,6 +19,7 @@ import { T } from '../../ui';
 import { trackScreenView, trackAction } from '../../utils/navigationAnalytics';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../config/supabaseClient';
+import { ViewToggle } from '../../shared/components/ViewToggle';
 
 type Props = NativeStackScreenProps<any, 'NewLiveClassScreen'>;
 
@@ -58,6 +59,9 @@ type NetworkQuality = 'excellent' | 'good' | 'fair' | 'poor';
 export default function NewLiveClassScreen({ route, navigation }: Props) {
   const { user } = useAuth();
   const classId = route.params?.classId;
+
+  // View mode state
+  const [viewMode, setViewMode] = useState<'compact' | 'detailed'>('detailed');
 
   // State for new features
   const [showChat, setShowChat] = useState(false);
@@ -201,6 +205,20 @@ export default function NewLiveClassScreen({ route, navigation }: Props) {
                 </T>
               </View>
             </View>
+            <View style={{ marginTop: 12 }}>
+              <ViewToggle
+                modes={[
+                  { value: 'compact', icon: '▦', label: 'Compact' },
+                  { value: 'detailed', icon: '☰', label: 'Detailed' },
+                ]}
+                selectedMode={viewMode}
+                onModeChange={(mode) => {
+                  setViewMode(mode as 'compact' | 'detailed');
+                  trackAction('toggle_view_mode', 'NewLiveClassScreen', { mode });
+                }}
+                size="small"
+              />
+            </View>
           </Card>
 
           {/* Main Video / Screen Share */}
@@ -225,8 +243,8 @@ export default function NewLiveClassScreen({ route, navigation }: Props) {
             )}
           </Card>
 
-          {/* Participant Video Grid */}
-          {showParticipants && (
+          {/* Participant Video Grid - Only in detailed mode */}
+          {viewMode === 'detailed' && showParticipants && (
             <Card style={styles.participantsGridCard}>
               <View style={styles.participantsGridHeader}>
                 <T variant="body" weight="semiBold">
@@ -335,28 +353,30 @@ export default function NewLiveClassScreen({ route, navigation }: Props) {
               </Button>
             </Row>
 
-            {/* Reactions */}
-            <View style={styles.reactionsRow}>
-              <T variant="caption" style={{ color: '#6B7280', marginRight: 8 }}>
-                React:
-              </T>
-              {reactions.map(reaction => (
-                <TouchableOpacity
-                  key={reaction.emoji}
-                  onPress={() => handleReaction(reaction.emoji)}
-                  style={styles.reactionButton}
-                  accessibilityRole="button"
-                  accessibilityLabel={`React with ${reaction.emoji}`}
-                >
-                  <T variant="body">{reaction.emoji}</T>
-                  {reaction.count > 0 && (
-                    <T variant="caption" style={{ marginLeft: 2 }}>
-                      {reaction.count}
-                    </T>
-                  )}
-                </TouchableOpacity>
-              ))}
-            </View>
+            {/* Reactions - Only in detailed mode */}
+            {viewMode === 'detailed' && (
+              <View style={styles.reactionsRow}>
+                <T variant="caption" style={{ color: '#6B7280', marginRight: 8 }}>
+                  React:
+                </T>
+                {reactions.map(reaction => (
+                  <TouchableOpacity
+                    key={reaction.emoji}
+                    onPress={() => handleReaction(reaction.emoji)}
+                    style={styles.reactionButton}
+                    accessibilityRole="button"
+                    accessibilityLabel={`React with ${reaction.emoji}`}
+                  >
+                    <T variant="body">{reaction.emoji}</T>
+                    {reaction.count > 0 && (
+                      <T variant="caption" style={{ marginLeft: 2 }}>
+                        {reaction.count}
+                      </T>
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
           </Card>
         </View>
       )}

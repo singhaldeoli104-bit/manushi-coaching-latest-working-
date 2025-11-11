@@ -33,6 +33,7 @@ import {
 import { safeNavigate } from '../../utils/navigationService';
 import { trackAction, trackScreenView } from '../../utils/navigationAnalytics';
 import { useAuth } from '../../context/AuthContext';
+import { ViewToggle } from '../../shared/components/ViewToggle';
 
 type Props = NativeStackScreenProps<any, 'NewAIStudyScreen'>;
 
@@ -98,6 +99,9 @@ const CACHE_KEY_ANALYTICS = 'ai_study_analytics';
 
 export default function NewAIStudyScreen({ navigation }: Props) {
   const { user } = useAuth();
+
+  // View mode state
+  const [viewMode, setViewMode] = useState<'compact' | 'detailed'>('detailed');
 
   // Tab state
   const [activeTab, setActiveTab] = useState<TabKey>('recommendations');
@@ -362,48 +366,50 @@ export default function NewAIStudyScreen({ navigation }: Props) {
   // Render Recommendations Tab
   const renderRecommendationsTab = () => (
     <View style={styles.tabContent}>
-      {/* Learning Analytics Card */}
-      <Card variant="filled" style={{ marginBottom: 16 }}>
-        <CardHeader title="Your Learning Profile" />
-        <CardContent>
-          <Row gap="md" style={{ justifyContent: 'space-around' }}>
-            <Col style={{ alignItems: 'center' }}>
-              <T variant="caption" color="textSecondary">
-                Streak
-              </T>
-              <T variant="h3" weight="bold">
-                {analytics.studyStreak}
-              </T>
-              <T variant="caption">🔥 days</T>
-            </Col>
-            <Col style={{ alignItems: 'center' }}>
-              <T variant="caption" color="textSecondary">
-                Complete
-              </T>
-              <T variant="h3" weight="bold" style={{ color: '#10B981' }}>
-                {analytics.completionRate}%
-              </T>
-            </Col>
-            <Col style={{ alignItems: 'center' }}>
-              <T variant="caption" color="textSecondary">
-                Focus
-              </T>
-              <T variant="h3" weight="bold">
-                {analytics.attentionSpan}
-              </T>
-              <T variant="caption">minutes</T>
-            </Col>
-            <Col style={{ alignItems: 'center' }}>
-              <T variant="caption" color="textSecondary">
-                Trend
-              </T>
-              <T variant="body" style={{ fontSize: 24 }}>
-                {analytics.improvementTrend === 'improving' ? '📈' : '📊'}
-              </T>
-            </Col>
-          </Row>
-        </CardContent>
-      </Card>
+      {/* Learning Analytics Card - Only in detailed mode */}
+      {viewMode === 'detailed' && (
+        <Card variant="filled" style={{ marginBottom: 16 }}>
+          <CardHeader title="Your Learning Profile" />
+          <CardContent>
+            <Row gap="md" style={{ justifyContent: 'space-around' }}>
+              <Col style={{ alignItems: 'center' }}>
+                <T variant="caption" color="textSecondary">
+                  Streak
+                </T>
+                <T variant="h3" weight="bold">
+                  {analytics.studyStreak}
+                </T>
+                <T variant="caption">🔥 days</T>
+              </Col>
+              <Col style={{ alignItems: 'center' }}>
+                <T variant="caption" color="textSecondary">
+                  Complete
+                </T>
+                <T variant="h3" weight="bold" style={{ color: '#10B981' }}>
+                  {analytics.completionRate}%
+                </T>
+              </Col>
+              <Col style={{ alignItems: 'center' }}>
+                <T variant="caption" color="textSecondary">
+                  Focus
+                </T>
+                <T variant="h3" weight="bold">
+                  {analytics.attentionSpan}
+                </T>
+                <T variant="caption">minutes</T>
+              </Col>
+              <Col style={{ alignItems: 'center' }}>
+                <T variant="caption" color="textSecondary">
+                  Trend
+                </T>
+                <T variant="body" style={{ fontSize: 24 }}>
+                  {analytics.improvementTrend === 'improving' ? '📈' : '📊'}
+                </T>
+              </Col>
+            </Row>
+          </CardContent>
+        </Card>
+      )}
 
       {/* AI Recommendations */}
       <T variant="title" weight="bold" style={{ marginBottom: 12 }}>
@@ -443,18 +449,20 @@ export default function NewAIStudyScreen({ navigation }: Props) {
                 {rec.confidence}% confidence
               </T>
             </Row>
-            <View
-              style={{
-                backgroundColor: '#F3F4F6',
-                padding: 8,
-                borderRadius: 8,
-                marginBottom: 8,
-              }}
-            >
-              <T variant="caption" style={{ fontStyle: 'italic' }}>
-                💡 {rec.reasoning}
-              </T>
-            </View>
+            {viewMode === 'detailed' && (
+              <View
+                style={{
+                  backgroundColor: '#F3F4F6',
+                  padding: 8,
+                  borderRadius: 8,
+                  marginBottom: 8,
+                }}
+              >
+                <T variant="caption" style={{ fontStyle: 'italic' }}>
+                  💡 {rec.reasoning}
+                </T>
+              </View>
+            )}
           </CardContent>
           <CardActions>
             <Button
@@ -701,6 +709,38 @@ export default function NewAIStudyScreen({ navigation }: Props) {
 
   return (
     <BaseScreen scrollable={false}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => {
+            trackAction('back_button', 'NewAIStudyScreen');
+            navigation.goBack();
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <T variant="h2" style={styles.backIcon}>←</T>
+        </TouchableOpacity>
+
+        <T variant="body" weight="semiBold" style={styles.headerTitle}>
+          AI Study Assistant
+        </T>
+
+        <ViewToggle
+          modes={[
+            { value: 'compact', icon: '▦', label: 'Compact' },
+            { value: 'detailed', icon: '☰', label: 'Detailed' },
+          ]}
+          selectedMode={viewMode}
+          onModeChange={(mode) => {
+            setViewMode(mode as 'compact' | 'detailed');
+            trackAction('toggle_view_mode', 'NewAIStudyScreen', { mode });
+          }}
+          size="small"
+        />
+      </View>
+
       {/* Tab Selector */}
       <View style={styles.tabSelector}>
         {TABS.map((tab) => (
@@ -825,6 +865,32 @@ export default function NewAIStudyScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backIcon: {
+    fontSize: 20,
+    color: '#111827',
+  },
+  headerTitle: {
+    fontSize: 18,
+    color: '#111827',
+  },
   tabSelector: {
     flexDirection: 'row',
     paddingHorizontal: 16,
