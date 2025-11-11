@@ -2,6 +2,7 @@
  * NewProgressDetailScreen - EXACT match to HTML reference
  * Purpose: Student progress with grades, performance metrics, and trends
  * Design: Material Design top bar, stats grid, chart, streak tracker
+ * ✅ OFFLINE SUPPORT: Caches progress data for 24 hours
  */
 
 import React, { useEffect, useState } from 'react';
@@ -22,6 +23,7 @@ import { safeNavigate } from '../../utils/navigationService';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../config/supabaseClient';
 import HamburgerMenu from './HamburgerMenu';
+import { getCache, setCache, CacheDurations } from '../../services/utils/CacheManager';
 
 type Props = NativeStackScreenProps<any, 'NewProgressDetailScreen'>;
 
@@ -58,11 +60,19 @@ export default function NewProgressDetailScreen({ navigation: _navigation }: Pro
     trackScreenView('NewProgressDetailScreen');
   }, []);
 
-  // Fetch progress data
+  // Fetch progress data (✅ WITH OFFLINE SUPPORT)
   const { data: progress, isLoading, refetch } = useQuery({
     queryKey: ['student-progress', user?.id],
     queryFn: async () => {
       if (!user?.id) throw new Error('No user ID');
+
+      // ✅ Try cache first
+      const cacheKey = `student_progress_${user.id}`;
+      const cached = await getCache(cacheKey);
+      if (cached) {
+        console.log('📦 [Progress] Using cached progress data');
+        return cached;
+      }
 
       const { data: submissions, error: submissionsError } = await supabase
         .from('submissions')
@@ -111,7 +121,7 @@ export default function NewProgressDetailScreen({ navigation: _navigation }: Pro
         rank: idx === 0 ? 2 : 18,
       })) || [];
 
-      return {
+      const progressData = {
         overall_grade: overallGrade,
         attendance_rate: 88,
         assignments_completed: totalSubmissions || 12,
@@ -141,6 +151,13 @@ export default function NewProgressDetailScreen({ navigation: _navigation }: Pro
           },
         ],
       } as ProgressData;
+
+      // ✅ Save to cache (24 hours)
+      const cacheKey = `student_progress_${user.id}`;
+      await setCache(cacheKey, progressData, CacheDurations.PERSISTENT);
+      console.log('💾 [Progress] Progress data cached');
+
+      return progressData;
     },
     enabled: !!user?.id,
   });
