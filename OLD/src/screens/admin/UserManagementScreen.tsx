@@ -5,7 +5,7 @@
  * Manushi Coaching Platform
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -19,7 +19,10 @@ import {
   RefreshControl,
   Switch,
   Dimensions,
+  ActivityIndicator,
 } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '../../lib/supabase';
 
 // Import theme and styling
 import { LightTheme } from '../../theme/colors';
@@ -143,22 +146,202 @@ interface UserManagementScreenProps {
   onNavigate: (screen: string) => void;
 }
 
+// Database type definitions
+interface UserDB {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone_number: string | null;
+  role: string;
+  role_display_name: string;
+  department: string | null;
+  status: string;
+  last_login: string | null;
+  created_at: string;
+  profile_image: string | null;
+  employee_id: string | null;
+  grade: string | null;
+  subjects: string[] | null;
+  is_verified: boolean;
+  requires_mfa: boolean;
+  total_permissions: number;
+}
+
+interface UserRoleDB {
+  id: string;
+  name: string;
+  display_name: string;
+  description: string;
+  permissions: any;
+  is_custom: boolean;
+  created_at: string;
+  created_by: string | null;
+  user_count: number;
+}
+
+interface BulkOperationDB {
+  id: string;
+  operation_type: string;
+  status: string;
+  total_users: number;
+  processed_users: number;
+  errors: any;
+  created_at: string;
+  completed_at: string | null;
+  created_by_email: string | null;
+  progress_percentage: number;
+}
+
+interface AuditLogDB {
+  id: string;
+  timestamp: string;
+  event_type: string;
+  user_id: string;
+  user_email: string;
+  admin_email: string | null;
+  description: string;
+  details: any;
+  ip_address: string;
+  severity: string;
+  outcome: string;
+}
+
+interface UserStatisticsDB {
+  total_users: number;
+  active_users: number;
+  pending_users: number;
+  suspended_users: number;
+  total_admins: number;
+  total_teachers: number;
+  total_parents: number;
+  total_students: number;
+  verified_users: number;
+  mfa_enabled_users: number;
+}
+
+// Fetch functions
+const fetchUsersWithRoles = async (): Promise<User[]> => {
+  const { data, error } = await supabase.rpc('get_users_with_roles');
+  if (error) throw error;
+
+  return (data || []).map((user: UserDB) => ({
+    id: user.id,
+    firstName: user.first_name,
+    lastName: user.last_name,
+    email: user.email,
+    phoneNumber: user.phone_number || undefined,
+    role: {
+      id: `role_${user.role}`,
+      name: user.role,
+      displayName: user.role_display_name,
+      description: '',
+      permissions: [],
+      isCustom: false,
+      createdAt: user.created_at,
+      createdBy: 'system',
+    },
+    department: user.department || undefined,
+    status: user.status as any,
+    lastLogin: user.last_login || undefined,
+    createdAt: user.created_at,
+    profileImage: user.profile_image || undefined,
+    permissions: [],
+    employeeId: user.employee_id || undefined,
+    grade: user.grade || undefined,
+    subjects: user.subjects || undefined,
+    isVerified: user.is_verified,
+    requiresMfa: user.requires_mfa,
+  }));
+};
+
+const fetchUserRoles = async (): Promise<UserRole[]> => {
+  const { data, error } = await supabase.rpc('get_user_roles');
+  if (error) throw error;
+
+  return (data || []).map((role: UserRoleDB) => ({
+    id: role.id,
+    name: role.name,
+    displayName: role.display_name,
+    description: role.description || '',
+    permissions: role.permissions || [],
+    isCustom: role.is_custom,
+    createdAt: role.created_at,
+    createdBy: role.created_by || 'system',
+  }));
+};
+
+const fetchBulkOperations = async (): Promise<BulkOperation[]> => {
+  const { data, error } = await supabase.rpc('get_bulk_operations');
+  if (error) throw error;
+
+  return (data || []).map((op: BulkOperationDB) => ({
+    id: op.id,
+    type: op.operation_type as any,
+    status: op.status as any,
+    totalUsers: op.total_users,
+    processedUsers: op.processed_users,
+    errors: op.errors || [],
+    createdAt: op.created_at,
+    completedAt: op.completed_at || undefined,
+    createdBy: op.created_by_email || 'system',
+  }));
+};
+
+const fetchAuditLogs = async (): Promise<AuditLogEntry[]> => {
+  const { data, error } = await supabase.rpc('get_user_audit_logs', {
+    p_limit: 100,
+    p_event_type: null,
+    p_user_id: null,
+    p_severity: null,
+  });
+  if (error) throw error;
+
+  return (data || []).map((log: AuditLogDB) => ({
+    id: log.id,
+    timestamp: log.timestamp,
+    eventType: log.event_type as any,
+    userId: log.user_id,
+    userEmail: log.user_email,
+    adminEmail: log.admin_email || undefined,
+    description: log.description,
+    details: log.details || {},
+    ipAddress: log.ip_address,
+    userAgent: '',
+    severity: log.severity as any,
+    location: undefined,
+    outcome: log.outcome as any,
+  }));
+};
+
+const fetchUserStatistics = async (): Promise<UserStatisticsDB> => {
+  const { data, error } = await supabase.rpc('get_user_statistics');
+  if (error) throw error;
+
+  return data?.[0] || {
+    total_users: 0,
+    active_users: 0,
+    pending_users: 0,
+    suspended_users: 0,
+    total_admins: 0,
+    total_teachers: 0,
+    total_parents: 0,
+    total_students: 0,
+    verified_users: 0,
+    mfa_enabled_users: 0,
+  };
+};
+
 const UserManagementScreen: React.FC<UserManagementScreenProps> = ({
   adminId,
   onNavigate,
 }) => {
   // State management
   const [activeTab, setActiveTab] = useState<'users' | 'roles' | 'bulk' | 'audit'>('users');
-  const [users, setUsers] = useState<User[]>([]);
-  const [roles, setRoles] = useState<UserRole[]>([]);
-  const [bulkOperations, setBulkOperations] = useState<BulkOperation[]>([]);
-  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
   const [auditFilters, setAuditFilters] = useState<AuditFilter>({});
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFilters, setSearchFilters] = useState<SearchFilter>({});
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
-  const [refreshing, setRefreshing] = useState(false);
-  const [loading, setLoading] = useState(true);
 
   // Modal states
   const [showUserModal, setShowUserModal] = useState(false);
@@ -168,373 +351,91 @@ const UserManagementScreen: React.FC<UserManagementScreenProps> = ({
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
 
-  // Initialize data
-  useEffect(() => {
-    loadData();
-  }, []);
+  // Fetch data using React Query
+  const {
+    data: users = [],
+    isLoading: usersLoading,
+    error: usersError,
+    refetch: refetchUsers
+  } = useQuery({
+    queryKey: ['users_with_roles'],
+    queryFn: fetchUsersWithRoles,
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
 
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      // Load users with comprehensive data
-      const usersData: User[] = [
-        {
-          id: 'usr_001',
-          firstName: 'Jennifer',
-          lastName: 'Anderson',
-          email: 'jennifer.anderson@school.edu',
-          phoneNumber: '+1-555-0123',
-          role: {
-            id: 'role_admin',
-            name: 'admin',
-            displayName: 'System Administrator',
-            description: 'Full system access with user management capabilities',
-            permissions: [],
-            isCustom: false,
-            createdAt: '2024-01-15T08:00:00Z',
-            createdBy: 'system',
-          },
-          department: 'Administration',
-          status: 'active',
-          lastLogin: '2024-12-03T10:30:00Z',
-          createdAt: '2024-01-15T08:00:00Z',
-          permissions: [],
-          employeeId: 'EMP001',
-          isVerified: true,
-          requiresMfa: true,
-        },
-        {
-          id: 'usr_002',
-          firstName: 'Dr. Michael',
-          lastName: 'Thompson',
-          email: 'michael.thompson@school.edu',
-          phoneNumber: '+1-555-0124',
-          role: {
-            id: 'role_teacher',
-            name: 'teacher',
-            displayName: 'Teacher',
-            description: 'Teaching capabilities with class management',
-            permissions: [],
-            isCustom: false,
-            createdAt: '2024-01-15T08:00:00Z',
-            createdBy: 'system',
-          },
-          department: 'Mathematics',
-          status: 'active',
-          lastLogin: '2024-12-03T09:15:00Z',
-          createdAt: '2024-02-01T08:00:00Z',
-          permissions: [],
-          employeeId: 'EMP002',
-          subjects: ['Algebra', 'Calculus', 'Statistics'],
-          isVerified: true,
-          requiresMfa: false,
-        },
-        {
-          id: 'usr_003',
-          firstName: 'Sarah',
-          lastName: 'Johnson',
-          email: 'sarah.johnson@parent.com',
-          phoneNumber: '+1-555-0125',
-          role: {
-            id: 'role_parent',
-            name: 'parent',
-            displayName: 'Parent',
-            description: 'Parent access with child monitoring capabilities',
-            permissions: [],
-            isCustom: false,
-            createdAt: '2024-01-15T08:00:00Z',
-            createdBy: 'system',
-          },
-          status: 'active',
-          lastLogin: '2024-12-02T19:45:00Z',
-          createdAt: '2024-03-01T08:00:00Z',
-          permissions: [],
-          childrenIds: ['usr_005', 'usr_006'],
-          isVerified: true,
-          requiresMfa: false,
-        },
-        {
-          id: 'usr_004',
-          firstName: 'Emily',
-          lastName: 'Davis',
-          email: 'emily.davis@student.edu',
-          role: {
-            id: 'role_student',
-            name: 'student',
-            displayName: 'Student',
-            description: 'Student access with learning capabilities',
-            permissions: [],
-            isCustom: false,
-            createdAt: '2024-01-15T08:00:00Z',
-            createdBy: 'system',
-          },
-          status: 'active',
-          lastLogin: '2024-12-03T08:30:00Z',
-          createdAt: '2024-03-15T08:00:00Z',
-          permissions: [],
-          parentId: 'usr_003',
-          grade: '10th Grade',
-          isVerified: false,
-          requiresMfa: false,
-        },
-        {
-          id: 'usr_005',
-          firstName: 'James',
-          lastName: 'Wilson',
-          email: 'james.wilson@student.edu',
-          role: {
-            id: 'role_student',
-            name: 'student',
-            displayName: 'Student',
-            description: 'Student access with learning capabilities',
-            permissions: [],
-            isCustom: false,
-            createdAt: '2024-01-15T08:00:00Z',
-            createdBy: 'system',
-          },
-          status: 'pending',
-          createdAt: '2024-11-01T08:00:00Z',
-          permissions: [],
-          parentId: 'usr_003',
-          grade: '8th Grade',
-          isVerified: false,
-          requiresMfa: false,
-        },
-      ];
+  const {
+    data: roles = [],
+    isLoading: rolesLoading,
+    error: rolesError,
+    refetch: refetchRoles
+  } = useQuery({
+    queryKey: ['user_roles'],
+    queryFn: fetchUserRoles,
+    refetchInterval: 60000, // Refetch every 60 seconds
+  });
 
-      // Load roles data
-      const rolesData: UserRole[] = [
-        {
-          id: 'role_admin',
-          name: 'admin',
-          displayName: 'System Administrator',
-          description: 'Full system access with user management capabilities',
-          permissions: [
-            { id: 'perm_001', name: 'user_management', resource: 'users', action: 'manage' },
-            { id: 'perm_002', name: 'system_settings', resource: 'system', action: 'manage' },
-            { id: 'perm_003', name: 'analytics_access', resource: 'analytics', action: 'read' },
-          ],
-          isCustom: false,
-          createdAt: '2024-01-15T08:00:00Z',
-          createdBy: 'system',
-        },
-        {
-          id: 'role_teacher',
-          name: 'teacher',
-          displayName: 'Teacher',
-          description: 'Teaching capabilities with class management',
-          permissions: [
-            { id: 'perm_004', name: 'class_management', resource: 'classes', action: 'manage' },
-            { id: 'perm_005', name: 'student_grades', resource: 'grades', action: 'update' },
-            { id: 'perm_006', name: 'assignment_creation', resource: 'assignments', action: 'create' },
-          ],
-          isCustom: false,
-          createdAt: '2024-01-15T08:00:00Z',
-          createdBy: 'system',
-        },
-        {
-          id: 'role_custom_001',
-          name: 'department_head',
-          displayName: 'Department Head',
-          description: 'Enhanced teacher role with department management',
-          permissions: [
-            { id: 'perm_004', name: 'class_management', resource: 'classes', action: 'manage' },
-            { id: 'perm_005', name: 'student_grades', resource: 'grades', action: 'update' },
-            { id: 'perm_007', name: 'teacher_supervision', resource: 'teachers', action: 'read' },
-            { id: 'perm_008', name: 'department_analytics', resource: 'department_analytics', action: 'read' },
-          ],
-          isCustom: true,
-          createdAt: '2024-06-01T08:00:00Z',
-          createdBy: 'usr_001',
-        },
-      ];
+  const {
+    data: bulkOperations = [],
+    isLoading: bulkOpsLoading,
+    error: bulkOpsError,
+    refetch: refetchBulkOps
+  } = useQuery({
+    queryKey: ['bulk_operations'],
+    queryFn: fetchBulkOperations,
+    refetchInterval: 10000, // Refetch every 10 seconds for real-time status
+  });
 
-      // Load bulk operations data
-      const bulkOpsData: BulkOperation[] = [
-        {
-          id: 'bulk_001',
-          type: 'import',
-          status: 'completed',
-          totalUsers: 150,
-          processedUsers: 147,
-          errors: [
-            { userEmail: 'invalid@email', error: 'Invalid email format', rowNumber: 23 },
-            { userEmail: 'duplicate@school.edu', error: 'User already exists', rowNumber: 89 },
-            { userEmail: 'missing@data.com', error: 'Required field missing: firstName', rowNumber: 134 },
-          ],
-          createdAt: '2024-11-15T10:00:00Z',
-          completedAt: '2024-11-15T10:15:00Z',
-          createdBy: adminId,
-        },
-        {
-          id: 'bulk_002',
-          type: 'update',
-          status: 'processing',
-          totalUsers: 50,
-          processedUsers: 32,
-          errors: [],
-          createdAt: '2024-12-03T14:30:00Z',
-          createdBy: adminId,
-        },
-      ];
+  const {
+    data: auditLogs = [],
+    isLoading: auditLogsLoading,
+    error: auditLogsError,
+    refetch: refetchAuditLogs
+  } = useQuery({
+    queryKey: ['user_audit_logs'],
+    queryFn: fetchAuditLogs,
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
 
-      // Load audit logs data
-      const auditLogsData: AuditLogEntry[] = [
-        {
-          id: 'audit_001',
-          timestamp: '2024-12-03T10:35:22Z',
-          eventType: 'login',
-          userId: 'usr_001',
-          userEmail: 'jennifer.anderson@school.edu',
-          description: 'Successful admin login',
-          details: { loginMethod: 'password_mfa', deviceType: 'desktop' },
-          ipAddress: '192.168.1.45',
-          userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-          severity: 'low',
-          location: 'New York, NY',
-          outcome: 'success'
-        },
-        {
-          id: 'audit_002',
-          timestamp: '2024-12-03T10:30:15Z',
-          eventType: 'security_violation',
-          userId: 'usr_007',
-          userEmail: 'unknown@suspicious.com',
-          description: 'Multiple failed login attempts detected',
-          details: { attempts: 5, timeWindow: '10 minutes', blocked: true },
-          ipAddress: '203.45.67.89',
-          userAgent: 'curl/7.68.0',
-          severity: 'critical',
-          location: 'Unknown, CN',
-          outcome: 'blocked'
-        },
-        {
-          id: 'audit_003',
-          timestamp: '2024-12-03T09:45:30Z',
-          eventType: 'user_updated',
-          userId: 'usr_002',
-          userEmail: 'michael.thompson@school.edu',
-          adminId: 'usr_001',
-          adminEmail: 'jennifer.anderson@school.edu',
-          description: 'User profile updated - MFA requirement changed',
-          details: { changes: { requiresMfa: { from: false, to: true } }, reason: 'security_policy_update' },
-          ipAddress: '192.168.1.45',
-          userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-          severity: 'medium',
-          location: 'New York, NY',
-          outcome: 'success'
-        },
-        {
-          id: 'audit_004',
-          timestamp: '2024-12-03T08:20:45Z',
-          eventType: 'bulk_operation',
-          userId: 'bulk_system',
-          userEmail: 'system@school.edu',
-          adminId: 'usr_001',
-          adminEmail: 'jennifer.anderson@school.edu',
-          description: 'Bulk user activation operation completed',
-          details: { operation: 'activate', totalUsers: 25, successCount: 23, errorCount: 2 },
-          ipAddress: '192.168.1.45',
-          userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-          severity: 'medium',
-          location: 'New York, NY',
-          outcome: 'success'
-        },
-        {
-          id: 'audit_005',
-          timestamp: '2024-12-02T23:15:12Z',
-          eventType: 'data_export',
-          userId: 'usr_001',
-          userEmail: 'jennifer.anderson@school.edu',
-          description: 'User data exported for compliance audit',
-          details: { format: 'CSV', recordCount: 1247, dataTypes: ['users', 'audit_logs', 'permissions'] },
-          ipAddress: '192.168.1.45',
-          userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-          severity: 'high',
-          location: 'New York, NY',
-          outcome: 'success'
-        },
-        {
-          id: 'audit_006',
-          timestamp: '2024-12-02T19:50:33Z',
-          eventType: 'role_changed',
-          userId: 'usr_008',
-          userEmail: 'temp.contractor@school.edu',
-          adminId: 'usr_001',
-          adminEmail: 'jennifer.anderson@school.edu',
-          description: 'User role changed from Teacher to Guest',
-          details: { 
-            oldRole: { name: 'teacher', permissions: 15 }, 
-            newRole: { name: 'guest', permissions: 3 },
-            reason: 'contract_ended'
-          },
-          ipAddress: '192.168.1.45',
-          userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-          severity: 'medium',
-          location: 'New York, NY',
-          outcome: 'success'
-        },
-        {
-          id: 'audit_007',
-          timestamp: '2024-12-02T16:30:44Z',
-          eventType: 'mfa_enabled',
-          userId: 'usr_002',
-          userEmail: 'michael.thompson@school.edu',
-          description: 'Multi-factor authentication enabled',
-          details: { method: 'authenticator_app', backupCodes: 8 },
-          ipAddress: '10.0.1.23',
-          userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
-          severity: 'low',
-          location: 'Boston, MA',
-          outcome: 'success'
-        },
-        {
-          id: 'audit_008',
-          timestamp: '2024-12-02T14:22:11Z',
-          eventType: 'password_reset',
-          userId: 'usr_009',
-          userEmail: 'student.forgot@school.edu',
-          description: 'Password reset initiated via email',
-          details: { method: 'email_link', tokenExpiry: '24 hours', successful: true },
-          ipAddress: '172.16.0.105',
-          userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X)',
-          severity: 'low',
-          location: 'Chicago, IL',
-          outcome: 'success'
-        }
-      ];
+  const {
+    data: statistics,
+    isLoading: statsLoading,
+    error: statsError
+  } = useQuery({
+    queryKey: ['user_statistics'],
+    queryFn: fetchUserStatistics,
+    refetchInterval: 60000, // Refetch every 60 seconds
+  });
 
-      setUsers(usersData);
-      setRoles(rolesData);
-      setBulkOperations(bulkOpsData);
-      setAuditLogs(auditLogsData);
-    } catch (error) {
-      Alert.alert('error', 'Failed to load user management data');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Combined loading and error states
+  const isLoading = usersLoading || rolesLoading || bulkOpsLoading || auditLogsLoading || statsLoading;
+  const error = usersError || rolesError || bulkOpsError || auditLogsError || statsError;
 
   const handleRefresh = async () => {
-    setRefreshing(true);
-    await loadData();
-    setRefreshing(false);
+    await Promise.all([
+      refetchUsers(),
+      refetchRoles(),
+      refetchBulkOps(),
+      refetchAuditLogs(),
+    ]);
   };
 
+
   // Filter users based on search and filters
-  const filteredUsers = users.filter((user) => {
-    const matchesSearch = searchQuery === '' || 
-      user.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredUsers = useMemo(() => {
+    return users.filter((user) => {
+      const matchesSearch = searchQuery === '' ||
+        user.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesRole = !searchFilters.role || user.role.name === searchFilters.role;
-    const matchesDepartment = !searchFilters.department || user.department === searchFilters.department;
-    const matchesStatus = !searchFilters.status || user.status === searchFilters.status;
-    const matchesVerified = searchFilters.isVerified === undefined || user.isVerified === searchFilters.isVerified;
+      const matchesRole = !searchFilters.role || user.role.name === searchFilters.role;
+      const matchesDepartment = !searchFilters.department || user.department === searchFilters.department;
+      const matchesStatus = !searchFilters.status || user.status === searchFilters.status;
+      const matchesVerified = searchFilters.isVerified === undefined || user.isVerified === searchFilters.isVerified;
 
-    return matchesSearch && matchesRole && matchesDepartment && matchesStatus && matchesVerified;
-  });
+      return matchesSearch && matchesRole && matchesDepartment && matchesStatus && matchesVerified;
+    });
+  }, [users, searchQuery, searchFilters]);
 
   // User management actions
   const handleCreateUser = () => {
@@ -556,23 +457,20 @@ const UserManagementScreen: React.FC<UserManagementScreenProps> = ({
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
-            setUsers(users.filter(u => u.id !== userId));
-            Alert.alert('success', 'User deleted successfully');
+          onPress: async () => {
+            // TODO: Implement actual database deletion
+            Alert.alert('Info', 'User deletion requires database implementation');
+            await refetchUsers();
           }
         }
       ]
     );
   };
 
-  const handleToggleUserStatus = (userId: string) => {
-    setUsers(users.map(user => {
-      if (user.id === userId) {
-        const newStatus = user.status === 'active' ? 'inactive' : 'active';
-        return { ...user, status: newStatus };
-      }
-      return user;
-    }));
+  const handleToggleUserStatus = async (userId: string) => {
+    // TODO: Implement actual database status toggle
+    Alert.alert('Info', 'Status toggle requires database implementation');
+    await refetchUsers();
   };
 
   const handleBulkAction = (action: 'activate' | 'deactivate' | 'delete' | 'export') => {
@@ -588,21 +486,11 @@ const UserManagementScreen: React.FC<UserManagementScreenProps> = ({
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Confirm',
-          onPress: () => {
-            // Create bulk operation record
-            const newBulkOp: BulkOperation = {
-              id: `bulk_${Date.now()}`,
-              type: action as any,
-              status: 'processing',
-              totalUsers: selectedUsers.length,
-              processedUsers: 0,
-              errors: [],
-              createdAt: new Date().toISOString(),
-              createdBy: adminId,
-            };
-            setBulkOperations([newBulkOp, ...bulkOperations]);
+          onPress: async () => {
+            // TODO: Implement actual database bulk operation
+            Alert.alert('Info', 'Bulk operations require database implementation');
             setSelectedUsers([]);
-            Alert.alert('success', `Bulk ${action} operation started`);
+            await refetchBulkOps();
           }
         }
       ]
@@ -635,9 +523,10 @@ const UserManagementScreen: React.FC<UserManagementScreenProps> = ({
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
-            setRoles(roles.filter(r => r.id !== roleId));
-            Alert.alert('success', 'Role deleted successfully');
+          onPress: async () => {
+            // TODO: Implement actual database role deletion
+            Alert.alert('Info', 'Role deletion requires database implementation');
+            await refetchRoles();
           }
         }
       ]
@@ -1188,39 +1077,53 @@ const UserManagementScreen: React.FC<UserManagementScreenProps> = ({
         </View>
       )}
 
+      {/* Loading State */}
+      {isLoading && (
+        <View style={[styles.container, styles.centerContent]}>
+          <ActivityIndicator size="large" color="#7C3AED" />
+          <Text style={styles.loadingText}>Loading user management data...</Text>
+        </View>
+      )}
+
+      {/* Error State */}
+      {error && !isLoading && (
+        <View style={[styles.container, styles.centerContent]}>
+          <Text style={styles.errorText}>Failed to load data</Text>
+          <Text style={styles.errorSubtext}>{error.message}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={handleRefresh}>
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       {/* Content based on active tab */}
-      <ScrollView 
-        style={styles.content}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-        }
-      >
-        {activeTab === 'users' && (
-          <>
-            <View style={styles.statsContainer}>
-              <View style={styles.statCard}>
-                <Text style={styles.statNumber}>{users.length}</Text>
-                <Text style={styles.statLabel}>Total Users</Text>
+      {!isLoading && !error && (
+        <ScrollView
+          style={styles.content}
+          refreshControl={
+            <RefreshControl refreshing={false} onRefresh={handleRefresh} />
+          }
+        >
+          {activeTab === 'users' && (
+            <>
+              <View style={styles.statsContainer}>
+                <View style={styles.statCard}>
+                  <Text style={styles.statNumber}>{statistics?.total_users || 0}</Text>
+                  <Text style={styles.statLabel}>Total Users</Text>
+                </View>
+                <View style={styles.statCard}>
+                  <Text style={styles.statNumber}>{statistics?.active_users || 0}</Text>
+                  <Text style={styles.statLabel}>Active Users</Text>
+                </View>
+                <View style={styles.statCard}>
+                  <Text style={styles.statNumber}>{statistics?.pending_users || 0}</Text>
+                  <Text style={styles.statLabel}>Pending</Text>
+                </View>
+                <View style={styles.statCard}>
+                  <Text style={styles.statNumber}>{statistics?.mfa_enabled_users || 0}</Text>
+                  <Text style={styles.statLabel}>MFA Enabled</Text>
+                </View>
               </View>
-              <View style={styles.statCard}>
-                <Text style={styles.statNumber}>
-                  {users.filter(u => u.status === 'active').length}
-                </Text>
-                <Text style={styles.statLabel}>Active Users</Text>
-              </View>
-              <View style={styles.statCard}>
-                <Text style={styles.statNumber}>
-                  {users.filter(u => u.status === 'pending').length}
-                </Text>
-                <Text style={styles.statLabel}>Pending</Text>
-              </View>
-              <View style={styles.statCard}>
-                <Text style={styles.statNumber}>
-                  {users.filter(u => u.requiresMfa).length}
-                </Text>
-                <Text style={styles.statLabel}>MFA Enabled</Text>
-              </View>
-            </View>
 
             <FlatList
               data={filteredUsers}
@@ -1276,12 +1179,13 @@ const UserManagementScreen: React.FC<UserManagementScreenProps> = ({
           </>
         )}
 
-        {activeTab === 'audit' && (
-          <View style={styles.auditContainer}>
-            {renderSecurityAuditLog()}
-          </View>
-        )}
-      </ScrollView>
+          {activeTab === 'audit' && (
+            <View style={styles.auditContainer}>
+              {renderSecurityAuditLog()}
+            </View>
+          )}
+        </ScrollView>
+      )}
 
       {/* Filter Modal */}
       <Modal
@@ -1409,14 +1313,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: Spacing.MD,
-    paddingVertical: Spacing.SM,
+    paddingHorizontal: Spacing?.MD ?? 12,
+    paddingVertical: Spacing?.SM ?? 8,
     backgroundColor: LightTheme.Surface,
     borderBottomWidth: 1,
     borderBottomColor: LightTheme.Outline,
   },
   backButton: {
-    padding: Spacing.XS,
+    padding: Spacing?.XS ?? 4,
   },
   backButtonText: {
     ...Typography.bodyMedium,
@@ -1430,8 +1334,8 @@ const styles = StyleSheet.create({
   },
   addButton: {
     backgroundColor: LightTheme.Primary,
-    paddingHorizontal: Spacing.MD,
-    paddingVertical: Spacing.XS,
+    paddingHorizontal: Spacing?.MD ?? 12,
+    paddingVertical: Spacing?.XS ?? 4,
     borderRadius: BorderRadius.SM,
   },
   addButtonText: {
@@ -1442,11 +1346,11 @@ const styles = StyleSheet.create({
   tabContainer: {
     flexDirection: 'row',
     backgroundColor: LightTheme.Surface,
-    paddingHorizontal: Spacing.MD,
+    paddingHorizontal: Spacing?.MD ?? 12,
   },
   tab: {
     flex: 1,
-    paddingVertical: Spacing.MD,
+    paddingVertical: Spacing?.MD ?? 12,
     alignItems: 'center',
     borderBottomWidth: 2,
     borderBottomColor: 'transparent',
@@ -1465,18 +1369,18 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     flexDirection: 'row',
-    paddingHorizontal: Spacing.MD,
-    paddingVertical: Spacing.SM,
+    paddingHorizontal: Spacing?.MD ?? 12,
+    paddingVertical: Spacing?.SM ?? 8,
     backgroundColor: LightTheme.Surface,
     alignItems: 'center',
-    gap: Spacing.SM,
+    gap: Spacing?.SM ?? 8,
   },
   searchInput: {
     flex: 1,
     ...Typography.bodyMedium,
     backgroundColor: LightTheme.Background,
-    paddingHorizontal: Spacing.MD,
-    paddingVertical: Spacing.SM,
+    paddingHorizontal: Spacing?.MD ?? 12,
+    paddingVertical: Spacing?.SM ?? 8,
     borderRadius: BorderRadius.SM,
     borderWidth: 1,
     borderColor: LightTheme.Outline,
@@ -1484,8 +1388,8 @@ const styles = StyleSheet.create({
   },
   filterButton: {
     backgroundColor: LightTheme.Primary,
-    paddingHorizontal: Spacing.MD,
-    paddingVertical: Spacing.SM,
+    paddingHorizontal: Spacing?.MD ?? 12,
+    paddingVertical: Spacing?.SM ?? 8,
     borderRadius: BorderRadius.SM,
   },
   filterButtonText: {
@@ -1495,8 +1399,8 @@ const styles = StyleSheet.create({
   },
   bulkActionsContainer: {
     backgroundColor: LightTheme.primaryContainer,
-    paddingHorizontal: Spacing.MD,
-    paddingVertical: Spacing.SM,
+    paddingHorizontal: Spacing?.MD ?? 12,
+    paddingVertical: Spacing?.SM ?? 8,
     borderBottomWidth: 1,
     borderBottomColor: LightTheme.Outline,
   },
@@ -1504,15 +1408,15 @@ const styles = StyleSheet.create({
     ...Typography.bodySmall,
     color: LightTheme.OnSurface,
     fontWeight: '600',
-    marginBottom: Spacing.XS,
+    marginBottom: Spacing?.XS ?? 4,
   },
   bulkActions: {
     flexDirection: 'row',
-    gap: Spacing.SM,
+    gap: Spacing?.SM ?? 8,
   },
   bulkActionButton: {
-    paddingHorizontal: Spacing.SM,
-    paddingVertical: Spacing.XS,
+    paddingHorizontal: Spacing?.SM ?? 8,
+    paddingVertical: Spacing?.XS ?? 4,
     borderRadius: BorderRadius.XS,
   },
   activateButton: {
@@ -1534,14 +1438,14 @@ const styles = StyleSheet.create({
   },
   statsContainer: {
     flexDirection: 'row',
-    paddingHorizontal: Spacing.MD,
-    paddingVertical: Spacing.SM,
-    gap: Spacing.SM,
+    paddingHorizontal: Spacing?.MD ?? 12,
+    paddingVertical: Spacing?.SM ?? 8,
+    gap: Spacing?.SM ?? 8,
   },
   statCard: {
     flex: 1,
     backgroundColor: LightTheme.Surface,
-    padding: Spacing.MD,
+    padding: Spacing?.MD ?? 12,
     borderRadius: BorderRadius.SM,
     alignItems: 'center',
     borderWidth: 1,
@@ -1555,13 +1459,13 @@ const styles = StyleSheet.create({
   statLabel: {
     ...Typography.bodySmall,
     color: LightTheme.OnSurfaceVariant,
-    marginTop: Spacing.XS,
+    marginTop: Spacing?.XS ?? 4,
   },
   userCard: {
     backgroundColor: LightTheme.Surface,
-    marginHorizontal: Spacing.MD,
-    marginVertical: Spacing.XS,
-    padding: Spacing.MD,
+    marginHorizontal: Spacing?.MD ?? 12,
+    marginVertical: Spacing?.XS ?? 4,
+    padding: Spacing?.MD ?? 12,
     borderRadius: BorderRadius.SM,
     borderWidth: 1,
     borderColor: LightTheme.Outline,
@@ -1570,7 +1474,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: Spacing.SM,
+    marginBottom: Spacing?.SM ?? 8,
   },
   userInfo: {
     flexDirection: 'row',
@@ -1583,7 +1487,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: Spacing.MD,
+    marginRight: Spacing?.MD ?? 12,
   },
   avatarText: {
     ...Typography.bodySmall,
@@ -1597,19 +1501,19 @@ const styles = StyleSheet.create({
     ...Typography.bodyMedium,
     color: LightTheme.OnSurface,
     fontWeight: '600',
-    marginBottom: Spacing.XS / 2,
+    marginBottom: Spacing?.XS ?? 8 / 2,
   },
   userEmail: {
     ...Typography.bodySmall,
     color: LightTheme.OnSurfaceVariant,
-    marginBottom: Spacing.XS,
+    marginBottom: Spacing?.XS ?? 4,
   },
   userMeta: {
     flexDirection: 'row',
-    gap: Spacing.XS,
+    gap: Spacing?.XS ?? 4,
   },
   roleTag: {
-    paddingHorizontal: Spacing.XS,
+    paddingHorizontal: Spacing?.XS ?? 4,
     paddingVertical: 2,
     borderRadius: BorderRadius.XS,
   },
@@ -1619,7 +1523,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   statusTag: {
-    paddingHorizontal: Spacing.XS,
+    paddingHorizontal: Spacing?.XS ?? 4,
     paddingVertical: 2,
     borderRadius: BorderRadius.XS,
   },
@@ -1629,7 +1533,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   selectButton: {
-    padding: Spacing.XS,
+    padding: Spacing?.XS ?? 4,
   },
   checkbox: {
     width: 20,
@@ -1651,8 +1555,8 @@ const styles = StyleSheet.create({
   },
   userStats: {
     flexDirection: 'row',
-    marginBottom: Spacing.SM,
-    gap: Spacing.MD,
+    marginBottom: Spacing?.SM ?? 8,
+    gap: Spacing?.MD ?? 12,
   },
   statItem: {
     flex: 1,
@@ -1664,11 +1568,11 @@ const styles = StyleSheet.create({
   },
   userActions: {
     flexDirection: 'row',
-    gap: Spacing.SM,
+    gap: Spacing?.SM ?? 8,
   },
   actionButton: {
     flex: 1,
-    paddingVertical: Spacing.XS,
+    paddingVertical: Spacing?.XS ?? 4,
     alignItems: 'center',
     borderRadius: BorderRadius.XS,
   },
@@ -1688,29 +1592,29 @@ const styles = StyleSheet.create({
   },
   roleCard: {
     backgroundColor: LightTheme.Surface,
-    marginHorizontal: Spacing.MD,
-    marginVertical: Spacing.XS,
-    padding: Spacing.MD,
+    marginHorizontal: Spacing?.MD ?? 12,
+    marginVertical: Spacing?.XS ?? 4,
+    padding: Spacing?.MD ?? 12,
     borderRadius: BorderRadius.SM,
     borderWidth: 1,
     borderColor: LightTheme.Outline,
   },
   roleHeader: {
-    marginBottom: Spacing.SM,
+    marginBottom: Spacing?.SM ?? 8,
   },
   roleInfo: {
-    marginBottom: Spacing.SM,
+    marginBottom: Spacing?.SM ?? 8,
   },
   roleName: {
     ...Typography.bodyMedium,
     color: LightTheme.OnSurface,
     fontWeight: '600',
-    marginBottom: Spacing.XS / 2,
+    marginBottom: Spacing?.XS ?? 8 / 2,
   },
   roleDescription: {
     ...Typography.bodySmall,
     color: LightTheme.OnSurfaceVariant,
-    marginBottom: Spacing.XS,
+    marginBottom: Spacing?.XS ?? 4,
   },
   roleMeta: {
     flexDirection: 'row',
@@ -1718,7 +1622,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   roleTypeTag: {
-    paddingHorizontal: Spacing.XS,
+    paddingHorizontal: Spacing?.XS ?? 4,
     paddingVertical: 2,
     borderRadius: BorderRadius.XS,
   },
@@ -1734,13 +1638,13 @@ const styles = StyleSheet.create({
   },
   roleActions: {
     flexDirection: 'row',
-    gap: Spacing.SM,
+    gap: Spacing?.SM ?? 8,
   },
   bulkCard: {
     backgroundColor: LightTheme.Surface,
-    marginHorizontal: Spacing.MD,
-    marginVertical: Spacing.XS,
-    padding: Spacing.MD,
+    marginHorizontal: Spacing?.MD ?? 12,
+    marginVertical: Spacing?.XS ?? 4,
+    padding: Spacing?.MD ?? 12,
     borderRadius: BorderRadius.SM,
     borderWidth: 1,
     borderColor: LightTheme.Outline,
@@ -1749,7 +1653,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: Spacing.SM,
+    marginBottom: Spacing?.SM ?? 8,
   },
   bulkType: {
     ...Typography.bodyMedium,
@@ -1757,7 +1661,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   bulkStatusTag: {
-    paddingHorizontal: Spacing.XS,
+    paddingHorizontal: Spacing?.XS ?? 4,
     paddingVertical: 2,
     borderRadius: BorderRadius.XS,
   },
@@ -1767,12 +1671,12 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   bulkProgress: {
-    marginBottom: Spacing.SM,
+    marginBottom: Spacing?.SM ?? 8,
   },
   bulkProgressText: {
     ...Typography.bodySmall,
     color: LightTheme.OnSurface,
-    marginBottom: Spacing.XS,
+    marginBottom: Spacing?.XS ?? 4,
   },
   progressBar: {
     height: 4,
@@ -1786,15 +1690,15 @@ const styles = StyleSheet.create({
   },
   bulkErrors: {
     backgroundColor: LightTheme.errorContainer,
-    padding: Spacing.SM,
+    padding: Spacing?.SM ?? 8,
     borderRadius: BorderRadius.XS,
-    marginBottom: Spacing.SM,
+    marginBottom: Spacing?.SM ?? 8,
   },
   bulkErrorsTitle: {
     ...Typography.bodySmall,
     color: LightTheme.Error,
     fontWeight: '600',
-    marginBottom: Spacing.XS,
+    marginBottom: Spacing?.XS ?? 4,
   },
   bulkErrorText: {
     ...Typography.bodySmall,
@@ -1812,8 +1716,8 @@ const styles = StyleSheet.create({
   },
   addRoleButton: {
     backgroundColor: LightTheme.Success,
-    paddingHorizontal: Spacing.MD,
-    paddingVertical: Spacing.XS,
+    paddingHorizontal: Spacing?.MD ?? 12,
+    paddingVertical: Spacing?.XS ?? 4,
     borderRadius: BorderRadius.SM,
   },
   addRoleButtonText: {
@@ -1823,8 +1727,8 @@ const styles = StyleSheet.create({
   },
   bulkImportButton: {
     backgroundColor: LightTheme.Info,
-    paddingHorizontal: Spacing.MD,
-    paddingVertical: Spacing.XS,
+    paddingHorizontal: Spacing?.MD ?? 12,
+    paddingVertical: Spacing?.XS ?? 4,
     borderRadius: BorderRadius.SM,
   },
   bulkImportButtonText: {
@@ -1833,29 +1737,29 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   auditContainer: {
-    padding: Spacing.MD,
+    padding: Spacing?.MD ?? 12,
   },
   auditHeader: {
-    marginBottom: Spacing.LG,
+    marginBottom: Spacing?.LG ?? 24,
   },
   auditSubtitle: {
     ...Typography.bodyMedium,
     color: LightTheme.OnSurfaceVariant,
-    marginTop: Spacing.SM,
+    marginTop: Spacing?.SM ?? 8,
   },
   auditStatsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: Spacing.LG,
+    marginBottom: Spacing?.LG ?? 24,
     flexWrap: 'wrap',
   },
   auditStatCard: {
     backgroundColor: LightTheme.Surface,
-    padding: Spacing.MD,
+    padding: Spacing?.MD ?? 12,
     borderRadius: BorderRadius.MD,
     alignItems: 'center',
     minWidth: '22%',
-    marginBottom: Spacing.SM,
+    marginBottom: Spacing?.SM ?? 8,
     borderWidth: 1,
     borderColor: LightTheme.Outline,
   },
@@ -1868,20 +1772,20 @@ const styles = StyleSheet.create({
     ...Typography.labelSmall,
     color: LightTheme.OnSurfaceVariant,
     textAlign: 'center',
-    marginTop: Spacing.XS,
+    marginTop: Spacing?.XS ?? 4,
   },
   auditFiltersContainer: {
     flexDirection: 'row',
-    marginBottom: Spacing.LG,
+    marginBottom: Spacing?.LG ?? 24,
     flexWrap: 'wrap',
   },
   filterButton: {
     backgroundColor: LightTheme.primaryContainer,
-    paddingHorizontal: Spacing.MD,
-    paddingVertical: Spacing.SM,
+    paddingHorizontal: Spacing?.MD ?? 12,
+    paddingVertical: Spacing?.SM ?? 8,
     borderRadius: BorderRadius.MD,
-    marginRight: Spacing.SM,
-    marginBottom: Spacing.SM,
+    marginRight: Spacing?.SM ?? 8,
+    marginBottom: Spacing?.SM ?? 8,
   },
   filterButtonText: {
     ...Typography.labelMedium,
@@ -1890,20 +1794,20 @@ const styles = StyleSheet.create({
   },
   complianceSummary: {
     backgroundColor: LightTheme.Surface,
-    padding: Spacing.LG,
+    padding: Spacing?.LG ?? 24,
     borderRadius: BorderRadius.MD,
-    marginBottom: Spacing.LG,
+    marginBottom: Spacing?.LG ?? 24,
     borderWidth: 1,
     borderColor: LightTheme.Outline,
   },
   complianceTitle: {
     ...Typography.titleMedium,
     color: LightTheme.OnSurface,
-    marginBottom: Spacing.MD,
+    marginBottom: Spacing?.MD ?? 12,
     fontWeight: '600',
   },
   complianceItems: {
-    gap: Spacing.SM,
+    gap: Spacing?.SM ?? 8,
   },
   complianceItem: {
     flexDirection: 'row',
@@ -1911,7 +1815,7 @@ const styles = StyleSheet.create({
   },
   complianceCheck: {
     fontSize: 16,
-    marginRight: Spacing.SM,
+    marginRight: Spacing?.SM ?? 8,
   },
   complianceText: {
     ...Typography.bodyMedium,
@@ -1923,9 +1827,9 @@ const styles = StyleSheet.create({
   },
   auditLogItem: {
     backgroundColor: LightTheme.Surface,
-    padding: Spacing.LG,
+    padding: Spacing?.LG ?? 24,
     borderRadius: BorderRadius.MD,
-    marginBottom: Spacing.MD,
+    marginBottom: Spacing?.MD ?? 12,
     borderWidth: 1,
     borderColor: LightTheme.Outline,
   },
@@ -1933,7 +1837,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: Spacing.MD,
+    marginBottom: Spacing?.MD ?? 12,
   },
   auditLogEvent: {
     flex: 1,
@@ -1942,10 +1846,10 @@ const styles = StyleSheet.create({
     ...Typography.titleSmall,
     color: LightTheme.OnSurface,
     fontWeight: '600',
-    marginBottom: Spacing.XS,
+    marginBottom: Spacing?.XS ?? 4,
   },
   auditSeverityTag: {
-    paddingHorizontal: Spacing.SM,
+    paddingHorizontal: Spacing?.SM ?? 8,
     paddingVertical: 2,
     borderRadius: BorderRadius.SM,
     alignSelf: 'flex-start',
@@ -1957,7 +1861,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
   },
   auditOutcomeTag: {
-    paddingHorizontal: Spacing.SM,
+    paddingHorizontal: Spacing?.SM ?? 8,
     paddingVertical: 2,
     borderRadius: BorderRadius.SM,
   },
@@ -1970,11 +1874,11 @@ const styles = StyleSheet.create({
   auditDescription: {
     ...Typography.bodyMedium,
     color: LightTheme.OnSurface,
-    marginBottom: Spacing.MD,
+    marginBottom: Spacing?.MD ?? 12,
   },
   auditDetails: {
-    gap: Spacing.XS,
-    marginBottom: Spacing.SM,
+    gap: Spacing?.XS ?? 4,
+    marginBottom: Spacing?.SM ?? 8,
   },
   auditDetailRow: {
     flexDirection: 'row',
@@ -1993,8 +1897,8 @@ const styles = StyleSheet.create({
   },
   auditDetailsToggle: {
     backgroundColor: LightTheme.primaryContainer,
-    paddingHorizontal: Spacing.MD,
-    paddingVertical: Spacing.SM,
+    paddingHorizontal: Spacing?.MD ?? 12,
+    paddingVertical: Spacing?.SM ?? 8,
     borderRadius: BorderRadius.SM,
     alignSelf: 'flex-start',
   },
@@ -2006,7 +1910,7 @@ const styles = StyleSheet.create({
   separator: {
     height: 1,
     backgroundColor: LightTheme.Outline,
-    marginHorizontal: Spacing.MD,
+    marginHorizontal: Spacing?.MD ?? 12,
   },
   // Modal styles
   modalOverlay: {
@@ -2014,7 +1918,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: Spacing.MD,
+    padding: Spacing?.MD ?? 12,
   },
   modalContent: {
     backgroundColor: LightTheme.Surface,
@@ -2027,7 +1931,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: Spacing.LG,
+    padding: Spacing?.LG ?? 24,
     borderBottomWidth: 1,
     borderBottomColor: LightTheme.Outline,
   },
@@ -2037,32 +1941,32 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   modalCloseButton: {
-    padding: Spacing.SM,
+    padding: Spacing?.SM ?? 8,
   },
   modalCloseText: {
     ...Typography.headlineMedium,
     color: LightTheme.OnSurfaceVariant,
   },
   modalBody: {
-    padding: Spacing.LG,
+    padding: Spacing?.LG ?? 24,
   },
   filterSection: {
-    marginBottom: Spacing.XL,
+    marginBottom: Spacing?.XL ?? 32,
   },
   filterLabel: {
     ...Typography.titleMedium,
     color: LightTheme.OnSurface,
     fontWeight: 'bold',
-    marginBottom: Spacing.MD,
+    marginBottom: Spacing?.MD ?? 12,
   },
   filterOptions: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.SM,
+    gap: Spacing?.SM ?? 8,
   },
   filterOption: {
-    paddingHorizontal: Spacing.MD,
-    paddingVertical: Spacing.SM,
+    paddingHorizontal: Spacing?.MD ?? 12,
+    paddingVertical: Spacing?.SM ?? 8,
     borderRadius: BorderRadius.MD,
     borderWidth: 1,
     borderColor: LightTheme.Outline,
@@ -2083,14 +1987,14 @@ const styles = StyleSheet.create({
   modalFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    padding: Spacing.LG,
+    padding: Spacing?.LG ?? 24,
     borderTopWidth: 1,
     borderTopColor: LightTheme.Outline,
-    gap: Spacing.MD,
+    gap: Spacing?.MD ?? 12,
   },
   clearFiltersButton: {
     flex: 1,
-    paddingVertical: Spacing.MD,
+    paddingVertical: Spacing?.MD ?? 12,
     borderRadius: BorderRadius.MD,
     borderWidth: 1,
     borderColor: LightTheme.Error,
@@ -2104,7 +2008,7 @@ const styles = StyleSheet.create({
   },
   applyFiltersButton: {
     flex: 1,
-    paddingVertical: Spacing.MD,
+    paddingVertical: Spacing?.MD ?? 12,
     borderRadius: BorderRadius.MD,
     backgroundColor: LightTheme.Primary,
     alignItems: 'center',
@@ -2128,6 +2032,38 @@ const styles = StyleSheet.create({
   emptyStateSubtext: {
     fontSize: 14,
     textAlign: 'center',
+  },
+  centerContent: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    ...Typography.bodyMedium,
+    color: LightTheme.OnSurfaceVariant,
+    marginTop: Spacing?.MD ?? 12,
+  },
+  errorText: {
+    ...Typography.headlineSmall,
+    color: LightTheme.Error,
+    fontWeight: '600',
+    marginBottom: Spacing?.SM ?? 8,
+  },
+  errorSubtext: {
+    ...Typography.bodyMedium,
+    color: LightTheme.OnSurfaceVariant,
+    marginBottom: Spacing?.LG ?? 24,
+    textAlign: 'center',
+  },
+  retryButton: {
+    backgroundColor: LightTheme.Primary,
+    paddingHorizontal: Spacing?.LG ?? 24,
+    paddingVertical: Spacing?.MD ?? 12,
+    borderRadius: BorderRadius.MD,
+  },
+  retryButtonText: {
+    ...Typography.bodyMedium,
+    color: LightTheme.Surface,
+    fontWeight: '600',
   },
 });
 

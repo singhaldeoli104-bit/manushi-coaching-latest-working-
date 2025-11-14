@@ -5,7 +5,7 @@
  * Manushi Coaching Platform
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -18,7 +18,10 @@ import {
   Alert,
   RefreshControl,
   Dimensions,
+  ActivityIndicator,
 } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '../../lib/supabase';
 
 // Import theme and styling
 import { LightTheme } from '../../theme/colors';
@@ -145,20 +148,229 @@ interface OrganizationManagementScreenProps {
   onNavigate: (screen: string) => void;
 }
 
+// Database type definitions
+interface DepartmentDB {
+  id: string;
+  name: string;
+  description: string;
+  head_of_department_id: string | null;
+  head_of_department_name: string | null;
+  teacher_count: number;
+  student_count: number;
+  subjects: string[];
+  budget: number | null;
+  location: string | null;
+  established_year: number;
+  is_active: boolean;
+  parent_department_id: string | null;
+  sub_department_ids: string[];
+}
+
+interface ClassDB {
+  id: string;
+  name: string;
+  grade: string;
+  section: string;
+  department_id: string;
+  class_teacher_id: string;
+  class_teacher_name: string;
+  max_capacity: number;
+  current_enrollment: number;
+  academic_year: string;
+  is_active: boolean;
+  room: string | null;
+  subjects: any;
+  schedules: any;
+}
+
+interface TeacherAssignmentDB {
+  id: string;
+  teacher_id: string;
+  teacher_name: string;
+  department_id: string;
+  department_name: string;
+  subjects: string[];
+  workload: number;
+  max_workload: number;
+  specializations: string[];
+  qualification: string;
+  experience: number;
+  is_active: boolean;
+  classes: any;
+}
+
+interface StudentGroupDB {
+  id: string;
+  name: string;
+  description: string;
+  type: string;
+  class_id: string | null;
+  supervisor_id: string;
+  supervisor_name: string;
+  student_ids: string[];
+  max_members: number | null;
+  meeting_schedule: string | null;
+  is_active: boolean;
+  created_at: string;
+  member_count: number;
+}
+
+interface StaffHierarchyDB {
+  id: string;
+  employee_id: string;
+  first_name: string;
+  last_name: string;
+  position: string;
+  department: string;
+  level: number;
+  manager_id: string | null;
+  manager_name: string | null;
+  direct_report_ids: string[];
+  direct_report_count: number;
+  responsibilities: string[];
+  is_active: boolean;
+}
+
+interface OrganizationStatisticsDB {
+  total_departments: number;
+  active_departments: number;
+  total_classes: number;
+  active_classes: number;
+  total_teachers: number;
+  total_students: number;
+  average_class_size: number;
+  teacher_utilization: number;
+}
+
+// Fetch functions
+const fetchDepartments = async (): Promise<Department[]> => {
+  const { data, error } = await supabase.rpc('get_departments');
+  if (error) throw error;
+
+  return (data || []).map((dept: DepartmentDB) => ({
+    id: dept.id,
+    name: dept.name,
+    description: dept.description || '',
+    headOfDepartment: dept.head_of_department_name || 'Unassigned',
+    headOfDepartmentId: dept.head_of_department_id || '',
+    teacherCount: dept.teacher_count,
+    studentCount: dept.student_count,
+    subjects: dept.subjects || [],
+    budget: dept.budget || undefined,
+    location: dept.location || undefined,
+    establishedYear: dept.established_year,
+    isActive: dept.is_active,
+    parentDepartmentId: dept.parent_department_id || undefined,
+    subDepartments: dept.sub_department_ids || [],
+  }));
+};
+
+const fetchClasses = async (): Promise<ClassStructure[]> => {
+  const { data, error } = await supabase.rpc('get_classes');
+  if (error) throw error;
+
+  return (data || []).map((cls: ClassDB) => ({
+    id: cls.id,
+    name: cls.name,
+    grade: cls.grade,
+    section: cls.section,
+    departmentId: cls.department_id,
+    classTeacherId: cls.class_teacher_id,
+    classTeacherName: cls.class_teacher_name,
+    maxCapacity: cls.max_capacity,
+    currentEnrollment: cls.current_enrollment,
+    subjects: cls.subjects || [],
+    schedule: cls.schedules || [],
+    academicYear: cls.academic_year,
+    isActive: cls.is_active,
+    room: cls.room || undefined,
+  }));
+};
+
+const fetchTeacherAssignments = async (): Promise<TeacherAssignment[]> => {
+  const { data, error } = await supabase.rpc('get_teacher_assignments');
+  if (error) throw error;
+
+  return (data || []).map((assign: TeacherAssignmentDB) => ({
+    id: assign.id,
+    teacherId: assign.teacher_id,
+    teacherName: assign.teacher_name,
+    departmentId: assign.department_id,
+    departmentName: assign.department_name,
+    subjects: assign.subjects || [],
+    classes: assign.classes || [],
+    workload: assign.workload,
+    maxWorkload: assign.max_workload,
+    specializations: assign.specializations || [],
+    qualification: assign.qualification,
+    experience: assign.experience,
+    isActive: assign.is_active,
+  }));
+};
+
+const fetchStudentGroups = async (): Promise<StudentGroup[]> => {
+  const { data, error } = await supabase.rpc('get_student_groups');
+  if (error) throw error;
+
+  return (data || []).map((group: StudentGroupDB) => ({
+    id: group.id,
+    name: group.name,
+    description: group.description || '',
+    type: group.type as any,
+    classId: group.class_id || undefined,
+    supervisorId: group.supervisor_id,
+    supervisorName: group.supervisor_name,
+    studentIds: group.student_ids || [],
+    maxMembers: group.max_members || undefined,
+    meetingSchedule: group.meeting_schedule || undefined,
+    isActive: group.is_active,
+    createdAt: group.created_at,
+  }));
+};
+
+const fetchStaffHierarchy = async (): Promise<StaffHierarchy[]> => {
+  const { data, error } = await supabase.rpc('get_staff_hierarchy');
+  if (error) throw error;
+
+  return (data || []).map((staff: StaffHierarchyDB) => ({
+    id: staff.id,
+    employeeId: staff.employee_id,
+    firstName: staff.first_name,
+    lastName: staff.last_name,
+    position: staff.position,
+    department: staff.department,
+    level: staff.level,
+    managerId: staff.manager_id || undefined,
+    managerName: staff.manager_name || undefined,
+    directReports: staff.direct_report_ids || [],
+    responsibilities: staff.responsibilities || [],
+    isActive: staff.is_active,
+  }));
+};
+
+const fetchOrganizationStatistics = async (): Promise<OrganizationStatisticsDB> => {
+  const { data, error } = await supabase.rpc('get_organization_statistics');
+  if (error) throw error;
+
+  return data?.[0] || {
+    total_departments: 0,
+    active_departments: 0,
+    total_classes: 0,
+    active_classes: 0,
+    total_teachers: 0,
+    total_students: 0,
+    average_class_size: 0,
+    teacher_utilization: 0,
+  };
+};
+
 const OrganizationManagementScreen: React.FC<OrganizationManagementScreenProps> = ({
   adminId,
   onNavigate,
 }) => {
   // State management
   const [activeTab, setActiveTab] = useState<'departments' | 'classes' | 'assignments' | 'groups' | 'hierarchy'>('departments');
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [classes, setClasses] = useState<ClassStructure[]>([]);
-  const [assignments, setAssignments] = useState<TeacherAssignment[]>([]);
-  const [studentGroups, setStudentGroups] = useState<StudentGroup[]>([]);
-  const [staffHierarchy, setStaffHierarchy] = useState<StaffHierarchy[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [refreshing, setRefreshing] = useState(false);
-  const [loading, setLoading] = useState(true);
 
   // Modal states
   const [showDepartmentModal, setShowDepartmentModal] = useState(false);
@@ -166,378 +378,86 @@ const OrganizationManagementScreen: React.FC<OrganizationManagementScreenProps> 
   const [showAssignmentModal, setShowAssignmentModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
 
-  // Initialize data
-  useEffect(() => {
-    loadData();
-  }, []);
+  // Fetch data using React Query
+  const {
+    data: departments = [],
+    isLoading: departmentsLoading,
+    error: departmentsError,
+    refetch: refetchDepartments
+  } = useQuery({
+    queryKey: ['departments'],
+    queryFn: fetchDepartments,
+    refetchInterval: 60000, // Refetch every 60 seconds
+  });
 
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      // Load departments data
-      const departmentsData: Department[] = [
-        {
-          id: 'dept_001',
-          name: 'Mathematics Department',
-          description: 'Advanced mathematics education covering algebra, calculus, statistics, and applied mathematics',
-          headOfDepartment: 'Dr. Michael Thompson',
-          headOfDepartmentId: 'teacher_001',
-          teacherCount: 8,
-          studentCount: 245,
-          subjects: ['Algebra', 'Calculus', 'Statistics', 'Geometry', 'Applied Mathematics'],
-          budget: 150000,
-          location: 'Building A, Floor 2',
-          establishedYear: 1985,
-          isActive: true,
-          subDepartments: ['dept_001_1'],
-        },
-        {
-          id: 'dept_001_1',
-          name: 'Applied Mathematics',
-          description: 'Specialized focus on practical applications of mathematical concepts',
-          headOfDepartment: 'Prof. Sarah Williams',
-          headOfDepartmentId: 'teacher_002',
-          teacherCount: 3,
-          studentCount: 78,
-          subjects: ['Applied Statistics', 'Mathematical Modeling', 'Operations Research'],
-          budget: 50000,
-          location: 'Building A, Floor 2, Wing B',
-          establishedYear: 2010,
-          isActive: true,
-          parentDepartmentId: 'dept_001',
-          subDepartments: [],
-        },
-        {
-          id: 'dept_002',
-          name: 'Science Department',
-          description: 'Comprehensive science education covering physics, chemistry, and biology',
-          headOfDepartment: 'Dr. Robert Chen',
-          headOfDepartmentId: 'teacher_003',
-          teacherCount: 12,
-          studentCount: 380,
-          subjects: ['Physics', 'Chemistry', 'Biology', 'Environmental Science', 'Computer Science'],
-          budget: 220000,
-          location: 'Building B, All Floors',
-          establishedYear: 1982,
-          isActive: true,
-          subDepartments: ['dept_002_1', 'dept_002_2'],
-        },
-        {
-          id: 'dept_003',
-          name: 'Languages Department',
-          description: 'Language education including English, literature, and foreign languages',
-          headOfDepartment: 'Ms. Jennifer Adams',
-          headOfDepartmentId: 'teacher_004',
-          teacherCount: 6,
-          studentCount: 290,
-          subjects: ['English Literature', 'Creative Writing', 'Spanish', 'French', 'Linguistics'],
-          budget: 95000,
-          location: 'Building C, Floor 1',
-          establishedYear: 1980,
-          isActive: true,
-          subDepartments: [],
-        },
-      ];
+  const {
+    data: classes = [],
+    isLoading: classesLoading,
+    error: classesError,
+    refetch: refetchClasses
+  } = useQuery({
+    queryKey: ['classes'],
+    queryFn: fetchClasses,
+    refetchInterval: 60000,
+  });
 
-      // Load classes data
-      const classesData: ClassStructure[] = [
-        {
-          id: 'class_001',
-          name: '10th Grade Mathematics - Section A',
-          grade: '10th Grade',
-          section: 'A',
-          departmentId: 'dept_001',
-          classTeacherId: 'teacher_001',
-          classTeacherName: 'Dr. Michael Thompson',
-          maxCapacity: 30,
-          currentEnrollment: 28,
-          subjects: [
-            {
-              id: 'subj_001',
-              name: 'Algebra II',
-              teacherId: 'teacher_001',
-              teacherName: 'Dr. Michael Thompson',
-              weeklyHours: 5,
-              room: 'A201',
-              isCore: true,
-            },
-            {
-              id: 'subj_002',
-              name: 'Geometry',
-              teacherId: 'teacher_002',
-              teacherName: 'Prof. Sarah Williams',
-              weeklyHours: 4,
-              room: 'A202',
-              isCore: true,
-            },
-          ],
-          schedule: [
-            {
-              id: 'sched_001',
-              dayOfWeek: 1, // Monday
-              startTime: '09:00',
-              endTime: '10:00',
-              subjectId: 'subj_001',
-              subjectName: 'Algebra II',
-              teacherId: 'teacher_001',
-              teacherName: 'Dr. Michael Thompson',
-              room: 'A201',
-            },
-            {
-              id: 'sched_002',
-              dayOfWeek: 1, // Monday
-              startTime: '10:15',
-              endTime: '11:15',
-              subjectId: 'subj_002',
-              subjectName: 'Geometry',
-              teacherId: 'teacher_002',
-              teacherName: 'Prof. Sarah Williams',
-              room: 'A202',
-            },
-          ],
-          academicYear: '2024-2025',
-          isActive: true,
-          room: 'A201',
-        },
-        {
-          id: 'class_002',
-          name: '11th Grade Science - Section B',
-          grade: '11th Grade',
-          section: 'B',
-          departmentId: 'dept_002',
-          classTeacherId: 'teacher_003',
-          classTeacherName: 'Dr. Robert Chen',
-          maxCapacity: 25,
-          currentEnrollment: 24,
-          subjects: [
-            {
-              id: 'subj_003',
-              name: 'Advanced Physics',
-              teacherId: 'teacher_003',
-              teacherName: 'Dr. Robert Chen',
-              weeklyHours: 6,
-              room: 'B101',
-              isCore: true,
-            },
-            {
-              id: 'subj_004',
-              name: 'Organic Chemistry',
-              teacherId: 'teacher_005',
-              teacherName: 'Dr. Lisa Park',
-              weeklyHours: 5,
-              room: 'B201',
-              isCore: true,
-            },
-          ],
-          schedule: [],
-          academicYear: '2024-2025',
-          isActive: true,
-          room: 'B101',
-        },
-      ];
+  const {
+    data: assignments = [],
+    isLoading: assignmentsLoading,
+    error: assignmentsError,
+    refetch: refetchAssignments
+  } = useQuery({
+    queryKey: ['teacher_assignments'],
+    queryFn: fetchTeacherAssignments,
+    refetchInterval: 60000,
+  });
 
-      // Load teacher assignments data
-      const assignmentsData: TeacherAssignment[] = [
-        {
-          id: 'assign_001',
-          teacherId: 'teacher_001',
-          teacherName: 'Dr. Michael Thompson',
-          departmentId: 'dept_001',
-          departmentName: 'Mathematics Department',
-          subjects: ['Algebra II', 'Calculus', 'Statistics'],
-          classes: [
-            {
-              classId: 'class_001',
-              className: '10th Grade Mathematics - Section A',
-              grade: '10th Grade',
-              section: 'A',
-              subject: 'Algebra II',
-              weeklyHours: 5,
-              role: 'class_teacher',
-            },
-            {
-              classId: 'class_003',
-              className: '12th Grade Mathematics - Section A',
-              grade: '12th Grade',
-              section: 'A',
-              subject: 'Calculus',
-              weeklyHours: 6,
-              role: 'subject_teacher',
-            },
-          ],
-          workload: 22,
-          maxWorkload: 25,
-          specializations: ['Advanced Mathematics', 'Statistics', 'Mathematical Modeling'],
-          qualification: 'Ph.D. in Mathematics',
-          experience: 15,
-          isActive: true,
-        },
-        {
-          id: 'assign_002',
-          teacherId: 'teacher_003',
-          teacherName: 'Dr. Robert Chen',
-          departmentId: 'dept_002',
-          departmentName: 'Science Department',
-          subjects: ['Physics', 'Advanced Physics'],
-          classes: [
-            {
-              classId: 'class_002',
-              className: '11th Grade Science - Section B',
-              grade: '11th Grade',
-              section: 'B',
-              subject: 'Advanced Physics',
-              weeklyHours: 6,
-              role: 'class_teacher',
-            },
-          ],
-          workload: 18,
-          maxWorkload: 20,
-          specializations: ['Quantum Physics', 'Thermodynamics', 'Electromagnetism'],
-          qualification: 'Ph.D. in Physics',
-          experience: 12,
-          isActive: true,
-        },
-      ];
+  const {
+    data: studentGroups = [],
+    isLoading: groupsLoading,
+    error: groupsError,
+    refetch: refetchGroups
+  } = useQuery({
+    queryKey: ['student_groups'],
+    queryFn: fetchStudentGroups,
+    refetchInterval: 60000,
+  });
 
-      // Load student groups data
-      const studentGroupsData: StudentGroup[] = [
-        {
-          id: 'group_001',
-          name: 'Mathematics Olympiad Team',
-          description: 'Elite mathematics competition team for advanced students',
-          type: 'academic',
-          supervisorId: 'teacher_001',
-          supervisorName: 'Dr. Michael Thompson',
-          studentIds: ['student_001', 'student_002', 'student_003', 'student_004'],
-          maxMembers: 12,
-          meetingSchedule: 'Fridays 3:00 PM - 5:00 PM',
-          isActive: true,
-          createdAt: '2024-09-01T08:00:00Z',
-        },
-        {
-          id: 'group_002',
-          name: 'Phoenix House',
-          description: 'One of the four school houses for inter-house competitions',
-          type: 'house',
-          supervisorId: 'teacher_004',
-          supervisorName: 'Ms. Jennifer Adams',
-          studentIds: ['student_005', 'student_006', 'student_007'],
-          meetingSchedule: 'Monthly house meetings',
-          isActive: true,
-          createdAt: '2024-08-15T08:00:00Z',
-        },
-        {
-          id: 'group_003',
-          name: 'Science Research Club',
-          description: 'Student research projects and science fair preparation',
-          type: 'club',
-          supervisorId: 'teacher_003',
-          supervisorName: 'Dr. Robert Chen',
-          studentIds: ['student_008', 'student_009', 'student_010'],
-          maxMembers: 20,
-          meetingSchedule: 'Wednesdays 4:00 PM - 6:00 PM',
-          isActive: true,
-          createdAt: '2024-09-10T08:00:00Z',
-        },
-      ];
+  const {
+    data: staffHierarchy = [],
+    isLoading: hierarchyLoading,
+    error: hierarchyError,
+    refetch: refetchHierarchy
+  } = useQuery({
+    queryKey: ['staff_hierarchy'],
+    queryFn: fetchStaffHierarchy,
+    refetchInterval: 60000,
+  });
 
-      // Load staff hierarchy data
-      const staffHierarchyData: StaffHierarchy[] = [
-        {
-          id: 'staff_001',
-          employeeId: 'EMP001',
-          firstName: 'Jennifer',
-          lastName: 'Anderson',
-          position: 'Principal',
-          department: 'Administration',
-          level: 0,
-          directReports: ['staff_002', 'staff_003'],
-          responsibilities: [
-            'Overall school management and leadership',
-            'Policy development and implementation',
-            'Community relations and partnerships',
-            'Strategic planning and vision',
-          ],
-          isActive: true,
-        },
-        {
-          id: 'staff_002',
-          employeeId: 'EMP002',
-          firstName: 'Michael',
-          lastName: 'Thompson',
-          position: 'Academic Director',
-          department: 'Academics',
-          level: 1,
-          managerId: 'staff_001',
-          managerName: 'Jennifer Anderson',
-          directReports: ['staff_004', 'staff_005'],
-          responsibilities: [
-            'Academic curriculum oversight',
-            'Teacher performance management',
-            'Student academic progress monitoring',
-            'Educational program development',
-          ],
-          isActive: true,
-        },
-        {
-          id: 'staff_003',
-          employeeId: 'EMP003',
-          firstName: 'Sarah',
-          lastName: 'Johnson',
-          position: 'Operations Director',
-          department: 'Operations',
-          level: 1,
-          managerId: 'staff_001',
-          managerName: 'Jennifer Anderson',
-          directReports: ['staff_006', 'staff_007'],
-          responsibilities: [
-            'Facility management and maintenance',
-            'Technology infrastructure',
-            'Transportation and logistics',
-            'Safety and security protocols',
-          ],
-          isActive: true,
-        },
-        {
-          id: 'staff_004',
-          employeeId: 'EMP004',
-          firstName: 'Robert',
-          lastName: 'Chen',
-          position: 'Department Head - Science',
-          department: 'Science',
-          level: 2,
-          managerId: 'staff_002',
-          managerName: 'Michael Thompson',
-          directReports: ['staff_008', 'staff_009'],
-          responsibilities: [
-            'Science department management',
-            'Science curriculum development',
-            'Laboratory safety oversight',
-            'Teacher mentoring and development',
-          ],
-          isActive: true,
-        },
-      ];
+  const {
+    data: statistics,
+    isLoading: statsLoading,
+    error: statsError
+  } = useQuery({
+    queryKey: ['organization_statistics'],
+    queryFn: fetchOrganizationStatistics,
+    refetchInterval: 60000,
+  });
 
-      setDepartments(departmentsData);
-      setClasses(classesData);
-      setAssignments(assignmentsData);
-      setStudentGroups(studentGroupsData);
-      setStaffHierarchy(staffHierarchyData);
-    } catch (error) {
-      Alert.alert('error', 'Failed to load organizational data');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Combined loading and error states
+  const isLoading = departmentsLoading || classesLoading || assignmentsLoading || groupsLoading || hierarchyLoading || statsLoading;
+  const error = departmentsError || classesError || assignmentsError || groupsError || hierarchyError || statsError;
 
   const handleRefresh = async () => {
-    setRefreshing(true);
-    await loadData();
-    setRefreshing(false);
+    await Promise.all([
+      refetchDepartments(),
+      refetchClasses(),
+      refetchAssignments(),
+      refetchGroups(),
+      refetchHierarchy(),
+    ]);
   };
 
-  // Management actions
   const handleCreateDepartment = () => {
     setSelectedItem(null);
     setShowDepartmentModal(true);
@@ -956,7 +876,7 @@ const OrganizationManagementScreen: React.FC<OrganizationManagementScreenProps> 
       </View>
 
       {/* Optimization Actions */}
-      {activeTab === 'assignments' && (
+      {activeTab === 'assignments' && !isLoading && !error && (
         <View style={styles.optimizationContainer}>
           <TouchableOpacity
             style={styles.optimizeAllButton}
@@ -967,13 +887,33 @@ const OrganizationManagementScreen: React.FC<OrganizationManagementScreenProps> 
         </View>
       )}
 
+      {/* Loading State */}
+      {isLoading && (
+        <View style={[styles.content, styles.centerContent]}>
+          <ActivityIndicator size="large" color="#7C3AED" />
+          <Text style={styles.loadingText}>Loading organizational data...</Text>
+        </View>
+      )}
+
+      {/* Error State */}
+      {error && !isLoading && (
+        <View style={[styles.content, styles.centerContent]}>
+          <Text style={styles.errorText}>Failed to load data</Text>
+          <Text style={styles.errorSubtext}>{error.message}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={handleRefresh}>
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       {/* Content */}
-      <ScrollView 
-        style={styles.content}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-        }
-      >
+      {!isLoading && !error && (
+        <ScrollView
+          style={styles.content}
+          refreshControl={
+            <RefreshControl refreshing={false} onRefresh={handleRefresh} />
+          }
+        >
         {activeTab === 'departments' && (
           <FlatList
             data={filteredDepartments}
@@ -1023,7 +963,8 @@ const OrganizationManagementScreen: React.FC<OrganizationManagementScreenProps> 
             ItemSeparatorComponent={() => <View style={styles.separator} />}
           />
         )}
-      </ScrollView>
+        </ScrollView>
+      )}
     </View>
   );
 };
@@ -1037,14 +978,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: Spacing.MD,
-    paddingVertical: Spacing.SM,
+    paddingHorizontal: Spacing?.MD ?? 12,
+    paddingVertical: Spacing?.SM ?? 8,
     backgroundColor: LightTheme.Surface,
     borderBottomWidth: 1,
     borderBottomColor: LightTheme.Outline,
   },
   backButton: {
-    padding: Spacing.XS,
+    padding: Spacing?.XS ?? 4,
   },
   backButtonText: {
     ...Typography.bodyMedium,
@@ -1058,8 +999,8 @@ const styles = StyleSheet.create({
   },
   addButton: {
     backgroundColor: LightTheme.Primary,
-    paddingHorizontal: Spacing.MD,
-    paddingVertical: Spacing.XS,
+    paddingHorizontal: Spacing?.MD ?? 12,
+    paddingVertical: Spacing?.XS ?? 4,
     borderRadius: BorderRadius.SM,
   },
   addButtonText: {
@@ -1070,11 +1011,11 @@ const styles = StyleSheet.create({
   tabContainer: {
     flexDirection: 'row',
     backgroundColor: LightTheme.Surface,
-    paddingHorizontal: Spacing.MD,
+    paddingHorizontal: Spacing?.MD ?? 12,
   },
   tab: {
     flex: 1,
-    paddingVertical: Spacing.SM,
+    paddingVertical: Spacing?.SM ?? 8,
     alignItems: 'center',
     borderBottomWidth: 2,
     borderBottomColor: 'transparent',
@@ -1092,15 +1033,15 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   searchContainer: {
-    paddingHorizontal: Spacing.MD,
-    paddingVertical: Spacing.SM,
+    paddingHorizontal: Spacing?.MD ?? 12,
+    paddingVertical: Spacing?.SM ?? 8,
     backgroundColor: LightTheme.Surface,
   },
   searchInput: {
     ...Typography.bodyMedium,
     backgroundColor: LightTheme.Background,
-    paddingHorizontal: Spacing.MD,
-    paddingVertical: Spacing.SM,
+    paddingHorizontal: Spacing?.MD ?? 12,
+    paddingVertical: Spacing?.SM ?? 8,
     borderRadius: BorderRadius.SM,
     borderWidth: 1,
     borderColor: LightTheme.Outline,
@@ -1108,13 +1049,13 @@ const styles = StyleSheet.create({
   },
   optimizationContainer: {
     backgroundColor: LightTheme.primaryContainer,
-    paddingHorizontal: Spacing.MD,
-    paddingVertical: Spacing.SM,
+    paddingHorizontal: Spacing?.MD ?? 12,
+    paddingVertical: Spacing?.SM ?? 8,
   },
   optimizeAllButton: {
     backgroundColor: LightTheme.Warning,
-    paddingHorizontal: Spacing.LG,
-    paddingVertical: Spacing.SM,
+    paddingHorizontal: Spacing?.LG ?? 24,
+    paddingVertical: Spacing?.SM ?? 8,
     borderRadius: BorderRadius.SM,
     alignItems: 'center',
   },
@@ -1128,9 +1069,9 @@ const styles = StyleSheet.create({
   },
   itemCard: {
     backgroundColor: LightTheme.Surface,
-    marginHorizontal: Spacing.MD,
-    marginVertical: Spacing.XS,
-    padding: Spacing.MD,
+    marginHorizontal: Spacing?.MD ?? 12,
+    marginVertical: Spacing?.XS ?? 4,
+    padding: Spacing?.MD ?? 12,
     borderRadius: BorderRadius.SM,
     borderWidth: 1,
     borderColor: LightTheme.Outline,
@@ -1139,25 +1080,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    marginBottom: Spacing.SM,
+    marginBottom: Spacing?.SM ?? 8,
   },
   itemInfo: {
     flex: 1,
-    marginRight: Spacing.SM,
+    marginRight: Spacing?.SM ?? 8,
   },
   itemTitle: {
     ...Typography.bodyMedium,
     color: LightTheme.OnSurface,
     fontWeight: '600',
-    marginBottom: Spacing.XS / 2,
+    marginBottom: Spacing?.XS ?? 8 / 2,
   },
   itemSubtitle: {
     ...Typography.bodySmall,
     color: LightTheme.OnSurfaceVariant,
-    marginBottom: Spacing.XS / 2,
+    marginBottom: Spacing?.XS ?? 8 / 2,
   },
   itemMeta: {
-    marginTop: Spacing.XS,
+    marginTop: Spacing?.XS ?? 4,
   },
   itemMetaText: {
     ...Typography.bodySmall,
@@ -1171,8 +1112,8 @@ const styles = StyleSheet.create({
   },
   statsGrid: {
     flexDirection: 'row',
-    marginBottom: Spacing.SM,
-    gap: Spacing.SM,
+    marginBottom: Spacing?.SM ?? 8,
+    gap: Spacing?.SM ?? 8,
   },
   statItem: {
     flex: 1,
@@ -1190,11 +1131,11 @@ const styles = StyleSheet.create({
   },
   itemActions: {
     flexDirection: 'row',
-    gap: Spacing.SM,
+    gap: Spacing?.SM ?? 8,
   },
   actionButton: {
     flex: 1,
-    paddingVertical: Spacing.XS,
+    paddingVertical: Spacing?.XS ?? 4,
     alignItems: 'center',
     borderRadius: BorderRadius.XS,
   },
@@ -1228,7 +1169,7 @@ const styles = StyleSheet.create({
     ...Typography.bodySmall,
     color: LightTheme.OnSurface,
     fontWeight: '600',
-    marginBottom: Spacing.XS / 2,
+    marginBottom: Spacing?.XS ?? 8 / 2,
   },
   workloadBar: {
     width: 60,
@@ -1241,14 +1182,14 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   assignmentDetails: {
-    marginBottom: Spacing.SM,
+    marginBottom: Spacing?.SM ?? 8,
   },
   assignmentLabel: {
     ...Typography.bodySmall,
     color: LightTheme.OnSurface,
     fontWeight: '600',
-    marginTop: Spacing.XS,
-    marginBottom: Spacing.XS / 2,
+    marginTop: Spacing?.XS ?? 4,
+    marginBottom: Spacing?.XS ?? 8 / 2,
   },
   assignmentValue: {
     ...Typography.bodySmall,
@@ -1260,7 +1201,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   groupTypeTag: {
-    paddingHorizontal: Spacing.XS,
+    paddingHorizontal: Spacing?.XS ?? 4,
     paddingVertical: 2,
     borderRadius: BorderRadius.XS,
     alignSelf: 'flex-start',
@@ -1273,7 +1214,7 @@ const styles = StyleSheet.create({
   scheduleText: {
     ...Typography.bodySmall,
     color: LightTheme.OnSurface,
-    marginBottom: Spacing.SM,
+    marginBottom: Spacing?.SM ?? 8,
     fontStyle: 'italic',
   },
   hierarchyLevel: {
@@ -1297,15 +1238,15 @@ const styles = StyleSheet.create({
   },
   responsibilitiesContainer: {
     backgroundColor: LightTheme.Background,
-    padding: Spacing.SM,
+    padding: Spacing?.SM ?? 8,
     borderRadius: BorderRadius.XS,
-    marginBottom: Spacing.SM,
+    marginBottom: Spacing?.SM ?? 8,
   },
   responsibilitiesTitle: {
     ...Typography.bodySmall,
     color: LightTheme.OnSurface,
     fontWeight: '600',
-    marginBottom: Spacing.XS,
+    marginBottom: Spacing?.XS ?? 4,
   },
   responsibilityText: {
     ...Typography.bodySmall,
@@ -1315,7 +1256,39 @@ const styles = StyleSheet.create({
   separator: {
     height: 1,
     backgroundColor: LightTheme.Outline,
-    marginHorizontal: Spacing.MD,
+    marginHorizontal: Spacing?.MD ?? 12,
+  },
+  centerContent: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    ...Typography.bodyMedium,
+    color: LightTheme.OnSurfaceVariant,
+    marginTop: Spacing?.MD ?? 12,
+  },
+  errorText: {
+    ...Typography.headlineSmall,
+    color: LightTheme.Error,
+    fontWeight: '600',
+    marginBottom: Spacing?.SM ?? 8,
+  },
+  errorSubtext: {
+    ...Typography.bodyMedium,
+    color: LightTheme.OnSurfaceVariant,
+    marginBottom: Spacing?.LG ?? 24,
+    textAlign: 'center',
+  },
+  retryButton: {
+    backgroundColor: LightTheme.Primary,
+    paddingHorizontal: Spacing?.LG ?? 24,
+    paddingVertical: Spacing?.MD ?? 12,
+    borderRadius: BorderRadius.MD,
+  },
+  retryButtonText: {
+    ...Typography.bodyMedium,
+    color: LightTheme.Surface,
+    fontWeight: '600',
   },
 });
 
