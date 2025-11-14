@@ -14,7 +14,10 @@ import {
   SafeAreaView,
   Dimensions,
   Switch,
+  ActivityIndicator,
 } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '../../lib/supabase';
 
 import { LightTheme } from '../../theme/colors';
 import { Typography } from '../../theme/typography';
@@ -69,150 +72,218 @@ interface ResourceAllocation {
   trend: 'up' | 'down' | 'stable';
 }
 
+// Database type definitions
+interface OperationalMetricDB {
+  id: string;
+  title: string;
+  value: string;
+  change: string;
+  change_type: string;
+  icon: string;
+  status: string;
+  updated_at: string;
+}
+
+interface WorkflowProcessDB {
+  id: string;
+  name: string;
+  description: string;
+  status: string;
+  automation_level: number;
+  efficiency: number;
+  last_run: string;
+  next_run: string;
+}
+
+interface IncidentDB {
+  id: string;
+  title: string;
+  description: string;
+  severity: string;
+  status: string;
+  assigned_to: string;
+  created_at: string;
+  resolved_at: string | null;
+}
+
+interface ResourceAllocationDB {
+  id: string;
+  resource: string;
+  allocated: number;
+  capacity: number;
+  utilization: number;
+  cost: number;
+  trend: string;
+}
+
+interface OperationsStatisticsDB {
+  total_workflows: number;
+  active_workflows: number;
+  total_incidents: number;
+  open_incidents: number;
+  critical_incidents: number;
+  average_automation_level: number;
+  average_resource_utilization: number;
+  total_resource_cost: number;
+}
+
+// Fetch functions
+const fetchOperationalMetrics = async (): Promise<OperationalMetric[]> => {
+  const { data, error } = await supabase.rpc('get_operational_metrics');
+  if (error) throw error;
+
+  return (data || []).map((metric: OperationalMetricDB) => ({
+    id: metric.id,
+    title: metric.title,
+    value: metric.value,
+    change: metric.change,
+    changeType: metric.change_type as any,
+    icon: metric.icon,
+    status: metric.status as any,
+  }));
+};
+
+const fetchWorkflowProcesses = async (): Promise<WorkflowProcess[]> => {
+  const { data, error } = await supabase.rpc('get_workflow_processes');
+  if (error) throw error;
+
+  return (data || []).map((workflow: WorkflowProcessDB) => ({
+    id: workflow.id,
+    name: workflow.name,
+    description: workflow.description || '',
+    status: workflow.status as any,
+    automationLevel: workflow.automation_level,
+    efficiency: workflow.efficiency,
+    lastRun: new Date(workflow.last_run),
+    nextRun: new Date(workflow.next_run),
+  }));
+};
+
+const fetchIncidents = async (): Promise<Incident[]> => {
+  const { data, error } = await supabase.rpc('get_incidents');
+  if (error) throw error;
+
+  return (data || []).map((incident: IncidentDB) => ({
+    id: incident.id,
+    title: incident.title,
+    description: incident.description || '',
+    severity: incident.severity as any,
+    status: incident.status as any,
+    assignedTo: incident.assigned_to,
+    createdAt: new Date(incident.created_at),
+    resolvedAt: incident.resolved_at ? new Date(incident.resolved_at) : undefined,
+  }));
+};
+
+const fetchResourceAllocations = async (): Promise<ResourceAllocation[]> => {
+  const { data, error } = await supabase.rpc('get_resource_allocations');
+  if (error) throw error;
+
+  return (data || []).map((resource: ResourceAllocationDB) => ({
+    id: resource.id,
+    resource: resource.resource,
+    allocated: resource.allocated,
+    capacity: resource.capacity,
+    utilization: resource.utilization,
+    cost: resource.cost,
+    trend: resource.trend as any,
+  }));
+};
+
+const fetchOperationsStatistics = async (): Promise<OperationsStatisticsDB> => {
+  const { data, error } = await supabase.rpc('get_operations_statistics');
+  if (error) throw error;
+
+  return data?.[0] || {
+    total_workflows: 0,
+    active_workflows: 0,
+    total_incidents: 0,
+    open_incidents: 0,
+    critical_incidents: 0,
+    average_automation_level: 0,
+    average_resource_utilization: 0,
+    total_resource_cost: 0,
+  };
+};
+
 const OperationsManagementScreen: React.FC<OperationsManagementScreenProps> = ({
   adminId,
   onNavigate,
 }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'workflows' | 'incidents' | 'resources'>('overview');
   const [autoRefresh, setAutoRefresh] = useState(true);
-  
+
   const handleBackNavigation = () => {
     onNavigate('back');
   };
 
-  // Mock operational data
-  const operationalMetrics: OperationalMetric[] = [
-    {
-      id: '1',
-      title: 'System Uptime',
-      value: '99.97%',
-      change: '+0.02%',
-      changeType: 'increase',
-      icon: '⚡',
-      status: 'excellent',
-    },
-    {
-      id: '2',
-      title: 'Process Automation',
-      value: '73%',
-      change: '+12%',
-      changeType: 'increase',
-      icon: '🤖',
-      status: 'good',
-    },
-    {
-      id: '3',
-      title: 'Resource Utilization',
-      value: '87%',
-      change: '+5%',
-      changeType: 'increase',
-      icon: '📊',
-      status: 'warning',
-    },
-    {
-      id: '4',
-      title: 'Incident Response',
-      value: '2.3h',
-      change: '-45min',
-      changeType: 'decrease',
-      icon: '🚨',
-      status: 'good',
-    },
-  ];
+  // Fetch data using React Query
+  const {
+    data: operationalMetrics = [],
+    isLoading: metricsLoading,
+    error: metricsError,
+    refetch: refetchMetrics
+  } = useQuery({
+    queryKey: ['operational_metrics'],
+    queryFn: fetchOperationalMetrics,
+    refetchInterval: autoRefresh ? 30000 : false, // Refetch every 30 seconds if auto-refresh enabled
+  });
 
-  const workflowProcesses: WorkflowProcess[] = [
-    {
-      id: '1',
-      name: 'Student Enrollment',
-      description: 'Automated student registration and onboarding process',
-      status: 'active',
-      automationLevel: 85,
-      efficiency: 92,
-      lastRun: new Date('2025-03-03T08:00:00'),
-      nextRun: new Date('2025-03-04T08:00:00'),
-    },
-    {
-      id: '2',
-      name: 'Payment Processing',
-      description: 'Automated fee collection and invoice generation',
-      status: 'active',
-      automationLevel: 95,
-      efficiency: 98,
-      lastRun: new Date('2025-03-03T12:00:00'),
-      nextRun: new Date('2025-03-03T18:00:00'),
-    },
-    {
-      id: '3',
-      name: 'Performance Reports',
-      description: 'Weekly academic performance report generation',
-      status: 'paused',
-      automationLevel: 70,
-      efficiency: 78,
-      lastRun: new Date('2025-02-28T09:00:00'),
-      nextRun: new Date('2025-03-07T09:00:00'),
-    },
-  ];
+  const {
+    data: workflowProcesses = [],
+    isLoading: workflowsLoading,
+    error: workflowsError,
+    refetch: refetchWorkflows
+  } = useQuery({
+    queryKey: ['workflow_processes'],
+    queryFn: fetchWorkflowProcesses,
+    refetchInterval: autoRefresh ? 60000 : false, // Refetch every 60 seconds if auto-refresh enabled
+  });
 
-  const incidents: Incident[] = [
-    {
-      id: '1',
-      title: 'Database Connection Timeout',
-      description: 'Intermittent database connection issues affecting user login',
-      severity: 'high',
-      status: 'investigating',
-      assignedTo: 'DevOps Team',
-      createdAt: new Date('2025-03-03T10:30:00'),
-    },
-    {
-      id: '2',
-      title: 'Payment Gateway Delay',
-      description: 'Slower response times from primary payment gateway',
-      severity: 'medium',
-      status: 'resolved',
-      assignedTo: 'Finance Team',
-      createdAt: new Date('2025-03-02T14:15:00'),
-      resolvedAt: new Date('2025-03-02T16:45:00'),
-    },
-    {
-      id: '3',
-      title: 'Mobile App Crash',
-      description: 'App crashes on specific Android versions during video playback',
-      severity: 'critical',
-      status: 'open',
-      assignedTo: 'Mobile Team',
-      createdAt: new Date('2025-03-03T09:00:00'),
-    },
-  ];
+  const {
+    data: incidents = [],
+    isLoading: incidentsLoading,
+    error: incidentsError,
+    refetch: refetchIncidents
+  } = useQuery({
+    queryKey: ['incidents'],
+    queryFn: fetchIncidents,
+    refetchInterval: autoRefresh ? 30000 : false, // Refetch every 30 seconds if auto-refresh enabled
+  });
 
-  const resourceAllocations: ResourceAllocation[] = [
-    {
-      id: '1',
-      resource: 'Server Infrastructure',
-      allocated: 45,
-      capacity: 60,
-      utilization: 75,
-      cost: 12500,
-      trend: 'up',
-    },
-    {
-      id: '2',
-      resource: 'Teaching Staff',
-      allocated: 28,
-      capacity: 32,
-      utilization: 88,
-      cost: 89600,
-      trend: 'stable',
-    },
-    {
-      id: '3',
-      resource: 'Support Staff',
-      allocated: 12,
-      capacity: 15,
-      utilization: 80,
-      cost: 24000,
-      trend: 'down',
-    },
-  ];
+  const {
+    data: resourceAllocations = [],
+    isLoading: resourcesLoading,
+    error: resourcesError,
+    refetch: refetchResources
+  } = useQuery({
+    queryKey: ['resource_allocations'],
+    queryFn: fetchResourceAllocations,
+    refetchInterval: autoRefresh ? 60000 : false,
+  });
+
+  const {
+    data: statistics,
+    isLoading: statsLoading,
+    error: statsError
+  } = useQuery({
+    queryKey: ['operations_statistics'],
+    queryFn: fetchOperationsStatistics,
+    refetchInterval: autoRefresh ? 60000 : false,
+  });
+
+  // Combined loading and error states
+  const isLoading = metricsLoading || workflowsLoading || incidentsLoading || resourcesLoading || statsLoading;
+  const error = metricsError || workflowsError || incidentsError || resourcesError || statsError;
+
+  const handleRefresh = async () => {
+    await Promise.all([
+      refetchMetrics(),
+      refetchWorkflows(),
+      refetchIncidents(),
+      refetchResources(),
+    ]);
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -517,11 +588,40 @@ const OperationsManagementScreen: React.FC<OperationsManagementScreenProps> = ({
     </View>
   );
 
+  // Loading State
+  if (isLoading) {
+    return (
+      <View style={styles.container}>
+        {renderHeader()}
+        <View style={[styles.content, styles.centerContent]}>
+          <ActivityIndicator size="large" color="#7C3AED" />
+          <Text style={styles.loadingText}>Loading operations data...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  // Error State
+  if (error) {
+    return (
+      <View style={styles.container}>
+        {renderHeader()}
+        <View style={[styles.content, styles.centerContent]}>
+          <Text style={styles.errorText}>Failed to load data</Text>
+          <Text style={styles.errorSubtext}>{error.message}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={handleRefresh}>
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       {renderHeader()}
       {renderTabSelector()}
-      <ScrollView 
+      <ScrollView
         style={styles.content}
         showsVerticalScrollIndicator={false}
       >
@@ -550,8 +650,8 @@ const styles = StyleSheet.create({
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: Spacing.MD,
-    paddingVertical: Spacing.LG,
+    paddingHorizontal: Spacing?.MD ?? 12,
+    paddingVertical: Spacing?.LG ?? 24,
   },
   backButton: {
     width: 40,
@@ -560,7 +660,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: Spacing.MD,
+    marginRight: Spacing?.MD ?? 12,
   },
   backButtonText: {
     fontSize: 24,
@@ -589,12 +689,12 @@ const styles = StyleSheet.create({
     fontSize: Typography.bodySmall.fontSize,
     fontFamily: Typography.bodySmall.fontFamily,
     color: LightTheme.OnPrimary,
-    marginBottom: Spacing.XS,
+    marginBottom: Spacing?.XS ?? 4,
   },
   tabContainer: {
     flexDirection: 'row',
     backgroundColor: LightTheme.Surface,
-    margin: Spacing.MD,
+    margin: Spacing?.MD ?? 12,
     borderRadius: 16,
     padding: 4,
     elevation: 2,
@@ -606,7 +706,7 @@ const styles = StyleSheet.create({
   tab: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: Spacing.SM,
+    paddingVertical: Spacing?.SM ?? 8,
     borderRadius: 12,
   },
   tabActive: {
@@ -614,7 +714,7 @@ const styles = StyleSheet.create({
   },
   tabIcon: {
     fontSize: 16,
-    marginBottom: Spacing.XS,
+    marginBottom: Spacing?.XS ?? 4,
   },
   tabText: {
     fontSize: Typography.bodySmall.fontSize,
@@ -631,19 +731,19 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   overviewContainer: {
-    padding: Spacing.MD,
+    padding: Spacing?.MD ?? 12,
   },
   metricsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginHorizontal: -Spacing.XS,
-    marginBottom: Spacing.LG,
+    marginHorizontal: -Spacing?.XS ?? 8,
+    marginBottom: Spacing?.LG ?? 24,
   },
   metricCard: {
-    width: (width - Spacing.MD * 2 - Spacing.XS * 2) / 2,
+    width: (width - Spacing?.MD ?? 8 * 2 - Spacing?.XS ?? 8 * 2) / 2,
     backgroundColor: LightTheme.Surface,
-    margin: Spacing.XS,
-    padding: Spacing.LG,
+    margin: Spacing?.XS ?? 4,
+    padding: Spacing?.LG ?? 24,
     borderRadius: 16,
     elevation: 2,
     shadowColor: '#000',
@@ -655,7 +755,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing.SM,
+    marginBottom: Spacing?.SM ?? 8,
   },
   metricIcon: {
     fontSize: 24,
@@ -670,18 +770,18 @@ const styles = StyleSheet.create({
     fontFamily: Typography.headlineSmall.fontFamily,
     fontWeight: Typography.headlineSmall.fontWeight,
     color: LightTheme.OnSurface,
-    marginBottom: Spacing.XS,
+    marginBottom: Spacing?.XS ?? 4,
   },
   metricTitle: {
     fontSize: Typography.bodyMedium.fontSize,
     fontFamily: Typography.bodyMedium.fontFamily,
     color: LightTheme.OnSurfaceVariant,
-    marginBottom: Spacing.SM,
+    marginBottom: Spacing?.SM ?? 8,
   },
   metricChangeContainer: {
     backgroundColor: LightTheme.SurfaceVariant,
-    paddingHorizontal: Spacing.SM,
-    paddingVertical: Spacing.XS,
+    paddingHorizontal: Spacing?.SM ?? 8,
+    paddingVertical: Spacing?.XS ?? 4,
     borderRadius: 12,
     alignSelf: 'flex-start',
   },
@@ -700,25 +800,25 @@ const styles = StyleSheet.create({
     color: LightTheme.OnSurfaceVariant,
   },
   quickActions: {
-    marginTop: Spacing.LG,
+    marginTop: Spacing?.LG ?? 24,
   },
   sectionTitle: {
     fontSize: Typography.titleMedium.fontSize,
     fontFamily: Typography.titleMedium.fontFamily,
     fontWeight: Typography.titleMedium.fontWeight,
     color: LightTheme.OnSurface,
-    marginBottom: Spacing.LG,
+    marginBottom: Spacing?.LG ?? 24,
   },
   actionGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginHorizontal: -Spacing.XS,
+    marginHorizontal: -Spacing?.XS ?? 8,
   },
   actionButton: {
-    width: (width - Spacing.MD * 2 - Spacing.XS * 2) / 2,
+    width: (width - Spacing?.MD ?? 8 * 2 - Spacing?.XS ?? 8 * 2) / 2,
     backgroundColor: LightTheme.Surface,
-    margin: Spacing.XS,
-    padding: Spacing.LG,
+    margin: Spacing?.XS ?? 4,
+    padding: Spacing?.LG ?? 24,
     borderRadius: 16,
     alignItems: 'center',
     elevation: 2,
@@ -729,7 +829,7 @@ const styles = StyleSheet.create({
   },
   actionIcon: {
     fontSize: 32,
-    marginBottom: Spacing.SM,
+    marginBottom: Spacing?.SM ?? 8,
   },
   actionText: {
     fontSize: Typography.bodyMedium.fontSize,
@@ -739,13 +839,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   workflowsContainer: {
-    padding: Spacing.MD,
+    padding: Spacing?.MD ?? 12,
   },
   workflowCard: {
     backgroundColor: LightTheme.Surface,
-    padding: Spacing.LG,
+    padding: Spacing?.LG ?? 24,
     borderRadius: 16,
-    marginBottom: Spacing.MD,
+    marginBottom: Spacing?.MD ?? 12,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -756,18 +856,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: Spacing.LG,
+    marginBottom: Spacing?.LG ?? 24,
   },
   workflowInfo: {
     flex: 1,
-    marginRight: Spacing.MD,
+    marginRight: Spacing?.MD ?? 12,
   },
   workflowName: {
     fontSize: Typography.titleMedium.fontSize,
     fontFamily: Typography.titleMedium.fontFamily,
     fontWeight: Typography.titleMedium.fontWeight,
     color: LightTheme.OnSurface,
-    marginBottom: Spacing.XS,
+    marginBottom: Spacing?.XS ?? 4,
   },
   workflowDescription: {
     fontSize: Typography.bodyMedium.fontSize,
@@ -775,8 +875,8 @@ const styles = StyleSheet.create({
     color: LightTheme.OnSurfaceVariant,
   },
   workflowStatus: {
-    paddingHorizontal: Spacing.SM,
-    paddingVertical: Spacing.XS,
+    paddingHorizontal: Spacing?.SM ?? 8,
+    paddingVertical: Spacing?.XS ?? 4,
     borderRadius: 12,
   },
   workflowStatusText: {
@@ -786,12 +886,12 @@ const styles = StyleSheet.create({
     textTransform: 'capitalize',
   },
   workflowMetrics: {
-    marginBottom: Spacing.LG,
+    marginBottom: Spacing?.LG ?? 24,
   },
   workflowMetric: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: Spacing.SM,
+    marginBottom: Spacing?.SM ?? 8,
   },
   metricLabel: {
     fontSize: Typography.bodySmall.fontSize,
@@ -804,7 +904,7 @@ const styles = StyleSheet.create({
     height: 8,
     backgroundColor: LightTheme.SurfaceVariant,
     borderRadius: 4,
-    marginHorizontal: Spacing.SM,
+    marginHorizontal: Spacing?.SM ?? 8,
   },
   progressFill: {
     height: '100%',
@@ -821,22 +921,22 @@ const styles = StyleSheet.create({
   workflowSchedule: {
     borderTopWidth: 1,
     borderTopColor: LightTheme.OutlineVariant,
-    paddingTop: Spacing.SM,
+    paddingTop: Spacing?.SM ?? 8,
   },
   scheduleText: {
     fontSize: Typography.bodySmall.fontSize,
     fontFamily: Typography.bodySmall.fontFamily,
     color: LightTheme.OnSurfaceVariant,
-    marginBottom: Spacing.XS,
+    marginBottom: Spacing?.XS ?? 4,
   },
   incidentsContainer: {
-    padding: Spacing.MD,
+    padding: Spacing?.MD ?? 12,
   },
   incidentCard: {
     backgroundColor: LightTheme.Surface,
-    padding: Spacing.LG,
+    padding: Spacing?.LG ?? 24,
     borderRadius: 16,
-    marginBottom: Spacing.MD,
+    marginBottom: Spacing?.MD ?? 12,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -847,18 +947,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: Spacing.MD,
+    marginBottom: Spacing?.MD ?? 12,
   },
   incidentInfo: {
     flex: 1,
-    marginRight: Spacing.MD,
+    marginRight: Spacing?.MD ?? 12,
   },
   incidentTitle: {
     fontSize: Typography.titleSmall.fontSize,
     fontFamily: Typography.titleSmall.fontFamily,
     fontWeight: Typography.titleSmall.fontWeight,
     color: LightTheme.OnSurface,
-    marginBottom: Spacing.XS,
+    marginBottom: Spacing?.XS ?? 4,
   },
   incidentDescription: {
     fontSize: Typography.bodyMedium.fontSize,
@@ -869,10 +969,10 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   severityTag: {
-    paddingHorizontal: Spacing.SM,
-    paddingVertical: Spacing.XS,
+    paddingHorizontal: Spacing?.SM ?? 8,
+    paddingVertical: Spacing?.XS ?? 4,
     borderRadius: 12,
-    marginBottom: Spacing.XS,
+    marginBottom: Spacing?.XS ?? 4,
   },
   severityText: {
     fontSize: Typography.bodySmall.fontSize,
@@ -881,8 +981,8 @@ const styles = StyleSheet.create({
     textTransform: 'capitalize',
   },
   statusTag: {
-    paddingHorizontal: Spacing.SM,
-    paddingVertical: Spacing.XS,
+    paddingHorizontal: Spacing?.SM ?? 8,
+    paddingVertical: Spacing?.XS ?? 4,
     borderRadius: 12,
   },
   statusText: {
@@ -894,28 +994,28 @@ const styles = StyleSheet.create({
   incidentDetails: {
     borderTopWidth: 1,
     borderTopColor: LightTheme.OutlineVariant,
-    paddingTop: Spacing.SM,
+    paddingTop: Spacing?.SM ?? 8,
   },
   incidentAssigned: {
     fontSize: Typography.bodySmall.fontSize,
     fontFamily: Typography.bodySmall.fontFamily,
     color: LightTheme.OnSurfaceVariant,
-    marginBottom: Spacing.XS,
+    marginBottom: Spacing?.XS ?? 4,
   },
   incidentTime: {
     fontSize: Typography.bodySmall.fontSize,
     fontFamily: Typography.bodySmall.fontFamily,
     color: LightTheme.OnSurfaceVariant,
-    marginBottom: Spacing.XS,
+    marginBottom: Spacing?.XS ?? 4,
   },
   resourcesContainer: {
-    padding: Spacing.MD,
+    padding: Spacing?.MD ?? 12,
   },
   resourceCard: {
     backgroundColor: LightTheme.Surface,
-    padding: Spacing.LG,
+    padding: Spacing?.LG ?? 24,
     borderRadius: 16,
-    marginBottom: Spacing.MD,
+    marginBottom: Spacing?.MD ?? 12,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -926,7 +1026,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing.LG,
+    marginBottom: Spacing?.LG ?? 24,
   },
   resourceName: {
     fontSize: Typography.titleMedium.fontSize,
@@ -940,7 +1040,7 @@ const styles = StyleSheet.create({
   },
   trendIcon: {
     fontSize: 16,
-    marginRight: Spacing.XS,
+    marginRight: Spacing?.XS ?? 4,
   },
   resourceCost: {
     fontSize: Typography.bodyMedium.fontSize,
@@ -955,20 +1055,20 @@ const styles = StyleSheet.create({
   },
   resourceAllocation: {
     flex: 1,
-    marginRight: Spacing.LG,
+    marginRight: Spacing?.LG ?? 24,
   },
   allocationLabel: {
     fontSize: Typography.bodySmall.fontSize,
     fontFamily: Typography.bodySmall.fontFamily,
     color: LightTheme.OnSurfaceVariant,
-    marginBottom: Spacing.XS,
+    marginBottom: Spacing?.XS ?? 4,
   },
   allocationValue: {
     fontSize: Typography.titleSmall.fontSize,
     fontFamily: Typography.titleSmall.fontFamily,
     fontWeight: Typography.titleSmall.fontWeight,
     color: LightTheme.OnSurface,
-    marginBottom: Spacing.SM,
+    marginBottom: Spacing?.SM ?? 8,
   },
   allocationBar: {
     height: 8,
@@ -986,13 +1086,50 @@ const styles = StyleSheet.create({
     fontSize: Typography.bodySmall.fontSize,
     fontFamily: Typography.bodySmall.fontFamily,
     color: LightTheme.OnSurfaceVariant,
-    marginBottom: Spacing.XS,
+    marginBottom: Spacing?.XS ?? 4,
   },
   utilizationValue: {
     fontSize: Typography.headlineSmall.fontSize,
     fontFamily: Typography.headlineSmall.fontFamily,
     fontWeight: Typography.headlineSmall.fontWeight,
     color: LightTheme.OnSurface,
+  },
+  centerContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: Typography.bodyMedium.fontSize,
+    fontFamily: Typography.bodyMedium.fontFamily,
+    color: LightTheme.OnSurfaceVariant,
+    marginTop: Spacing?.MD ?? 12,
+  },
+  errorText: {
+    fontSize: Typography.headlineSmall.fontSize,
+    fontFamily: Typography.headlineSmall.fontFamily,
+    fontWeight: '600' as any,
+    color: LightTheme.Error,
+    marginBottom: Spacing?.SM ?? 8,
+  },
+  errorSubtext: {
+    fontSize: Typography.bodyMedium.fontSize,
+    fontFamily: Typography.bodyMedium.fontFamily,
+    color: LightTheme.OnSurfaceVariant,
+    marginBottom: Spacing?.LG ?? 24,
+    textAlign: 'center' as any,
+  },
+  retryButton: {
+    backgroundColor: LightTheme.Primary,
+    paddingHorizontal: Spacing?.LG ?? 24,
+    paddingVertical: Spacing?.MD ?? 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    fontSize: Typography.bodyMedium.fontSize,
+    fontFamily: Typography.bodyMedium.fontFamily,
+    color: LightTheme.Surface,
+    fontWeight: '600' as any,
   },
 });
 
