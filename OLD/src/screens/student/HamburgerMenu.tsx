@@ -4,7 +4,7 @@
  * Design: Material Design drawer with theme color #4A90E2
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import {
   View,
   StyleSheet,
@@ -21,6 +21,7 @@ import { safeNavigate } from '../../utils/navigationService';
 import { useAuth } from '../../context/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../../config/supabaseClient';
+import { useTheme } from '../../context/ThemeContext';
 
 interface StudentData {
   name?: string;
@@ -36,8 +37,28 @@ interface HamburgerMenuProps {
   studentData?: StudentData;
 }
 
+type MenuItemConfig = {
+  key: string;
+  icon: string;
+  label: string;
+  route?: string;
+  params?: Record<string, unknown>;
+  analyticsEvent: string;
+  badge?: number | null;
+  showDot?: boolean;
+  action?: () => void;
+  disabled?: boolean;
+};
+
+type MenuSectionConfig = {
+  key: string;
+  title: string;
+  items: MenuItemConfig[];
+};
+
 export default function HamburgerMenu({ visible, onClose, currentRoute, studentData }: HamburgerMenuProps) {
   const { user } = useAuth();
+  const { theme } = useTheme();
 
   useEffect(() => {
     if (visible) {
@@ -68,13 +89,70 @@ export default function HamburgerMenu({ visible, onClose, currentRoute, studentD
     enabled: !!user?.id && visible, // Only fetch when menu is visible
   });
 
-  const handleNavigate = (route: string, action: string) => {
-    trackAction(action, 'HamburgerMenu');
+  const { data: pendingDoubtCount } = useQuery({
+    queryKey: ['pending-doubts-count', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return 0;
+
+      const { count, error } = await supabase
+        .from('doubts')
+        .select('id', { count: 'exact', head: true })
+        .eq('student_id', user.id)
+        .in('status', ['open', 'viewed']);
+
+      if (error) {
+        console.error('Error fetching pending doubt count:', error);
+        return 0;
+      }
+
+      return count || 0;
+    },
+    enabled: !!user?.id && visible,
+  });
+
+  const shouldFetchProfile = !studentData && !!user?.id && visible;
+  const { data: fetchedStudentProfile } = useQuery({
+    queryKey: ['student-profile-menu', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data, error } = await supabase
+        .from('students')
+        .select('name, grade, section, student_id')
+        .eq('id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching student profile for menu:', error);
+        return null;
+      }
+
+      return data;
+    },
+    enabled: shouldFetchProfile,
+  });
+
+  const profile = studentData || fetchedStudentProfile || {};
+
+  const handleItemPress = (item: MenuItemConfig) => {
+    if (item.disabled) {
+      trackAction(`${item.analyticsEvent}_disabled`, 'HamburgerMenu');
+      return;
+    }
+
+    trackAction(item.analyticsEvent, 'HamburgerMenu');
     onClose();
+
     setTimeout(() => {
-      // @ts-expect-error - Student routes not yet in ParentStackParamList
-      safeNavigate(route);
-    }, 300);
+      if (item.action) {
+        item.action();
+        return;
+      }
+
+      if (item.route) {
+        // @ts-expect-error - Student routes not yet in ParentStackParamList
+        safeNavigate(item.route, item.params);
+      }
+    }, 250);
   };
 
   const handleLogout = () => {
@@ -123,6 +201,180 @@ export default function HamburgerMenu({ visible, onClose, currentRoute, studentD
     );
   };
 
+  const menuSections: MenuSectionConfig[] = useMemo(() => [
+    {
+      key: 'main-nav',
+      title: 'MAIN NAVIGATION',
+      items: [
+        {
+          key: 'dashboard',
+          icon: 'dY`Y',
+          label: 'Dashboard',
+          route: 'NewStudentDashboard',
+          analyticsEvent: 'nav_dashboard',
+        },
+        {
+          key: 'classes',
+          icon: 'dY?�',
+          label: 'My Classes',
+          route: 'NewEnhancedSchedule',
+          analyticsEvent: 'nav_classes',
+          badge: liveClassCount ?? 0,
+        },
+        {
+          key: 'library',
+          icon: 'dY"s',
+          label: 'Study Library',
+          route: 'NewStudyLibraryScreen',
+          analyticsEvent: 'nav_library',
+        },
+        {
+          key: 'progress',
+          icon: 'dY"^',
+          label: 'My Progress',
+          route: 'NewProgressDetailScreen',
+          analyticsEvent: 'nav_progress',
+        },
+        {
+          key: 'peers',
+          icon: 'dY`�',
+          label: 'Peer Network',
+          route: 'NewPeerLearningNetwork',
+          analyticsEvent: 'nav_peers',
+        },
+        {
+          key: 'ai_tutor',
+          icon: 'dY-',
+          label: 'AI Tutor',
+          route: 'NewAITutorChat',
+          analyticsEvent: 'nav_ai_tutor',
+          showDot: true,
+        },
+      ],
+    },
+    {
+      key: 'quick-actions',
+      title: 'QUICK ACTIONS',
+      items: [
+        {
+          key: 'doubt',
+          icon: '�?"',
+          label: 'Ask a Doubt',
+          route: 'NewDoubtSubmission',
+          analyticsEvent: 'quick_doubt',
+          badge: pendingDoubtCount ?? 0,
+        },
+        {
+          key: 'schedule',
+          icon: 'dY".',
+          label: 'View Schedule',
+          route: 'NewEnhancedSchedule',
+          analyticsEvent: 'quick_schedule',
+        },
+        {
+          key: 'assignments',
+          icon: '�o.',
+          label: 'Assignments',
+          route: 'NewAssignmentDetailScreen',
+          analyticsEvent: 'quick_assignments',
+        },
+        {
+          key: 'learning_hub',
+          icon: 'dY\'�',
+          label: 'Learning Hub',
+          route: 'NewGamifiedLearningHub',
+          analyticsEvent: 'quick_learning_hub',
+        },
+      ],
+    },
+    {
+      key: 'settings-support',
+      title: 'SETTINGS & SUPPORT',
+      items: [
+        {
+          key: 'settings',
+          icon: '??',
+          label: 'Settings',
+          route: 'StudentProfileScreen',
+          analyticsEvent: 'settings',
+        },
+        {
+          key: 'preferences',
+          icon: '???',
+          label: 'App Preferences',
+          analyticsEvent: 'app_preferences',
+          disabled: true,
+        },
+        {
+          key: 'notifications',
+          icon: '??',
+          label: 'Notifications',
+          analyticsEvent: 'notifications_settings',
+          disabled: true,
+        },
+        {
+          key: 'help',
+          icon: '??',
+          label: 'Help Center',
+          analyticsEvent: 'help_center',
+          disabled: true,
+        },
+        {
+          key: 'support',
+          icon: '??',
+          label: 'Contact Support',
+          analyticsEvent: 'contact_support',
+          disabled: true,
+        },
+      ],
+    },
+  ], [liveClassCount, pendingDoubtCount]);
+
+  const renderMenuItem = (item: MenuItemConfig) => {
+    const isActive = currentRoute === item.route;
+    const showBadge = typeof item.badge === 'number' && item.badge > 0;
+
+    return (
+      <TouchableOpacity
+        key={item.key}
+        style={[
+          styles.menuItem,
+          isActive && styles.menuItemActive,
+          item.disabled && styles.menuItemDisabled,
+        ]}
+        onPress={() => handleItemPress(item)}
+        accessibilityRole="button"
+        disabled={item.disabled}
+      >
+        <T
+          style={[
+            styles.menuIcon,
+            isActive && styles.menuIconActive,
+            item.disabled && styles.menuIconDisabled,
+          ]}
+        >
+          {item.icon}
+        </T>
+        <T
+          variant="body"
+          weight="medium"
+          style={[
+            styles.menuText,
+            item.disabled && styles.menuTextDisabled,
+          ]}
+        >
+          {item.label}
+        </T>
+        {showBadge && (
+          <View style={styles.badge}>
+            <T style={styles.badgeText}>{item.badge}</T>
+          </View>
+        )}
+        {!showBadge && item.showDot && <View style={styles.dotIndicator} />}
+      </TouchableOpacity>
+    );
+  };
+
   return (
     <Modal
       visible={visible}
@@ -150,25 +402,29 @@ export default function HamburgerMenu({ visible, onClose, currentRoute, studentD
                   <T style={styles.closeIcon}>✕</T>
                 </TouchableOpacity>
               </View>
-
               {/* User Profile Section */}
               <View style={styles.profileSection}>
-                <View style={styles.avatar}>
+                <View style={[styles.avatar, { backgroundColor: theme.Primary }]}>
                   <T style={styles.avatarText}>
-                    {studentData?.name
-                      ? studentData.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
-                      : 'ST'}
+                    {(profile?.name || 'Student')
+                      .split(' ')
+                      .map((part) => part[0])
+                      .join('')
+                      .slice(0, 2)
+                      .toUpperCase() || 'ST'}
                   </T>
                 </View>
                 <View style={styles.profileInfo}>
                   <T variant="body" weight="bold" style={[styles.profileName, { marginBottom: 2 }]}>
-                    {studentData?.name || 'Student'}
+                    {profile?.name || 'Student'}
                   </T>
                   <T variant="caption" style={[styles.profileDetails, { marginBottom: 2 }]}>
-                    Grade {studentData?.grade || 'N/A'}, Section {studentData?.section || 'N/A'}
+                    {profile?.grade ? `Grade ${profile.grade}` : 'Grade N/A'}
+                    {profile?.section ? ` | Section ${profile.section}` : ''}
                   </T>
                   <TouchableOpacity
-                    onPress={() => handleNavigate('StudentProfileScreen', 'view_profile')}
+                    onPress={() => handleItemPress(menuSections[2].items[0])}
+                    accessibilityRole="button"
                   >
                     <T variant="caption" weight="semiBold" style={styles.viewProfileLink}>
                       View Profile
@@ -176,201 +432,20 @@ export default function HamburgerMenu({ visible, onClose, currentRoute, studentD
                   </TouchableOpacity>
                 </View>
               </View>
-
-              {/* Main Navigation */}
-              <View style={styles.section}>
-                <T variant="caption" weight="semiBold" style={styles.sectionHeader}>
-                  MAIN NAVIGATION
-                </T>
-                <View>
-                  <TouchableOpacity
-                    style={[
-                      styles.menuItem,
-                      currentRoute === 'NewStudentDashboard' && styles.menuItemActive,
-                    ]}
-                    onPress={() => handleNavigate('NewStudentDashboard', 'nav_dashboard')}
-                    accessibilityRole="button"
-                  >
-                    <T style={[
-                      styles.menuIcon,
-                      currentRoute === 'NewStudentDashboard' && styles.menuIconActive,
-                    ]}>📊</T>
-                    <T
-                      variant="body"
-                      weight={currentRoute === 'NewStudentDashboard' ? 'bold' : 'medium'}
-                      style={styles.menuText}
-                    >
-                      Dashboard
+            
+              {menuSections.map((section, index) => (
+                <React.Fragment key={section.key}>
+                  <View style={styles.section}>
+                    <T variant="caption" weight="semiBold" style={styles.sectionHeader}>
+                      {section.title}
                     </T>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.menuItem}
-                    onPress={() => handleNavigate('NewScheduleScreen', 'nav_classes')}
-                    accessibilityRole="button"
-                  >
-                    <T style={styles.menuIcon}>🏫</T>
-                    <T variant="body" weight="medium" style={styles.menuText}>My Classes</T>
-                    {liveClassCount && liveClassCount > 0 && (
-                      <View style={styles.badge}>
-                        <T style={styles.badgeText}>{liveClassCount}</T>
-                      </View>
-                    )}
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.menuItem}
-                    onPress={() => handleNavigate('NewStudyLibraryScreen', 'nav_library')}
-                    accessibilityRole="button"
-                  >
-                    <T style={styles.menuIcon}>📚</T>
-                    <T variant="body" weight="medium" style={styles.menuText}>Study Library</T>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.menuItem}
-                    onPress={() => handleNavigate('NewProgressDetailScreen', 'nav_progress')}
-                    accessibilityRole="button"
-                  >
-                    <T style={styles.menuIcon}>📈</T>
-                    <T variant="body" weight="medium" style={styles.menuText}>My Progress</T>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.menuItem}
-                    onPress={() => handleNavigate('NewPeerLearningNetwork', 'nav_peers')}
-                    accessibilityRole="button"
-                  >
-                    <T style={styles.menuIcon}>👥</T>
-                    <T variant="body" weight="medium" style={styles.menuText}>Peer Network</T>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.menuItem}
-                    onPress={() => handleNavigate('NewAITutorChat', 'nav_ai_tutor')}
-                    accessibilityRole="button"
-                  >
-                    <T style={styles.menuIcon}>🤖</T>
-                    <T variant="body" weight="medium" style={styles.menuText}>AI Tutor</T>
-                    <View style={styles.dotIndicator} />
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              <View style={styles.divider} />
-
-              {/* Quick Actions */}
-              <View style={styles.section}>
-                <T variant="caption" weight="semiBold" style={styles.sectionHeader}>
-                  QUICK ACTIONS
-                </T>
-                <View>
-                  <TouchableOpacity
-                    style={styles.menuItem}
-                    onPress={() => handleNavigate('NewDoubtSubmission', 'quick_doubt')}
-                    accessibilityRole="button"
-                  >
-                    <T style={styles.menuIcon}>❓</T>
-                    <T variant="body" weight="medium" style={styles.menuText}>Ask a Doubt</T>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.menuItem}
-                    onPress={() => handleNavigate('NewEnhancedSchedule', 'quick_schedule')}
-                    accessibilityRole="button"
-                  >
-                    <T style={styles.menuIcon}>📅</T>
-                    <T variant="body" weight="medium" style={styles.menuText}>View Schedule</T>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.menuItem}
-                    onPress={() => handleNavigate('NewAssignmentDetailScreen', 'quick_assignments')}
-                    accessibilityRole="button"
-                  >
-                    <T style={styles.menuIcon}>✅</T>
-                    <T variant="body" weight="medium" style={styles.menuText}>Assignments</T>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.menuItem}
-                    onPress={() => handleNavigate('NewGamifiedLearningHub', 'quick_learning_hub')}
-                    accessibilityRole="button"
-                  >
-                    <T style={styles.menuIcon}>💡</T>
-                    <T variant="body" weight="medium" style={styles.menuText}>Learning Hub</T>
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              <View style={styles.divider} />
-
-              {/* Settings & Support */}
-              <View style={styles.section}>
-                <T variant="caption" weight="semiBold" style={styles.sectionHeader}>
-                  SETTINGS & SUPPORT
-                </T>
-                <View>
-                  <TouchableOpacity
-                    style={styles.menuItem}
-                    onPress={() => handleNavigate('StudentProfileScreen', 'settings')}
-                    accessibilityRole="button"
-                  >
-                    <T style={styles.menuIcon}>⚙️</T>
-                    <T variant="body" weight="medium" style={styles.menuText}>Settings</T>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.menuItem}
-                    onPress={() => {
-                      trackAction('app_preferences', 'HamburgerMenu');
-                      onClose();
-                    }}
-                    accessibilityRole="button"
-                  >
-                    <T style={styles.menuIcon}>🎛️</T>
-                    <T variant="body" weight="medium" style={styles.menuText}>App Preferences</T>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.menuItem}
-                    onPress={() => {
-                      trackAction('notifications_settings', 'HamburgerMenu');
-                      onClose();
-                    }}
-                    accessibilityRole="button"
-                  >
-                    <T style={styles.menuIcon}>🔔</T>
-                    <T variant="body" weight="medium" style={styles.menuText}>Notifications</T>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.menuItem}
-                    onPress={() => {
-                      trackAction('help_center', 'HamburgerMenu');
-                      onClose();
-                    }}
-                    accessibilityRole="button"
-                  >
-                    <T style={styles.menuIcon}>🆘</T>
-                    <T variant="body" weight="medium" style={styles.menuText}>Help Center</T>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.menuItem}
-                    onPress={() => {
-                      trackAction('contact_support', 'HamburgerMenu');
-                      onClose();
-                    }}
-                    accessibilityRole="button"
-                  >
-                    <T style={styles.menuIcon}>📧</T>
-                    <T variant="body" weight="medium" style={styles.menuText}>Contact Support</T>
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              <View style={styles.divider} />
+                    <View>
+                      {section.items.map((item) => renderMenuItem(item))}
+                    </View>
+                  </View>
+                  {index < menuSections.length - 1 && <View style={styles.divider} />}
+                </React.Fragment>
+              ))}
 
               {/* Account Options */}
               <View style={styles.section}>
@@ -563,6 +638,15 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: '#374151',
+  },
+  menuItemDisabled: {
+    opacity: 0.5,
+  },
+  menuIconDisabled: {
+    color: '#D1D5DB',
+  },
+  menuTextDisabled: {
+    color: '#9CA3AF',
   },
   badge: {
     width: 20,

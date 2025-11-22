@@ -1,0 +1,748 @@
+﻿Below is a **complete, detailed, production-grade Student User Story Document**.
+This is structured exactly like professional product PRDs: with **Epics → User Stories → Acceptance Criteria → Data Requirements → Dependencies → Notes**.
+
+This represents every major feature we identified across the student experience.
+
+---
+
+# 📘 **STUDENT USER STORIES – COMPLETE PRODUCT DOCUMENT**
+
+---
+
+# **EPIC 1 — Student Onboarding & Profile Setup**
+
+## **US 1.1 — First-time onboarding**
+
+**As a** new student
+**I want to** set up my profile, board, class, subjects, and exam goals
+**So that** the app can personalize my learning journey.
+
+### Acceptance Criteria
+
+* Student can select:
+
+  * Board (CBSE/ICSE/State/IB)
+  * Class/Grade
+  * Academic stream (Science/Commerce/Humanities)
+  * Subjects
+  * Target exam (Boards, NEET, JEE, CUET, etc.)
+* Student can set:
+
+  * Confidence level per subject
+  * Daily available study time
+  * Preferred study hours (morning/evening)
+* Progress through multi-step UI with skip/resume support.
+* Data is saved to `student_profile`.
+
+### Data Needed
+
+* `student_profile`, `student_subjects`, `student_goals`.
+
+### Dependencies
+
+* Supabase auth (user ID)
+* Basic config tables for boards, grades, subjects.
+
+---
+
+## **US 1.2 — Edit learning profile**
+
+**As a** returning student
+**I want to** update my profile, goals, subjects
+**So that** recommendations stay relevant.
+
+### Acceptance Criteria
+
+* Edit board/class/subjects/preference.
+* Change target exam + target date.
+* Update study preferences.
+* Trigger re-generation of AI study plan.
+
+---
+
+## **US 1.3 — View my profile**
+
+**As a** student
+**I want to** see my academic details and activity stats
+**So that** I understand my overall learning identity.
+
+### Acceptance Criteria
+
+* Show: name, class, board, subjects, goals.
+* Show: total study time, streak, badges, recent activity.
+* Button to manage account.
+
+---
+
+---
+
+# **EPIC 2 — Home Dashboard & Daily Plan**
+
+## **US 2.1 — View personalized dashboard**
+
+**As a** student
+**I want to** see my day summarized in one place
+**So that** I know what to do next.
+
+### Acceptance Criteria
+
+* Greeting + avatar
+* Today’s classes list
+* Today’s study plan (AI generated)
+* Pending assignments snapshot
+* Continue Learning (recent items)
+* Streak + XP snapshot
+* Notifications icon with count
+* Quick actions: Ask Doubt, AI Study, Library, Schedule
+
+---
+
+## **US 2.2 — AI-generated daily study plan**
+
+**As a** student
+**I want to** get a personalized plan every day
+**So that** I know exactly what to study.
+
+### Acceptance Criteria
+
+* Daily plan includes 3–5 tasks:
+
+  * Videos
+  * Practice sets
+  * Revision tasks
+  * Test preparation
+* Tasks based on:
+
+  * Subjects selected
+  * Weak areas
+  * Upcoming tests
+  * Last activity
+  * Doubts asked
+* Plan updates when tasks are completed.
+* Plan updates automatically at midnight or major event (test, new chapter taught).
+
+---
+
+## **US 2.3 — Continue learning**
+
+**As a** student
+**I want to** resume my ongoing videos, tests, chapters
+**So that** I don’t lose momentum.
+
+### Acceptance Criteria
+
+* List last 5 active items:
+
+  * Video with % watched
+  * Test with progress
+  * Chapter with progress
+* Clicking resumes exactly where left off.
+
+---
+
+---
+
+# **EPIC 3 — Classes (Live & Recorded)**
+
+## **US 3.1 — View today’s classes**
+
+**As a** student
+**I want to** see all classes happening today
+**So that** I can plan my day.
+
+### Acceptance Criteria
+
+* Show subject, teacher, time, class type (Live/Test/Practice).
+* Status badges: Live / Upcoming / Completed.
+* “Join live” button.
+* “View recording” for past classes.
+
+---
+
+## **US 3.2 — Join live class**
+
+**As a** student
+**I want to** enter a live classroom
+**So that** I can attend teaching in real time.
+
+### Acceptance Criteria
+
+* On click, opens live session in 1–2 seconds.
+* Supports:
+
+  * Video
+  * Audio
+  * Screenshare
+  * Whiteboard
+  * Chat
+  * Raise hand
+  * Polls
+  * Q&A
+  * Breakout rooms
+* Auto reconnect on network drop.
+* Auto attendance after 5 minutes in class.
+
+---
+
+## **US 3.3 — Interact during class**
+
+**As a** student
+**I want to** chat, answer polls, vote questions, raise doubts
+**So that** I remain engaged.
+
+### Acceptance Criteria
+
+* Chat with emojis, images.
+* Anonymous or public doubts.
+* Poll participation with results.
+* Upvote other questions.
+
+---
+
+## **US 3.4 — After-class recap**
+
+**As a** student
+**I want to** get a summary after class
+**So that** I can revise easily.
+
+### Acceptance Criteria
+
+* AI-generated summary:
+
+  * Key points
+  * Formulas
+  * Questions asked
+* Access class notes/resources/recordings.
+* Link to related practice sets.
+
+---
+
+---
+
+# **EPIC 4 — Schedule & Time Management**
+
+## **US 4.1 — View weekly schedule**
+
+**As a** student
+**I want to** see all events for the week
+**So that** I can manage my time.
+
+### Acceptance Criteria
+
+* Week strip view (Mon–Sun)
+* Today highlighted
+* Events merged:
+
+  * Classes
+  * Tests
+  * AI study blocks
+  * Personal tasks
+
+---
+
+## **US 4.2 — Full calendar**
+
+**As a** student
+**I want to** see all events in month view
+**So that** I can plan long-term.
+
+### Acceptance Criteria
+
+* Month/Week/Day/Agenda views
+* Filters by event type and subject
+* Calendar sync toggle (device calendar)
+
+---
+
+## **US 4.3 — Smart scheduling**
+
+**As a** student
+**I want to** automatically fill free time with study blocks
+**So that** I maintain consistency.
+
+### Acceptance Criteria
+
+* AI suggests:
+
+  * “Use 30 min free slot for Physics revision”
+* Accept/reject suggestion.
+* Automatically reschedules missed tasks.
+
+---
+
+---
+
+# **EPIC 5 — Study Library & Content**
+
+## **US 5.1 — Explore study materials**
+
+**As a** student
+**I want to** view videos, notes, documents
+**So that** I can learn anytime.
+
+### Acceptance Criteria
+
+* Tabs: All / Favorites / Playlists / Recommended
+* Filters: Subject, Type
+* Grid/list view
+* Badges: New, AI Generated, Downloaded
+
+---
+
+## **US 5.2 — Download materials**
+
+**As a** student
+**I want to** download resources
+**So that** I can study offline.
+
+### Acceptance Criteria
+
+* Download PDFs/videos
+* Downloads manager screen
+* Storage meter
+* Offline viewer fallback
+
+---
+
+## **US 5.3 — Playlist management**
+
+**As a** student
+**I want to** organize resources into playlists
+**So that** I can structure my revision.
+
+### Acceptance Criteria
+
+* Create playlist
+* Add/remove items
+* Sort items
+* Share playlist with peers
+
+---
+
+---
+
+# **EPIC 6 — AI Study & Personalization**
+
+## **US 6.1 — Get personalized suggestions**
+
+**As a** student
+**I want to** get recommendations based on my weakness
+**So that** I improve faster.
+
+### Acceptance Criteria
+
+* AI recommends:
+
+  * Videos
+  * Practice sets
+  * Revision tasks
+  * Notes
+* Powered by:
+
+  * Grades
+  * Completion
+  * Doubts
+  * Test performance
+
+---
+
+## **US 6.2 — Generate practice**
+
+**As a** student
+**I want to** get custom practice questions
+**So that** I can prepare efficiently.
+
+### Acceptance Criteria
+
+* Input: topic/chapter/difficulty
+* Output:
+
+  * MCQ
+  * Integer questions
+  * Short answer
+* Each question has:
+
+  * Solution steps
+  * Hints
+
+---
+
+## **US 6.3 — Summarize notes automatically**
+
+**As a** student
+**I want to** convert notes into summaries
+**So that** I revise quicker.
+
+### Acceptance Criteria
+
+* Convert paragraph → concise notes.
+* Convert notes → flashcards.
+* Convert notes → quiz.
+
+---
+
+## **US 6.4 — Explain my mistakes**
+
+**As a** student
+**I want to** understand why I got something wrong
+**So that** I avoid repeating errors.
+
+### Acceptance Criteria
+
+* Upload question + selected wrong answer.
+* AI explains:
+
+  * Correct approach
+  * Why chosen answer is wrong
+  * What concept is weak
+  * Recommendation for improvement
+
+---
+
+---
+
+# **EPIC 7 — Assignments & Homework**
+
+## **US 7.1 — View all assignments**
+
+**As a** student
+**I want to** see all my assignments
+**So that** I don’t miss deadlines.
+
+### Acceptance Criteria
+
+* Tabs: Upcoming / Overdue / Completed
+* Filters: Subject, Type
+* Sort by due date
+* Assignment card with:
+
+  * Title
+  * Teacher
+  * Due date
+  * Status
+
+---
+
+## **US 7.2 — Submit assignment**
+
+**As a** student
+**I want to** upload my work
+**So that** I complete homework digitally.
+
+### Acceptance Criteria
+
+* Attach photos, PDF, docs
+* Add comments
+* Submit/resubmit before deadline
+* View submission history
+
+---
+
+## **US 7.3 — Receive feedback**
+
+**As a** student
+**I want to** see grades and teacher comments
+**So that** I know how to improve.
+
+### Acceptance Criteria
+
+* Score breakdown
+* Teacher remarks
+* Rubric mapping
+* Link to “Practice weak areas”
+
+---
+
+---
+
+# **EPIC 8 — Tests, Mock Exams & Revision**
+
+## **US 8.1 — Attempt tests**
+
+**As a** student
+**I want to** take timed tests
+**So that** I evaluate my learning.
+
+### Acceptance Criteria
+
+* Timer
+* MCQ/MSQ/Integer/Short-answer types
+* Save & next
+* Mark for review
+* Auto-submit on time expiry
+
+---
+
+## **US 8.2 — Review test**
+
+**As a** student
+**I want to** analyze my performance
+**So that** I can study better.
+
+### Acceptance Criteria
+
+* View correct/incorrect answers
+* Explanation
+* Time spent per question
+* Chart: subject-wise & topic-wise performance
+* “Generate practice for mistakes”
+
+---
+
+---
+
+# **EPIC 9 — Doubt Solving**
+
+## **US 9.1 — Ask doubts**
+
+**As a** student
+**I want to** ask questions anytime
+**So that** I never stay stuck.
+
+### Acceptance Criteria
+
+* Add:
+
+  * Subject
+  * Chapter
+  * Text
+  * Images
+  * Voice
+* AI previews instant explanation
+* Submit to teacher if still needed
+
+---
+
+## **US 9.2 — View answered doubts**
+
+**As a** student
+**I want to** see all my doubts
+**So that** I can revise past learnings.
+
+### Acceptance Criteria
+
+* Tabs: Pending / Answered
+* Jump to `DoubtDetailScreen` for full thread
+
+---
+
+## **US 9.3 — Explore solved doubts**
+
+**As a** student
+**I want to** search solved doubts
+**So that** I learn from others’ questions.
+
+### Acceptance Criteria
+
+* Search bar
+* Filters: subject, chapter, difficulty
+* List with solved badge
+
+---
+
+---
+
+# **EPIC 10 — Social & Peer Learning**
+
+## **US 10.1 — Connect with peers**
+
+**As a** student
+**I want to** discover peers with similar goals
+**So that** I can learn collaboratively.
+
+### Acceptance Criteria
+
+* See suggested peers based on:
+
+  * Same class
+  * Same subjects
+  * Exam goals
+* View profile summary
+* Send message → Chat screen
+
+---
+
+## **US 10.2 — Join study groups**
+
+**As a** student
+**I want to** engage in topic-based study groups
+**So that** I stay motivated.
+
+### Acceptance Criteria
+
+* Join/leave groups
+* View group feed
+* Participate in group study sessions
+
+---
+
+---
+
+# **EPIC 11 — Gamification & Motivation**
+
+## **US 11.1 — Earn XP & rewards**
+
+**As a** student
+**I want to** earn XP for completing tasks
+**So that** I stay motivated.
+
+### Acceptance Criteria
+
+* Earn XP for:
+
+  * Finishing assignments
+  * Completing practice sets
+  * Attending class
+  * Daily streaks
+* Level progression
+* Badges unlocked at milestones
+
+---
+
+## **US 11.2 — Daily & weekly quests**
+
+**As a** student
+**I want to** complete quests
+**So that** I can earn bonus rewards.
+
+### Acceptance Criteria
+
+* Examples:
+
+  * “Watch 2 videos”
+  * “Complete 40 MCQs”
+  * “No missed classes today”
+* Rewards: XP, badges, boosts
+
+---
+
+## **US 11.3 — Leaderboards**
+
+**As a** student
+**I want to** see where I stand
+**So that** I stay competitive.
+
+### Acceptance Criteria
+
+* Leaderboard by:
+
+  * Class
+  * School
+* Rank, XP, level, streak
+
+---
+
+# **EPIC 12 — Analytics & Reports**
+
+## **US 12.1 — View subject analytics**
+
+**As a** student
+**I want to** see my performance per subject
+**So that** I can identify weak areas.
+
+### Acceptance Criteria
+
+* Per-subject charts:
+
+  * Accuracy
+  * Time spent
+  * Mastery level
+
+---
+
+## **US 12.2 — Download/share report**
+
+**As a** student
+**I want to** share my progress
+**So that** I can show parents/teachers.
+
+### Acceptance Criteria
+
+* Generate sharable image/PDF
+* Contains:
+
+  * Grades
+  * Streak
+  * Mastery
+  * Test history
+
+---
+
+# **EPIC 13 — Notifications & Communication**
+
+## **US 13.1 — Notification Center**
+
+**As a** student
+**I want to** see all updates in one place
+**So that** I stay on top of tasks.
+
+### Acceptance Criteria
+
+* Tabs:
+
+  * All
+  * Classes
+  * Assignments
+  * Tests
+  * Doubts
+  * Rewards
+* Mark all as read
+
+---
+
+## **US 13.2 — In-app chat**
+
+**As a** student
+**I want to** message peers
+**So that** I study collaboratively.
+
+### Acceptance Criteria
+
+* Group & private chat
+* Images, links, voice notes
+* AI summarization of chats
+
+---
+
+# **EPIC 14 — Support & Help**
+
+## **US 14.1 — Help center**
+
+**As a** student
+**I want to** access guides & tutorials
+**So that** I learn how to use the app.
+
+### Acceptance Criteria
+
+* FAQs
+* Video guides
+* Troubleshooting
+
+---
+
+## **US 14.2 — Report issue**
+
+**As a** student
+**I want to** report problems
+**So that** I can get timely support.
+
+### Acceptance Criteria
+
+* Issue form with screenshots
+* Support ticket creation
+
+---
+
+# ✔️ If you want…
+
+I can now also generate:
+
+* **Full UX flows**
+* **Wireframes for each screen**
+* **Database schema for all features**
+* **Navigation map (React Navigation)**
+* **Story points / development effort breakdown**
+* **Priority roadmap (Phase 1 → Phase 2 → Phase 3)**
+* **Component library spec (UI System)**
+
+Just tell me **"Generate UX flows"** or **"Generate database schema"** or **"Generate all wireframes"**.

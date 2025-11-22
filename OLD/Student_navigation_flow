@@ -1,0 +1,899 @@
+﻿Nice, this is a fun one. Let’s turn all those screens into a clean React Navigation architecture.
+
+I’ll give you:
+
+1. **Architecture overview** (what navigators exist and why)
+2. **Route / navigator map** (which screen lives where)
+3. **Type-safe `ParamList`s**
+4. **Example `AppNavigator.tsx` implementation** tying it all together
+
+You can copy-paste and adapt this directly in your project.
+
+---
+
+## 1. Navigation architecture overview
+
+Given your stack & dependencies (`@react-navigation/native`, `@react-navigation/native-stack`, `@react-navigation/bottom-tabs`), a solid structure is:
+
+* **RootStack**
+
+  * Handles:
+
+    * Splash / loading
+    * Auth vs Main app
+    * Global modals (e.g. Guided Study Session)
+* **AuthStack**
+
+  * Login, OTP, etc. (even if not built yet, keep placeholder)
+* **MainTabs** (bottom tab navigator)
+
+  * `HomeTab` – dashboard, progress, notifications
+  * `ClassesTab` – schedules, live classes, tests
+  * `StudyTab` – library, AI study, syllabus
+  * `DoubtsTab` – doubts, doubt history, explore doubts
+  * `CommunityTab` – peers, groups, gamification
+  * `ProfileTab` – profile, settings, help
+
+Each tab is **a stack navigator** so you get deep navigation while keeping the tab bar.
+
+---
+
+## 2. Route / navigator map
+
+### 2.1 Root stack
+
+**RootStack (Native Stack)**
+
+* `Splash` (optional)
+* `AuthStack` (stack)
+* `MainTabs` (bottom tabs)
+* `GuidedStudySession` (full-screen modal)
+* `ImageViewerModal` (optional)
+* `GenericWebViewModal` (optional)
+
+---
+
+### 2.2 Auth stack
+
+**AuthStack (Native Stack)**
+
+* `Welcome`
+* `Login`
+* `OtpVerify`
+* `CreatePassword`
+* `StudentOnboardingFlow` (multi-step)
+* `AuthDoneRedirect` → goes to `MainTabs`
+
+> You already have auth libs (`@react-native-firebase/auth`), so this fits nicely.
+
+---
+
+### 2.3 Main tabs
+
+**MainTabNavigator (Bottom Tabs)**
+
+1. **HomeTab → `HomeStack`**
+2. **ClassesTab → `ClassesStack`**
+3. **StudyTab → `StudyStack`**
+4. **DoubtsTab → `DoubtsStack`**
+5. **CommunityTab → `CommunityStack`**
+6. **ProfileTab → `ProfileStack`**
+
+---
+
+### 2.4 Home stack
+
+**HomeStack (Native Stack)**
+
+* `NewStudentDashboard`
+* `NotificationCenterScreen`
+* `NewProgressDetailScreen`
+* `GlobalAnalyticsScreen`
+* `ShareProgressReportScreen`
+* `NewGamifiedLearningHub`
+* `LeaderboardScreen`
+* `QuestsScreen`
+
+Entry points from dashboard:
+
+* Tap on metrics → `NewProgressDetailScreen`
+* Tap on “View detailed analytics” → `GlobalAnalyticsScreen`
+* Tap “Rewards / XP” → `NewGamifiedLearningHub`
+* Tap leaderboard preview → `LeaderboardScreen`
+* Tap a quest → `QuestsScreen`
+* Sharing → `ShareProgressReportScreen` (push or modal)
+
+---
+
+### 2.5 Classes stack
+
+**ClassesStack (Native Stack)**
+
+* `NewScheduleScreen`          ← default for Classes tab
+* `NewEnhancedSchedule`
+* `NewVirtualClassroom`
+* `NewEnhancedLiveClass`
+* `NewLiveClassScreen`
+* `NewInteractiveClassroom`
+* `ClassRecapScreen`
+* `TestCenterScreen`
+* `TestAttemptScreen`
+* `TestReviewScreen`
+* `DoubtSessionsScreen` (group doubt classes)
+
+Flow examples:
+
+* Today’s classes (from Home) → `NewScheduleScreen` (with day preset)
+* Tap a live class → `NewLiveClassScreen` (or `NewEnhancedLiveClass` as your canonical live shell)
+* Class ends → `ClassRecapScreen`
+* Tests:
+
+  * From dashboard → `TestCenterScreen`
+  * Start test → `TestAttemptScreen`
+  * View result → `TestReviewScreen`
+
+---
+
+### 2.6 Study stack
+
+**StudyStack (Native Stack)**
+
+* `NewStudyLibraryScreen`      ← default for Study tab
+* `ResourceDetailScreen`
+* `CourseRoadmapScreen`
+* `ChapterDetailScreen`
+* `NewEnhancedAIStudy`
+* `NotesAndHighlightsScreen`
+* `DownloadsManagerScreen`
+* `TaskHubScreen`
+* `GuidedStudySessionScreen` (can also be in Root as modal)
+
+Flows:
+
+* Study tab → `NewStudyLibraryScreen`
+* “Syllabus” → `CourseRoadmapScreen`
+* Chapter → `ChapterDetailScreen`
+* “AI Study” → `NewEnhancedAIStudy`
+* “Notes” → `NotesAndHighlightsScreen`
+* “Downloads” → `DownloadsManagerScreen`
+* “Tasks / Planner” → `TaskHubScreen`
+* Start focus session anywhere → `GuidedStudySessionScreen` (modal)
+
+---
+
+### 2.7 Doubts stack
+
+**DoubtsStack (Native Stack)**
+
+* `NewSimpleDoubt`             ← default for Doubts tab
+* `NewDoubtSubmission`
+* `DoubtsHomeScreen` (history: Pending / Answered)
+* `DoubtDetailScreen`
+* `DoubtsExploreScreen`
+
+Typical flows:
+
+* Quick question → `NewSimpleDoubt`
+* “More options / add images” → `NewDoubtSubmission`
+* “My doubts” → `DoubtsHomeScreen` → `DoubtDetailScreen`
+* “Explore solved doubts” → `DoubtsExploreScreen`
+
+---
+
+### 2.8 Community / peers / gamification stack
+
+**CommunityStack (Native Stack)**
+
+* `NewPeerLearningNetwork`     ← default for Community tab
+* `StudyGroupDetailScreen`
+* `PeerChatScreen`
+* `ClassFeedScreen`
+* `NewGamifiedLearningHub` (also in Home stack, but can push here too)
+* `LeaderboardScreen`
+* `QuestsScreen`
+
+Typical flows:
+
+* Community tab → `NewPeerLearningNetwork`
+* Tap group → `StudyGroupDetailScreen` → `PeerChatScreen`
+* Tap “Class feed” → `ClassFeedScreen`
+* Tap gamification card → `NewGamifiedLearningHub` → `LeaderboardScreen` / `QuestsScreen`
+
+---
+
+### 2.9 Profile stack
+
+**ProfileStack (Native Stack)**
+
+* `StudentProfileScreen`       ← default for Profile tab
+* `EditOnboardingScreen`
+* `SettingsScreen`
+* `HelpAndSupportScreen`
+* `LegalScreen` (T&Cs, privacy)
+
+Flows:
+
+* Profile tab → `StudentProfileScreen`
+* “Edit learning profile” → `EditOnboardingScreen`
+* “Settings” → `SettingsScreen`
+* “Help & support” → `HelpAndSupportScreen`
+
+---
+
+## 3. Type-safe `ParamList`s
+
+Here’s a suggested full set of param lists in TypeScript. You can tweak based on your actual route params.
+
+```ts
+// navigation/types.ts
+
+export type RootStackParamList = {
+  Splash: undefined;
+  AuthStack: undefined;
+  MainTabs: undefined;
+  GuidedStudySession: {
+    topicId?: string;
+    chapterId?: string;
+    mode: 'review' | 'practice' | 'focus';
+    durationMinutes?: number;
+  };
+  ImageViewerModal: {
+    uri: string;
+  };
+  WebViewModal: {
+    url: string;
+    title?: string;
+  };
+};
+
+export type AuthStackParamList = {
+  Welcome: undefined;
+  Login: undefined;
+  OtpVerify: { phone: string };
+  CreatePassword: { phone: string };
+  StudentOnboardingFlow: undefined;
+  AuthDoneRedirect: undefined;
+};
+
+export type MainTabParamList = {
+  HomeTab: undefined;
+  ClassesTab: undefined;
+  StudyTab: undefined;
+  DoubtsTab: undefined;
+  CommunityTab: undefined;
+  ProfileTab: undefined;
+};
+
+// HOME
+export type HomeStackParamList = {
+  NewStudentDashboard: undefined;
+  NotificationCenterScreen: undefined;
+  NewProgressDetailScreen: {
+    initialSubjectId?: string;
+  };
+  GlobalAnalyticsScreen: undefined;
+  ShareProgressReportScreen: {
+    format?: 'image' | 'pdf';
+  };
+  NewGamifiedLearningHub: undefined;
+  LeaderboardScreen: {
+    scope?: 'class' | 'school';
+  };
+  QuestsScreen: undefined;
+};
+
+// CLASSES
+export type ClassesStackParamList = {
+  NewScheduleScreen: {
+    initialDate?: string; // ISO
+    viewMode?: 'day' | 'week' | 'month' | 'agenda';
+  };
+  NewEnhancedSchedule: undefined;
+  NewVirtualClassroom: {
+    classId: string;
+  };
+  NewEnhancedLiveClass: {
+    classId: string;
+  };
+  NewLiveClassScreen: {
+    classId: string;
+  };
+  NewInteractiveClassroom: {
+    classId: string;
+    initialTab?: 'polls' | 'qa' | 'breakouts' | 'notes';
+  };
+  ClassRecapScreen: {
+    classId: string;
+  };
+  TestCenterScreen: {
+    initialTab?: 'upcoming' | 'mock' | 'past';
+  };
+  TestAttemptScreen: {
+    testId: string;
+    mode?: 'scheduled' | 'practice';
+  };
+  TestReviewScreen: {
+    testId: string;
+    attemptId: string;
+  };
+  DoubtSessionsScreen: undefined;
+};
+
+// STUDY
+export type StudyStackParamList = {
+  NewStudyLibraryScreen: {
+    initialTab?: 'all' | 'favorites' | 'playlists' | 'recommended' | 'downloads';
+  } | undefined;
+  ResourceDetailScreen: {
+    resourceId: string;
+  };
+  CourseRoadmapScreen: {
+    initialSubjectId?: string;
+  } | undefined;
+  ChapterDetailScreen: {
+    chapterId: string;
+  };
+  NewEnhancedAIStudy: {
+    subjectId?: string;
+    chapterId?: string;
+    mode?: 'dashboard' | 'practice' | 'flashcards' | 'notes' | 'tests';
+  } | undefined;
+  NotesAndHighlightsScreen: {
+    subjectId?: string;
+  } | undefined;
+  DownloadsManagerScreen: undefined;
+  TaskHubScreen: {
+    filter?: 'today' | 'week' | 'all';
+  } | undefined;
+  GuidedStudySessionScreen: {
+    topicId?: string;
+    chapterId?: string;
+    mode: 'review' | 'practice' | 'focus';
+    durationMinutes?: number;
+  };
+};
+
+// DOUBTS
+export type DoubtsStackParamList = {
+  NewSimpleDoubt: {
+    prefillSubjectId?: string;
+    prefillText?: string;
+  } | undefined;
+  NewDoubtSubmission: {
+    subjectId?: string;
+    chapterId?: string;
+    editDoubtId?: string;
+  } | undefined;
+  DoubtsHomeScreen: {
+    initialTab?: 'pending' | 'answered';
+  } | undefined;
+  DoubtDetailScreen: {
+    doubtId: string;
+  };
+  DoubtsExploreScreen: {
+    subjectId?: string;
+    chapterId?: string;
+    query?: string;
+  } | undefined;
+};
+
+// COMMUNITY
+export type CommunityStackParamList = {
+  NewPeerLearningNetwork: undefined;
+  StudyGroupDetailScreen: {
+    groupId: string;
+  };
+  PeerChatScreen: {
+    chatId: string;
+    peerId?: string;
+    groupId?: string;
+  };
+  ClassFeedScreen: {
+    classId: string;
+  };
+  NewGamifiedLearningHub: undefined;
+  LeaderboardScreen: {
+    scope?: 'class' | 'school';
+  };
+  QuestsScreen: undefined;
+};
+
+// PROFILE
+export type ProfileStackParamList = {
+  StudentProfileScreen: undefined;
+  EditOnboardingScreen: undefined;
+  SettingsScreen: undefined;
+  HelpAndSupportScreen: undefined;
+  LegalScreen: {
+    docType: 'terms' | 'privacy';
+  };
+};
+```
+
+---
+
+## 4. Example `AppNavigator.tsx` (full wiring)
+
+This is how everything plugs together with React Navigation.
+
+```tsx
+// AppNavigator.tsx
+import React from 'react';
+import {
+  NavigationContainer,
+  DefaultTheme,
+  Theme,
+} from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+
+import {
+  RootStackParamList,
+  AuthStackParamList,
+  MainTabParamList,
+  HomeStackParamList,
+  ClassesStackParamList,
+  StudyStackParamList,
+  DoubtsStackParamList,
+  CommunityStackParamList,
+  ProfileStackParamList,
+} from './navigation/types';
+
+// --- import your screens here ---
+// Home
+import NewStudentDashboard from './screens/NewStudentDashboard';
+import NotificationCenterScreen from './screens/NotificationCenterScreen';
+import NewProgressDetailScreen from './screens/NewProgressDetailScreen';
+import GlobalAnalyticsScreen from './screens/GlobalAnalyticsScreen';
+import ShareProgressReportScreen from './screens/ShareProgressReportScreen';
+import NewGamifiedLearningHub from './screens/NewGamifiedLearningHub';
+import LeaderboardScreen from './screens/LeaderboardScreen';
+import QuestsScreen from './screens/QuestsScreen';
+
+// Classes
+import NewScheduleScreen from './screens/NewScheduleScreen';
+import NewEnhancedSchedule from './screens/NewEnhancedSchedule';
+import NewVirtualClassroom from './screens/NewVirtualClassroom';
+import NewEnhancedLiveClass from './screens/NewEnhancedLiveClass';
+import NewLiveClassScreen from './screens/NewLiveClassScreen';
+import NewInteractiveClassroom from './screens/NewInteractiveClassroom';
+import ClassRecapScreen from './screens/ClassRecapScreen';
+import TestCenterScreen from './screens/TestCenterScreen';
+import TestAttemptScreen from './screens/TestAttemptScreen';
+import TestReviewScreen from './screens/TestReviewScreen';
+import DoubtSessionsScreen from './screens/DoubtSessionsScreen';
+
+// Study
+import NewStudyLibraryScreen from './screens/NewStudyLibraryScreen';
+import ResourceDetailScreen from './screens/ResourceDetailScreen';
+import CourseRoadmapScreen from './screens/CourseRoadmapScreen';
+import ChapterDetailScreen from './screens/ChapterDetailScreen';
+import NewEnhancedAIStudy from './screens/NewEnhancedAIStudy';
+import NotesAndHighlightsScreen from './screens/NotesAndHighlightsScreen';
+import DownloadsManagerScreen from './screens/DownloadsManagerScreen';
+import TaskHubScreen from './screens/TaskHubScreen';
+import GuidedStudySessionScreen from './screens/GuidedStudySessionScreen';
+
+// Doubts
+import NewSimpleDoubt from './screens/NewSimpleDoubt';
+import NewDoubtSubmission from './screens/NewDoubtSubmission';
+import DoubtsHomeScreen from './screens/DoubtsHomeScreen';
+import DoubtDetailScreen from './screens/DoubtDetailScreen';
+import DoubtsExploreScreen from './screens/DoubtsExploreScreen';
+
+// Community
+import NewPeerLearningNetwork from './screens/NewPeerLearningNetwork';
+import StudyGroupDetailScreen from './screens/StudyGroupDetailScreen';
+import PeerChatScreen from './screens/PeerChatScreen';
+import ClassFeedScreen from './screens/ClassFeedScreen';
+
+// Profile / misc
+import StudentProfileScreen from './screens/StudentProfileScreen';
+import EditOnboardingScreen from './screens/EditOnboardingScreen';
+import SettingsScreen from './screens/SettingsScreen';
+import HelpAndSupportScreen from './screens/HelpAndSupportScreen';
+import LegalScreen from './screens/LegalScreen';
+
+// Auth
+import WelcomeScreen from './screens/WelcomeScreen';
+import LoginScreen from './screens/LoginScreen';
+import OtpVerifyScreen from './screens/OtpVerifyScreen';
+import CreatePasswordScreen from './screens/CreatePasswordScreen';
+import StudentOnboardingFlow from './screens/StudentOnboardingFlow';
+import SplashScreen from './screens/SplashScreen';
+
+// ---- NAV OBJECTS ----
+const RootStack = createNativeStackNavigator<RootStackParamList>();
+const AuthStackNav = createNativeStackNavigator<AuthStackParamList>();
+const Tab = createBottomTabNavigator<MainTabParamList>();
+
+const HomeStackNav = createNativeStackNavigator<HomeStackParamList>();
+const ClassesStackNav = createNativeStackNavigator<ClassesStackParamList>();
+const StudyStackNav = createNativeStackNavigator<StudyStackParamList>();
+const DoubtsStackNav = createNativeStackNavigator<DoubtsStackParamList>();
+const CommunityStackNav = createNativeStackNavigator<CommunityStackParamList>();
+const ProfileStackNav = createNativeStackNavigator<ProfileStackParamList>();
+
+// --- STACK COMPONENTS ---
+
+function AuthStack() {
+  return (
+    <AuthStackNav.Navigator screenOptions={{ headerShown: false }}>
+      <AuthStackNav.Screen name="Welcome" component={WelcomeScreen} />
+      <AuthStackNav.Screen name="Login" component={LoginScreen} />
+      <AuthStackNav.Screen name="OtpVerify" component={OtpVerifyScreen} />
+      <AuthStackNav.Screen
+        name="CreatePassword"
+        component={CreatePasswordScreen}
+      />
+      <AuthStackNav.Screen
+        name="StudentOnboardingFlow"
+        component={StudentOnboardingFlow}
+      />
+      <AuthStackNav.Screen
+        name="AuthDoneRedirect"
+        component={SplashScreen} // or a small redirect component that checks auth + profile and navigates to MainTabs
+      />
+    </AuthStackNav.Navigator>
+  );
+}
+
+function HomeStack() {
+  return (
+    <HomeStackNav.Navigator>
+      <HomeStackNav.Screen
+        name="NewStudentDashboard"
+        component={NewStudentDashboard}
+        options={{ headerShown: false }}
+      />
+      <HomeStackNav.Screen
+        name="NotificationCenterScreen"
+        component={NotificationCenterScreen}
+        options={{ title: 'Notifications' }}
+      />
+      <HomeStackNav.Screen
+        name="NewProgressDetailScreen"
+        component={NewProgressDetailScreen}
+        options={{ title: 'Progress' }}
+      />
+      <HomeStackNav.Screen
+        name="GlobalAnalyticsScreen"
+        component={GlobalAnalyticsScreen}
+        options={{ title: 'Analytics' }}
+      />
+      <HomeStackNav.Screen
+        name="ShareProgressReportScreen"
+        component={ShareProgressReportScreen}
+        options={{ presentation: 'modal', title: 'Share report' }}
+      />
+      <HomeStackNav.Screen
+        name="NewGamifiedLearningHub"
+        component={NewGamifiedLearningHub}
+        options={{ title: 'Gamified Learning' }}
+      />
+      <HomeStackNav.Screen
+        name="LeaderboardScreen"
+        component={LeaderboardScreen}
+        options={{ title: 'Leaderboard' }}
+      />
+      <HomeStackNav.Screen
+        name="QuestsScreen"
+        component={QuestsScreen}
+        options={{ title: 'Quests' }}
+      />
+    </HomeStackNav.Navigator>
+  );
+}
+
+function ClassesStack() {
+  return (
+    <ClassesStackNav.Navigator>
+      <ClassesStackNav.Screen
+        name="NewScheduleScreen"
+        component={NewScheduleScreen}
+        options={{ title: 'Schedule' }}
+      />
+      <ClassesStackNav.Screen
+        name="NewEnhancedSchedule"
+        component={NewEnhancedSchedule}
+        options={{ title: 'This Week' }}
+      />
+      <ClassesStackNav.Screen
+        name="NewLiveClassScreen"
+        component={NewLiveClassScreen}
+        options={{ headerShown: false }}
+      />
+      <ClassesStackNav.Screen
+        name="NewVirtualClassroom"
+        component={NewVirtualClassroom}
+        options={{ headerShown: false }}
+      />
+      <ClassesStackNav.Screen
+        name="NewEnhancedLiveClass"
+        component={NewEnhancedLiveClass}
+        options={{ headerShown: false }}
+      />
+      <ClassesStackNav.Screen
+        name="NewInteractiveClassroom"
+        component={NewInteractiveClassroom}
+        options={{ title: 'Class Tools' }}
+      />
+      <ClassesStackNav.Screen
+        name="ClassRecapScreen"
+        component={ClassRecapScreen}
+        options={{ title: 'Class Recap' }}
+      />
+      <ClassesStackNav.Screen
+        name="TestCenterScreen"
+        component={TestCenterScreen}
+        options={{ title: 'Tests' }}
+      />
+      <ClassesStackNav.Screen
+        name="TestAttemptScreen"
+        component={TestAttemptScreen}
+        options={{ headerShown: false, gestureEnabled: false }}
+      />
+      <ClassesStackNav.Screen
+        name="TestReviewScreen"
+        component={TestReviewScreen}
+        options={{ title: 'Test Review' }}
+      />
+      <ClassesStackNav.Screen
+        name="DoubtSessionsScreen"
+        component={DoubtSessionsScreen}
+        options={{ title: 'Doubt Sessions' }}
+      />
+    </ClassesStackNav.Navigator>
+  );
+}
+
+function StudyStack() {
+  return (
+    <StudyStackNav.Navigator>
+      <StudyStackNav.Screen
+        name="NewStudyLibraryScreen"
+        component={NewStudyLibraryScreen}
+        options={{ headerShown: false }}
+      />
+      <StudyStackNav.Screen
+        name="ResourceDetailScreen"
+        component={ResourceDetailScreen}
+        options={{ title: 'Resource' }}
+      />
+      <StudyStackNav.Screen
+        name="CourseRoadmapScreen"
+        component={CourseRoadmapScreen}
+        options={{ title: 'Course Roadmap' }}
+      />
+      <StudyStackNav.Screen
+        name="ChapterDetailScreen"
+        component={ChapterDetailScreen}
+        options={{ title: 'Chapter' }}
+      />
+      <StudyStackNav.Screen
+        name="NewEnhancedAIStudy"
+        component={NewEnhancedAIStudy}
+        options={{ headerShown: false }}
+      />
+      <StudyStackNav.Screen
+        name="NotesAndHighlightsScreen"
+        component={NotesAndHighlightsScreen}
+        options={{ title: 'Notes & Highlights' }}
+      />
+      <StudyStackNav.Screen
+        name="DownloadsManagerScreen"
+        component={DownloadsManagerScreen}
+        options={{ title: 'Downloads' }}
+      />
+      <StudyStackNav.Screen
+        name="TaskHubScreen"
+        component={TaskHubScreen}
+        options={{ title: 'Tasks & Planner' }}
+      />
+      <StudyStackNav.Screen
+        name="GuidedStudySessionScreen"
+        component={GuidedStudySessionScreen}
+        options={{ headerShown: false, presentation: 'modal' }}
+      />
+    </StudyStackNav.Navigator>
+  );
+}
+
+function DoubtsStack() {
+  return (
+    <DoubtsStackNav.Navigator>
+      <DoubtsStackNav.Screen
+        name="NewSimpleDoubt"
+        component={NewSimpleDoubt}
+        options={{ title: 'Ask a Doubt' }}
+      />
+      <DoubtsStackNav.Screen
+        name="NewDoubtSubmission"
+        component={NewDoubtSubmission}
+        options={{ title: 'Submit Doubt' }}
+      />
+      <DoubtsStackNav.Screen
+        name="DoubtsHomeScreen"
+        component={DoubtsHomeScreen}
+        options={{ title: 'My Doubts' }}
+      />
+      <DoubtsStackNav.Screen
+        name="DoubtDetailScreen"
+        component={DoubtDetailScreen}
+        options={{ title: 'Doubt Detail' }}
+      />
+      <DoubtsStackNav.Screen
+        name="DoubtsExploreScreen"
+        component={DoubtsExploreScreen}
+        options={{ title: 'Explore Doubts' }}
+      />
+    </DoubtsStackNav.Navigator>
+  );
+}
+
+function CommunityStack() {
+  return (
+    <CommunityStackNav.Navigator>
+      <CommunityStackNav.Screen
+        name="NewPeerLearningNetwork"
+        component={NewPeerLearningNetwork}
+        options={{ headerShown: false }}
+      />
+      <CommunityStackNav.Screen
+        name="StudyGroupDetailScreen"
+        component={StudyGroupDetailScreen}
+        options={{ title: 'Study Group' }}
+      />
+      <CommunityStackNav.Screen
+        name="PeerChatScreen"
+        component={PeerChatScreen}
+        options={{ title: 'Chat' }}
+      />
+      <CommunityStackNav.Screen
+        name="ClassFeedScreen"
+        component={ClassFeedScreen}
+        options={{ title: 'Class Feed' }}
+      />
+      <CommunityStackNav.Screen
+        name="NewGamifiedLearningHub"
+        component={NewGamifiedLearningHub}
+        options={{ title: 'Gamified Learning' }}
+      />
+      <CommunityStackNav.Screen
+        name="LeaderboardScreen"
+        component={LeaderboardScreen}
+        options={{ title: 'Leaderboard' }}
+      />
+      <CommunityStackNav.Screen
+        name="QuestsScreen"
+        component={QuestsScreen}
+        options={{ title: 'Quests' }}
+      />
+    </CommunityStackNav.Navigator>
+  );
+}
+
+function ProfileStack() {
+  return (
+    <ProfileStackNav.Navigator>
+      <ProfileStackNav.Screen
+        name="StudentProfileScreen"
+        component={StudentProfileScreen}
+        options={{ title: 'Profile' }}
+      />
+      <ProfileStackNav.Screen
+        name="EditOnboardingScreen"
+        component={EditOnboardingScreen}
+        options={{ title: 'Learning Profile' }}
+      />
+      <ProfileStackNav.Screen
+        name="SettingsScreen"
+        component={SettingsScreen}
+        options={{ title: 'Settings' }}
+      />
+      <ProfileStackNav.Screen
+        name="HelpAndSupportScreen"
+        component={HelpAndSupportScreen}
+        options={{ title: 'Help & Support' }}
+      />
+      <ProfileStackNav.Screen
+        name="LegalScreen"
+        component={LegalScreen}
+        options={({ route }) => ({
+          title: route.params.docType === 'terms' ? 'Terms & Conditions' : 'Privacy Policy',
+        })}
+      />
+    </ProfileStackNav.Navigator>
+  );
+}
+
+function MainTabs() {
+  return (
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: false,
+        // tabBarIcon: ... add icons here
+      }}
+    >
+      <Tab.Screen
+        name="HomeTab"
+        component={HomeStack}
+        options={{ title: 'Home' }}
+      />
+      <Tab.Screen
+        name="ClassesTab"
+        component={ClassesStack}
+        options={{ title: 'Classes' }}
+      />
+      <Tab.Screen
+        name="StudyTab"
+        component={StudyStack}
+        options={{ title: 'Study' }}
+      />
+      <Tab.Screen
+        name="DoubtsTab"
+        component={DoubtsStack}
+        options={{ title: 'Doubts' }}
+      />
+      <Tab.Screen
+        name="CommunityTab"
+        component={CommunityStack}
+        options={{ title: 'Community' }}
+      />
+      <Tab.Screen
+        name="ProfileTab"
+        component={ProfileStack}
+        options={{ title: 'Profile' }}
+      />
+    </Tab.Navigator>
+  );
+}
+
+const appTheme: Theme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    background: '#050816',
+  },
+};
+
+export default function AppNavigator() {
+  const isAuthenticated = true;        // wire to your auth state
+  const hasProfile = true;            // wire to student_profile existence
+
+  return (
+    <NavigationContainer theme={appTheme}>
+      <RootStack.Navigator screenOptions={{ headerShown: false }}>
+        <RootStack.Screen name="Splash" component={SplashScreen} />
+        {!isAuthenticated ? (
+          <RootStack.Screen name="AuthStack" component={AuthStack} />
+        ) : !hasProfile ? (
+          <RootStack.Screen
+            name="AuthStack"
+            component={AuthStack}
+            initialParams={{ screen: 'StudentOnboardingFlow' }}
+          />
+        ) : (
+          <RootStack.Screen name="MainTabs" component={MainTabs} />
+        )}
+        <RootStack.Screen
+          name="GuidedStudySession"
+          component={GuidedStudySessionScreen}
+          options={{ presentation: 'modal' }}
+        />
+        {/* Add ImageViewerModal / WebViewModal here if needed */}
+      </RootStack.Navigator>
+    </NavigationContainer>
+  );
+}
+```
+
+---
+
+If you want, next we can:
+
+* Go tab-by-tab and **clean up your existing screens** to match these param types and route names,
+* Or generate a **component breakdown / design system** so all screens visually match the Teacher Framer dashboard.
+
+Tell me whether you want:
+**“Clean up existing screens to match this nav”** or **“Design system / component library next”**.

@@ -56,6 +56,7 @@ import ClassChat from '../screens/student/ClassChat';
 import ClassNotes from '../screens/student/ClassNotes';
 import DoubtDetailScreen from '../screens/student/DoubtDetailScreen';
 import ResourceViewerScreen from '../screens/student/ResourceViewerScreen';
+import PlaylistDetailScreen from '../screens/student/PlaylistDetailScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -111,6 +112,16 @@ function HomeStack() {
         options={{ headerShown: false, title: 'Study Library' }}
       />
       <Stack.Screen
+        name="ResourceViewer"
+        component={ResourceViewerScreen}
+        options={{ headerShown: false, title: 'Resource Viewer' }}
+      />
+      <Stack.Screen
+        name="PlaylistDetail"
+        component={PlaylistDetailScreen}
+        options={{ headerShown: false, title: 'Playlist Details' }}
+      />
+      <Stack.Screen
         name="NewEnhancedAIStudy"
         component={NewEnhancedAIStudy}
         options={{ headerShown: false, title: 'AI Study' }}
@@ -139,6 +150,11 @@ function HomeStack() {
         name="NewVirtualClassroom"
         component={NewVirtualClassroom}
         options={{ headerShown: false, title: 'Virtual Classroom' }}
+      />
+      <Stack.Screen
+        name="Whiteboard"
+        component={Whiteboard}
+        options={{ headerShown: false, title: 'Whiteboard' }}
       />
       <Stack.Screen
         name="NewClassDetailScreen"
@@ -243,6 +259,11 @@ function AssignmentsStack() {
         name="ResourceViewerScreen"
         component={ResourceViewerScreen}
         options={{ headerShown: false, title: 'Resource Viewer' }}
+      />
+      <Stack.Screen
+        name="PlaylistDetail"
+        component={PlaylistDetailScreen}
+        options={{ headerShown: false, title: 'Playlist Details' }}
       />
       <Stack.Screen
         name="NewAssignmentDetailScreen"

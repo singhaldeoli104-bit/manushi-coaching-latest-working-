@@ -1,0 +1,700 @@
+﻿Below is a **complete, production-grade UX Flow Document** for the entire Student App.
+This defines **every navigation path, decision flow, entry point, exit point, and cross-screen integration**.
+
+This is the **master UX blueprint** for your entire student system.
+
+---
+
+# 🎨 **STUDENT APP — FULL UX FLOWS (END-TO-END)**
+
+Structured as:
+
+1. **High-Level System Map**
+2. **Detailed UX Flows (per EPIC)**
+3. **Cross-feature Flow Maps (AI, Doubts, Tests, Gamification)**
+4. **Navigation Tree**
+
+---
+
+# 1. 🌐 **HIGH-LEVEL SYSTEM MAP**
+
+```
+                      ┌──────────────────────────────┐
+                      │        Onboarding Flow        │
+                      └──────────────┬───────────────┘
+                                     ↓
+                         ┌────────────────────────┐
+                         │   Student Dashboard     │
+                         └────────────────────────┘
+       ┌──────────────┬──────────────┬───────────────┬───────────────┬──────────────┐
+       ↓              ↓              ↓               ↓               ↓
+┌────────────┐  ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌────────────┐
+│  Schedule  │  │   Classes  │  │   Library  │  │  AI Study  │  │Assignments │
+└─────┬──────┘  └──────┬─────┘  └──────┬─────┘  └──────┬─────┘  └──────┬─────┘
+      ↓                ↓               ↓               ↓               ↓
+ Guided Session   Live Class Hub   Resource View   Practice/Notes  Detail View
+      ↓                ↓               ↓               ↓               ↓
+   Analytics        Class Recap     Downloads       Test Center     Submission
+      ↓                ↓               ↓               ↓               ↓
+  Progress Hub  ← Doubts & Peers → Gamified Learning Hub → Leaderboard & Rewards
+```
+
+---
+
+# 2. 🔥 **DETAILED UX FLOWS (PER EPIC)**
+
+Each flow shows:
+
+* **Entry points**
+* **Screen sequence**
+* **Alternate paths**
+* **Exit points**
+* **AI / automation triggers**
+
+---
+
+# EPIC 1 — **ONBOARDING UX FLOW**
+
+### 1.1 FIRST-TIME USER FLOW
+
+```
+App Launch
+    ↓
+Check if student_profile exists?
+    ↓                         ↓
+  YES → Go to Dashboard      NO → Start Onboarding
+```
+
+### Onboarding Steps
+
+1. **Welcome Screen**
+2. **Board + Class Selection**
+3. **Stream (optional)**
+4. **Subject Selection**
+5. **Exam Goal Selection**
+6. **Confidence Rating (per subject)**
+7. **Daily Study Time → Preferred Time Slot**
+8. **Confirmation Screen**
+9. **Create AI Profile**
+10. **Redirect → Student Dashboard**
+
+### AI Automations
+
+* AI generates:
+
+  * Baseline *weak/strong profile*
+  * Initial *7-day study plan*
+  * Personalized *recommended playlists*
+
+---
+
+# EPIC 2 — **DASHBOARD FLOW**
+
+### Primary Flow
+
+```
+Dashboard
+ ↓ ↓ ↓
+┌───────────────┬────────────────┬────────────────────────┬────────────────────┐
+│Today’s Plan   │Continue Learning│Today’s Classes         │Assignments Preview│
+└──────┬────────┴───────┬────────┴──────────────┬────────┴───────────┬────────┘
+       ↓                ↓                      ↓                   ↓
+ Guided Study     Resource Resume         Join Live Class     View All Assignments
+```
+
+### Secondary Navigation
+
+* Gamification → XP, Badges, Leaderboard
+* AI Study → Personalized practice
+* Library → Content
+* Peer Network → Groups, Chats
+* Doubts → Ask or explore
+* Profile → Settings
+
+### AI Triggers
+
+* If assignments overdue → Show alert card
+* If streak broken → Suggest “streak recovery session”
+* If test tomorrow → Replace plan with “Exam Prep Mode”
+
+---
+
+# EPIC 3 — **CLASS FLOW (LIVE + RECAP)**
+
+```
+Dashboard → Today’s Classes → Class Detail → Join Live Class
+```
+
+### LIVE CLASS SHELL FLOW
+
+1. **LiveClassExperienceScreen**
+2. Student chooses tab:
+
+```
+Video | Chat | Q&A | Polls | Notes | Resources | Breakouts
+```
+
+3. During class:
+
+   * Raise hand
+   * Participate in polls
+   * Ask questions anonymously/publicly
+   * Save notes
+   * Join breakout rooms
+
+4. **Class ends → Auto redirect to Class Recap**
+
+### CLASS RECAP FLOW
+
+```
+LiveClassExperience → ClassRecapScreen
+            ↓
+    AI Summary (auto)
+            ↓
+ Related Materials → Practice → AI questions
+```
+
+### Optional Navigation
+
+* Bookmark class
+* Add notes to personal notebook
+* Report issue
+
+---
+
+# EPIC 4 — **SCHEDULE & PLANNER FLOW**
+
+```
+Dashboard → Schedule
+```
+
+### WEEK VIEW FLOW
+
+```
+Schedule Screen
+   ↓
+Select Day
+   ↓
+Event List (Class/Test/Study Task)
+   ↓
+Event Detail
+```
+
+### DAY VIEW FLOW
+
+```
+Day Timeline → Event Detail → Action (Join/Start/Review)
+```
+
+### MONTH VIEW FLOW
+
+```
+Month Grid → Click Date → Agenda List → Event Detail
+```
+
+### SMART PLANNING FLOW
+
+```
+User has free slot detected
+     ↓
+AI Suggestion Card (“Use 30 mins for revision?”)
+     ↓
+Accept? 
+  YES → Add AI Task to schedule → Trigger reminder
+  NO  → Suggest alternative slot
+```
+
+---
+
+# EPIC 5 — **STUDY LIBRARY FLOW**
+
+### MAIN FLOW
+
+```
+Dashboard → Library
+```
+
+```
+Library
+  ↓
+Tabs: All | Favorites | Playlists | Recommended | Downloads
+  ↓
+Select Resource → Resource Viewer
+```
+
+### RESOURCE VIEWER FLOW
+
+```
+Resource Viewer
+   ↓
+Take Notes → Highlights → Add to Playlist
+   ↓
+AI Actions:
+   Summarize → Create Flashcards → Create Quiz
+```
+
+### DOWNLOAD FLOW
+
+```
+Resource → Download → Downloads Manager
+```
+
+---
+
+# EPIC 6 — **AI STUDY FLOW (CORE PERSONALIZATION)**
+
+```
+Dashboard → AI Study
+```
+
+### AI STUDY HUB FLOW
+
+```
+AI Study Home
+   ↓
+Tabs:
+ Dashboard | Practice | Flashcards | Notes | Tests
+```
+
+### PRACTICE FLOW
+
+```
+AI Study → Practice
+    ↓
+Choose Topic / Auto Recommended
+    ↓
+Generate Questions → Solve → Results
+    ↓
+Explain Mistakes → Retry → Add to Plan
+```
+
+### NOTES FLOW
+
+```
+AI Study → Notes
+    ↓
+Paste/upload notes
+    ↓
+Actions:
+- Summarize
+- Convert to Flashcards
+- Convert to Quizzes
+```
+
+### DAILY REVIEW FLOW
+
+```
+AI Study → Daily Reviews
+   ↓
+Flashcards Due → Mini Quiz → Reinforcement
+```
+
+---
+
+# EPIC 7 — **ASSIGNMENTS FLOW**
+
+### MAIN FLOW
+
+```
+Dashboard → Assignments Preview → View All Assignments
+```
+
+### ASSIGNMENTS FLOW
+
+```
+AssignmentsHome
+   ↓
+Filter (Subject/Type/Status)
+   ↓
+Assignment Detail
+   ↓
+Submit Work → Upload → Confirm
+```
+
+### AFTER SUBMISSION
+
+```
+Submission → Pending Review → Grade Released
+```
+
+### FEEDBACK FLOW
+
+```
+Grade + Feedback → View Breakdown → Improve with AI → Practice Set
+```
+
+---
+
+# EPIC 8 — **TEST & MOCK EXAM FLOW**
+
+### TEST CENTER FLOW
+
+```
+Dashboard → Tests → TestCenter
+```
+
+```
+TestCenter
+  ↓
+Upcoming Tests | Mock Tests | Past Tests
+```
+
+### TEST ATTEMPT FLOW
+
+```
+Start Test
+   ↓
+Instructions
+   ↓
+Timer Starts
+   ↓
+Question Navigation:
+   Prev | Next | Mark for review | Submit
+```
+
+### SUBMISSION FLOW
+
+```
+Submit → Confirm → Auto Evaluate
+```
+
+### REVIEW FLOW
+
+```
+Results Screen
+   ↓
+Correct/Incorrect Breakdown
+   ↓
+AI “Explain My Mistakes”
+   ↓
+Practice Weak Areas
+```
+
+---
+
+# EPIC 9 — **DOUBTS FLOW**
+
+### QUICK DOUBT FLOW
+
+```
+Dashboard → Ask Doubt (Quick)
+   ↓
+Enter text or attach image
+   ↓
+AI Preview Response
+   ↓
+Submit to Teacher? YES → Full Doubt Submission
+```
+
+### FULL DOUBT FLOW
+
+```
+DoubtSubmission
+   ↓
+Fields: Subject → Chapter → Text → Images
+   ↓
+AI Similar Doubts
+   ↓
+Submit
+```
+
+### DOUBT HISTORY FLOW
+
+```
+DoubtsHome
+   ↓
+Tabs: Pending | Answered
+   ↓
+DoubtDetailScreen
+   ↓
+Thread View → Rate Answer → Save to Notes
+```
+
+### DOUBT EXPLORE FLOW
+
+```
+DoubtsExplore
+  ↓
+Search Doubts
+  ↓
+Filter (Subject/Chapter/Difficulty)
+  ↓
+View Answered Doubt
+```
+
+---
+
+# EPIC 10 — **PEER LEARNING FLOW**
+
+### PEER DISCOVERY FLOW
+
+```
+Dashboard → Peer Network
+```
+
+```
+Peer Network
+   ↓
+Suggested Peers → Peer Profile → Chat
+   ↓
+Study Groups → Group Detail → Join/Leave
+```
+
+### GROUP STUDY SESSION FLOW
+
+```
+Group Detail → Start Group Study
+   ↓
+Timer + Shared Chat + Shared Tasks
+   ↓
+End Session → XP + Notes
+```
+
+---
+
+# EPIC 11 — **GAMIFICATION FLOW**
+
+### GAMIFIED HUB FLOW
+
+```
+Dashboard → Gamified Learning Hub
+```
+
+```
+Gamified Hub
+  ↓
+XP & Level | Streak | Badges | Quests | Leaderboard
+```
+
+### QUEST FLOW
+
+```
+Quest Selected
+   ↓
+Steps to Complete
+   ↓
+Progress Tracker
+   ↓
+Claim Reward
+```
+
+### LEADERBOARD FLOW
+
+```
+Leaderboard
+  ↓
+Class / School Ranking
+```
+
+---
+
+# EPIC 12 — **PROGRESS & ANALYTICS FLOW**
+
+### PROGRESS HUB FLOW
+
+```
+Dashboard → Progress Detail
+```
+
+```
+Progress Detail
+   ↓
+Subject Breakdown → Trends → Time Spent
+   ↓
+Weak Areas → Suggested Actions → AI Study
+```
+
+### SUBJECT ANALYTICS FLOW
+
+```
+SubjectAnalytics
+   ↓
+Topic Mastery Map
+   ↓
+Topic Detail → Practice
+```
+
+---
+
+# EPIC 13 — **NOTIFICATION FLOW**
+
+```
+Dashboard → Bell Icon → NotificationCenter
+```
+
+### FLOW
+
+```
+NotificationCenter
+  ↓
+Filters: All / Classes / Tests / Doubts / Rewards / System
+  ↓
+Notification → Deep Link (Assignment/Test/Class/AI Study)
+```
+
+---
+
+# EPIC 14 — **SETTINGS & SUPPORT FLOW**
+
+### FLOW
+
+```
+Dashboard → Profile → Settings
+```
+
+```
+Settings
+  ↓
+Notifications | Language | Theme | Privacy | Help & Support
+```
+
+### HELP FLOW
+
+```
+Help & Support
+  ↓
+FAQs → Tutorials → Contact Support → Report Issue
+```
+
+---
+
+# 3. ⭐ **CROSS-FEATURE EXPERIENCE FLOW MAPS**
+
+These show how the system behaves across modules.
+
+---
+
+## **A. AI FLOW ACROSS THE APP**
+
+```
+Onboarding
+  ↓
+Create AI Profile
+  ↓
+Dashboard → Daily Plan
+  ↓
+Library → AI Recommendations
+  ↓
+Assignments → AI Hints
+  ↓
+Tests → Explain My Mistakes
+  ↓
+Doubts → AI Preview Answer
+  ↓
+Notes → Summaries / Flashcards / Quizzes
+  ↓
+Progress → Weak Area Suggestions
+```
+
+---
+
+## **B. DOUBT & LEARNING INTEGRATION**
+
+```
+Ask Doubt
+   ↓            ↘
+AI Answer     Teacher Answer
+   ↓            ↓
+Add to Notes ← Saved Doubt
+   ↓
+AI Study → Practice Questions
+```
+
+---
+
+## **C. TEST + AI + PROGRESS LOOP**
+
+```
+Test Attempt
+   ↓
+Test Result
+   ↓
+AI: Explain Mistakes
+   ↓
+AI Study Practice
+   ↓
+Progress Dashboard Updates
+   ↓
+Next Test → Repeat
+```
+
+---
+
+## **D. GAMIFICATION LOOP**
+
+```
+Any Action Completed
+   ↓
+XP Earned → Streak Update
+   ↓
+Badge Unlock Check
+   ↓
+Leaderboard Rank Updated
+   ↓
+Quest Progress Updated
+```
+
+---
+
+# 4. 🗺️ **NAVIGATION TREE (FINAL)**
+
+```
+App
+ ├── Onboarding
+ ├── Dashboard
+ │    ├── Schedule
+ │    ├── Today’s Plan (AI)
+ │    ├── Classes
+ │    ├── Assignments
+ │    ├── Library
+ │    ├── AI Study
+ │    ├── Doubts
+ │    ├── Peers
+ │    ├── Gamification
+ │    ├── Progress
+ │    ├── Notifications
+ │    └── Profile
+ │          ├── Settings
+ │          ├── Help
+ │          └── Edit Profile
+ ├── Live Class Experience
+ ├── Class Recap
+ ├── Resource Viewer
+ ├── Test Center
+ ├── Test Attempt
+ ├── Test Review
+ ├── Assignment Detail
+ ├── Doubt Detail
+ ├── Doubts Explore
+ ├── Peer Chat
+ ├── Study Group Detail
+ └── Downloads Manager
+```
+
+---
+
+# 🎯 WANT ME TO CONTINUE?
+
+I can now generate ANY of the following:
+
+### ✅ Wireframes for all flows
+
+### ✅ Complete navigation map with React Navigation structure
+
+### ✅ Component list + reusable UI system
+
+### ✅ Database schema for all features
+
+### ✅ Auto-generate all `.tsx` screen skeletons
+
+### ✅ Full product roadmap (Phase 1–3)
+
+Just tell me:
+
+👉 **“Generate wireframes”**
+or
+👉 **“Generate navigation structure”**
+or
+👉 **“Generate database schema”**
+
+What would you like next?

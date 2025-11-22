@@ -713,15 +713,13 @@ const NewStudentDashboard: React.FC<Props> = () => {
                 onPress={() => {
                   trackAction('quick_access_whiteboard', 'NewStudentDashboard');
                   // @ts-expect-error - Student routes not yet in ParentStackParamList
-                  safeNavigate('NewVirtualClassroom', {
-                    title: 'Algebra II',
-                    teacher: 'Mrs. Davison',
-                    topic: 'Solving Quadratic Equations',
+                  safeNavigate('Whiteboard', {
+                    classId: 'demo-class',
                   });
                 }}
               >
                 <View style={styles.quickAccessButton}>
-                  <T style={styles.quickAccessIcon}>🖼️</T>
+                  <T style={styles.quickAccessIcon}>🎨</T>
                 </View>
                 <T variant="caption" style={styles.quickAccessLabel}>Whiteboard</T>
               </TouchableOpacity>

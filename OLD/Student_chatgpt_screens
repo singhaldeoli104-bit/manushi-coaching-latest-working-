@@ -1,0 +1,1257 @@
+﻿Here’s a complete product/UX spec document for the **student app** – covering:
+
+* **All existing screens → improvements**, with sections & components.
+* **All new screens → detailed specs** (structure, components, data, AI/automation, navigation).
+
+You can copy this into Notion/Confluence/Figma docs as your master BRD/PRD for the student side.
+
+---
+
+# 1. Overview
+
+**Goal:**
+Make the student app a **world‑class learning companion**, not just a class viewer:
+
+* Deep **personalization** (goals, syllabus, AI).
+* Smooth **live + self‑study + tests** journey.
+* Strong **doubt solving, analytics, and gamification**.
+* Clean, modern **UI/UX** consistent with the teacher dashboard.
+
+---
+
+# 2. Screen Index
+
+## 2.1 Existing screens – to improve
+
+1. `NewStudentDashboard`
+2. `NewEnhancedSchedule`
+3. `NewScheduleScreen`
+4. `NewVirtualClassroom`
+5. `NewEnhancedLiveClass`
+6. `NewLiveClassScreen`
+7. `NewInteractiveClassroom`
+8. `NewStudyLibraryScreen`
+9. `NewEnhancedAIStudy`
+10. `NewGamifiedLearningHub`
+11. `NewDoubtSubmission` + `NewSimpleDoubt`
+12. `NewPeerLearningNetwork`
+13. `NewProgressDetailScreen`
+
+## 2.2 New screens / patterns to build
+
+**Core product:**
+
+1. `StudentOnboardingFlow`
+2. `EditOnboardingScreen`
+3. `CourseRoadmapScreen`
+4. `ChapterDetailScreen`
+5. `AssignmentsHomeScreen`
+6. `AssignmentDetailScreen`
+7. `TestCenterScreen`
+8. `TestAttemptScreen`
+9. `TestReviewScreen`
+10. `NotificationCenterScreen`
+11. `StudentProfileScreen`
+12. `SettingsScreen`
+13. `HelpAndSupportScreen`
+
+**AI / automation:**
+
+14. `AIStudyCompanionPanel` (pattern)
+15. `TodayReviewsSection` inside `NewEnhancedAIStudy`
+
+**Content / analytics:**
+
+16. `DownloadsManagerScreen`
+17. `NotesAndHighlightsScreen`
+18. `ClassRecapScreen`
+19. `SubjectAnalyticsScreen`
+20. `ShareProgressReportScreen`
+21. `GlobalAnalyticsScreen`
+
+**Gamification / community:**
+
+22. `LeaderboardScreen`
+23. `QuestsScreen`
+24. `StudyGroupDetailScreen`
+25. `PeerChatScreen`
+26. `ClassFeedScreen`
+27. `DoubtDetailScreen`
+28. `DoubtsExploreScreen`
+29. `DoubtSessionsScreen`
+30. `TaskHubScreen`
+31. `GuidedStudySessionScreen`
+
+---
+
+# 3. Existing Screens – Improvement Specs
+
+---
+
+## 3.1 `NewStudentDashboard` (Student Home)
+
+### Purpose
+
+* Be the **central brain** of the student app:
+
+  * Today’s plan, schedule, tasks, progress, and quick entry to all major areas.
+
+### Sections & Components
+
+1. **Header**
+
+   * Components:
+
+     * Avatar + name (“Good morning, Rohan 👋”).
+     * Exam countdown: `TextBadge` (“Boards in 134 days”).
+     * Notification icon → `NotificationCenterScreen`.
+   * Data:
+
+     * `students` table (name, avatar, target exam/date).
+
+2. **Top Metrics Row**
+
+   * Cards:
+
+     * Today’s classes count.
+     * Pending assignments count.
+     * Attendance %.
+     * Streak days.
+   * Component idea: `MetricCard` with icon + number + subtitle.
+
+3. **Smart Plan for Today**
+
+   * “AI Today’s Plan” card summarizing 3–5 tasks:
+
+     * e.g., “Revise Algebra (15 min)”, “10 Physics MCQs”.
+   * Components:
+
+     * `PlanItemRow` with checkbox, title, ETA, subject tag.
+   * Data:
+
+     * AI service using `openai` + student profile + schedule.
+   * Actions:
+
+     * Ticking items updates XP and feeds `NewGamifiedLearningHub`.
+
+4. **Continue Learning**
+
+   * Horizontal list of last 3–5 active items:
+
+     * Last video, last chapter, ongoing test.
+   * Components:
+
+     * `ContinueCard` (thumbnail, title, progress bar).
+   * Data:
+
+     * `study_activity` table (resource_id, type, last_opened, progress).
+
+5. **Today’s Schedule**
+
+   * List of today’s classes/tests/AI sessions:
+
+     * Consolidate from `live_sessions`, `tests`, AI-generated study blocks.
+   * Components:
+
+     * `ScheduleItemRow` (time, title, type chip, “Join”/“Start” button).
+   * Actions:
+
+     * Join → `LiveClassExperienceScreen`.
+     * Start study block → `GuidedStudySessionScreen`.
+
+6. **Assignments Snapshot**
+
+   * “Pending assignments” condensed list.
+   * Each row: title, subject, due date, urgency tag.
+   * Footer button: “View all assignments” → `AssignmentsHomeScreen`.
+
+7. **Motivation & Gamification Strip**
+
+   * XP, level, small progress bar to next level.
+   * Button: “Go to Challenges” → `NewGamifiedLearningHub`.
+
+### Key Improvements vs current
+
+* Add **Smart Plan**, **Continue row**, exam countdown, and direct entry to AI & doubts.
+* Replace static cards with **data‑driven** content (AI + Supabase).
+
+---
+
+## 3.2 `NewEnhancedSchedule` & `NewScheduleScreen` (Time & planner)
+
+### Purpose
+
+* `NewEnhancedSchedule`: light, weekly view.
+* `NewScheduleScreen`: full calendar & planner.
+
+### Improvements
+
+#### A. Unify behaviours
+
+* Shared logic for:
+
+  * Fetching events: classes, tests, AI study tasks, personal tasks.
+  * Filters: by type (Class / Test / Study / Personal), subject.
+
+#### B. `NewEnhancedSchedule` – Quick weekly view
+
+**Sections:**
+
+1. Week strip (Mon–Sun with current day highlight).
+2. Today’s events list.
+3. CTA: “Open full calendar” → `NewScheduleScreen`.
+
+**Components:**
+
+* `WeekDayPill`, `EventCardSmall`.
+
+**Automation:**
+
+* AI suggests events in free gaps:
+
+  * e.g., “Use 30m at 6pm for Chemistry revision?”.
+
+#### C. `NewScheduleScreen` – Full planner
+
+**Sections:**
+
+1. View mode tabs:
+
+   * Week / Day / Month / Agenda.
+2. Calendar grid (month) or list (agenda).
+3. Events timeline for selected day.
+4. Filters & settings:
+
+   * Show/hide AI tasks.
+   * Sync with device calendar toggle.
+
+**Components:**
+
+* `CalendarView` (can use `react-native-calendars` or custom).
+* `EventCardLarge`, `FilterChips`.
+
+**Data:**
+
+* `live_sessions`, `tests`, `assignments`, `ai_tasks`, `custom_tasks`.
+
+**Integrations:**
+
+* Device calendar (build around `syncWithDeviceCalendar` flag).
+* Push notifications for event reminders.
+
+---
+
+## 3.3 Live Class Screens (`NewVirtualClassroom`, `NewEnhancedLiveClass`, `NewLiveClassScreen`, `NewInteractiveClassroom`)
+
+### Problem
+
+You have **multiple overlapping live class UIs**. We should converge into:
+
+* **One main live class shell** + embedded tools.
+
+### New structure
+
+Define a canonical:
+
+> `LiveClassExperienceScreen` (can reuse `NewLiveClassScreen` as base layout)
+
+### Sections & Components
+
+1. **Top bar**
+
+   * Class title, subject, timer, live badge.
+   * “Leave” button.
+
+2. **Main video / content area**
+
+   * Use `@stream-io/video-react-native-sdk` for:
+
+     * Teacher video.
+     * Screensharing/slides.
+   * Component: `LiveVideoContainer`.
+
+3. **Bottom controls**
+
+   * Mute/unmute, camera on/off, raise hand, chat toggle, participants, more.
+   * Component: `ControlBar` (icon buttons).
+
+4. **Right / bottom dock (tabs)**
+
+   * Tabs: Chat, Q&A, Polls, Notes, Resources.
+   * Reuse `NewInteractiveClassroom` panels:
+
+     * Poll list & answers.
+     * Q&A list with upvotes.
+     * Shared notes.
+     * Breakout room join.
+
+5. **Class end → Recap**
+
+   * After leaving/ending:
+
+     * Navigate to `ClassRecapScreen`.
+
+### Data & Automation
+
+* Engagement data (poll participation, attendance length) logged→ analytics.
+* Auto-create:
+
+  * AI summary.
+  * Recommended practice sets.
+
+---
+
+## 3.4 `NewStudyLibraryScreen` (Library)
+
+### Purpose
+
+* Central place to access all study resources.
+
+### Improvements
+
+### Sections & Components
+
+1. **Header**
+
+   * Search bar (resources/doubts by chapter/topic).
+   * Filter icon → opens filter sheet.
+
+2. **Primary tabs**
+
+   * `All | Favorites | Playlists | Recommended`.
+   * Component: `TabBar`.
+
+3. **Smart collections (Recommended tab)**
+
+   * Cards:
+
+     * “For your next test”.
+     * “Weak in Algebra”.
+     * “Recently added by teacher”.
+   * Data from analytics + AI.
+
+4. **Resource list / grid**
+
+   * `ResourceCard`:
+
+     * Thumbnail, title, type icon, subject, progress bar.
+     * Badges: “Downloaded”, “AI generated”, “New”.
+
+5. **Footer / Quick actions**
+
+   * “Downloads” → `DownloadsManagerScreen`.
+   * “Open AI Study” → `NewEnhancedAIStudy`.
+
+### Data & AI
+
+* Tables: `study_materials`, `study_playlists`, `downloads`, `recent_activity`.
+* AI:
+
+  * Recommend resources based on weakness, upcoming tests.
+  * Semantic search in descriptions/tags.
+
+---
+
+## 3.5 `NewEnhancedAIStudy`
+
+### Purpose
+
+* AI-powered **coach** for practice & plans.
+
+### Improvements
+
+### Sections & Components
+
+1. **Top summary**
+
+   * “Your Goal”: exam + target.
+   * “Current predicted range” (from analytics).
+   * Basic stats (questions attempted, accuracy).
+
+2. **“Today’s Reviews” section**
+
+   * `TodayReviewsSection`:
+
+     * Cards for flashcards/quizzes due (spaced repetition).
+   * Data from `ai_reviews_schedule` table.
+
+3. **Modes (Tabs)**
+
+   * `Dashboard` → overview & suggestions.
+   * `Practice` → AI-generated quizzes.
+   * `Flashcards` → AI + manual cards.
+   * `Notes` → AI summarization of notes.
+   * `Tests` → mini adaptive tests.
+
+4. **AI actions**
+
+   * “Generate practice for chapter X”.
+   * “Explain my mistakes from last test”.
+   * “Turn my notes into flashcards”.
+
+### Data & AI
+
+* Both analytics data & content.
+* `openai` for:
+
+  * Question generation.
+  * Explanations & summaries.
+
+---
+
+## 3.6 `NewGamifiedLearningHub`
+
+### Purpose
+
+* Make progress visible & fun.
+
+### Improvements
+
+### Sections & Components
+
+1. **Profile bar**
+
+   * Avatar, level, XP bar, streak days.
+
+2. **Quests & challenges**
+
+   * Cards: daily/weekly quests.
+   * Link → `QuestsScreen`.
+
+3. **Leaderboards**
+
+   * Small preview of class/grade leaderboard.
+   * Link → `LeaderboardScreen`.
+
+4. **Badges & rewards**
+
+   * Grid of earned/locked badges.
+   * Rewards list with redeem button.
+
+5. **Activity feed**
+
+   * Timeline of XP events.
+
+### Data
+
+* `students`, `xp_events`, `badges`, `challenges`, `rewards`.
+
+---
+
+## 3.7 Doubt Screens (`NewDoubtSubmission`, `NewSimpleDoubt`)
+
+### Purpose
+
+* Let students ask **structured doubts** & get answers quickly.
+
+### Improvements
+
+### `NewSimpleDoubt` changes
+
+* Use it as **quick entry**:
+
+  * Simple form: subject + question + optional image/voice.
+  * AI preview answer inline (if high confidence).
+  * Button: “Still need human help → Submit full doubt” → `NewDoubtSubmission`.
+
+### `NewDoubtSubmission` changes
+
+**Sections:**
+
+1. Form:
+
+   * Subject, chapter dropdown, title, detailed description.
+   * Priority, images.
+2. AI suggestions panel:
+
+   * Similar solved doubts.
+   * Suggested explanations.
+3. Doubt history:
+
+   * Tabs: All / Pending / Answered.
+
+**New:**
+
+* Tapping a doubt → `DoubtDetailScreen` (chat thread).
+
+---
+
+## 3.8 `NewPeerLearningNetwork`
+
+### Purpose
+
+* Connect students with peers & groups.
+
+### Improvements
+
+### Sections & Components
+
+1. **Header**
+
+   * Search bar (by name, subject).
+   * Filter chip: “Same exam / Same class”.
+
+2. **My Groups**
+
+   * Horizontal carousel: study groups.
+   * Tap → `StudyGroupDetailScreen`.
+
+3. **Suggested peers**
+
+   * Cards with match % (“80% match: similar goals & subjects”).
+
+4. **Actions**
+
+   * “Message” → `PeerChatScreen`.
+   * “Invite to group” → groups.
+
+---
+
+## 3.9 `NewProgressDetailScreen`
+
+### Purpose
+
+* Show **learning outcomes**, not just grades.
+
+### Improvements
+
+### Sections & Components
+
+1. **Overview**
+
+   * Overall grade %, tests count, assignments completion rate.
+   * Attendance summary.
+
+2. **Subject cards**
+
+   * For each subject:
+
+     * Average, trend arrow, mastery %, time spent.
+   * Tap → `SubjectAnalyticsScreen`.
+
+3. **Risk / prediction**
+
+   * Card: “At current pace, predicted Board score: X–Y”.
+
+4. **Actionable suggestions**
+
+   * List of recommended actions:
+
+     * “Do Algebra practice”.
+     * “Attend more Physics classes”.
+
+5. **Share**
+
+   * Button: “Share report” → `ShareProgressReportScreen`.
+
+---
+
+# 4. New Screens – Detailed Specs
+
+Now the **new** ones.
+
+---
+
+## 4.1 `StudentOnboardingFlow`
+
+### Purpose
+
+* First‑time flow to collect **board, goals, subjects, preferences** and seed personalization.
+
+### Steps & Sections
+
+1. **Welcome screen**
+
+   * Title, subtitle.
+   * Button: “Let’s personalize your learning”.
+
+2. **Board & Class**
+
+   * Pickers: Board, Class/Grade, Medium.
+
+3. **Exam goals**
+
+   * Multi-select: Boards, NEET, JEE, etc.
+   * Target year/month.
+
+4. **Subjects & comfort**
+
+   * Subject list (checkboxes).
+   * For each chosen: slider “How confident are you?”.
+
+5. **Study preferences**
+
+   * Available time per day.
+   * Preferred study time slots (morning/evening).
+
+6. **Summary**
+
+   * Confirmation view of all selections.
+   * Button: “Finish & go to dashboard”.
+
+### Components
+
+* `BaseScreen`, `StepperIndicator`, `SelectCard`, `SliderRow`, `PrimaryButton`.
+
+### Data
+
+* `student_profile` table with:
+
+  * board, class, exam_targets, subjects, confidence, daily_time, preferred_slots.
+
+---
+
+## 4.2 `EditOnboardingScreen`
+
+* Same data as onboarding, but for editing later.
+* Accessible from `StudentProfileScreen`.
+
+---
+
+## 4.3 `CourseRoadmapScreen`
+
+### Purpose
+
+* Visual **syllabus map** per subject.
+
+### Sections
+
+1. Subject tabs.
+2. Progress summary per subject.
+3. List of units (accordion).
+4. Inside unit:
+
+   * Chapter list with:
+
+     * Name.
+     * Mastery %, last activity.
+     * Indicators: Videos done, practice done.
+   * CTA: “Open Chapter” → `ChapterDetailScreen`.
+
+### Components
+
+* `SubjectTab`, `UnitAccordion`, `ChapterRow`.
+
+### Data
+
+* Tables: `syllabus_units`, `syllabus_chapters`, `chapter_progress`.
+
+---
+
+## 4.4 `ChapterDetailScreen`
+
+### Purpose
+
+* All learning for a single chapter in one place.
+
+### Sections
+
+1. Header: chapter name, subject, mastery bar.
+2. Tabs:
+
+   * Learn (videos/notes from library).
+   * Practice (AIStudy-generated or fixed problem sets).
+   * Tests (chapter-level tests).
+   * Doubts (list of doubts tagged to chapter).
+3. Quick actions:
+
+   * “Generate AI summary”.
+   * “Start guided session”.
+
+---
+
+## 4.5 `AssignmentsHomeScreen`
+
+### Purpose
+
+* Central **assignment manager**.
+
+### Sections
+
+1. Tabs: Upcoming | Overdue | Completed.
+
+2. Filters bar: Subject, Type (Homework, Project, Quiz).
+
+3. Assignment list:
+
+   * `AssignmentCard`:
+
+     * Title, subject, due date, status, small progress indicator.
+   * Click → `AssignmentDetailScreen`.
+
+4. Summary bar at top:
+
+   * “3 due this week • 1 overdue • Avg grade: 84%”.
+
+### Data
+
+* `assignments`, `submissions`, `subjects`.
+
+---
+
+## 4.6 `AssignmentDetailScreen`
+
+### Purpose
+
+* Full view of single assignment + submission.
+
+### Sections
+
+1. Header:
+
+   * Title, subject, teacher, due date, time remaining.
+2. Details:
+
+   * Description, attachments list.
+3. “How to approach”:
+
+   * AI‑generated hints (non‑cheating).
+4. Submission:
+
+   * Text editor, file upload, photos.
+   * Submission status (Not started / Draft / Submitted / Graded).
+5. Feedback (if graded):
+
+   * Score, teacher comments, rubric breakdown.
+
+### Actions
+
+* “Ask a doubt about this assignment” → `NewDoubtSubmission` (pre-filled context).
+* “Generate similar practice” → `NewEnhancedAIStudy`.
+
+---
+
+## 4.7 `TestCenterScreen`
+
+### Purpose
+
+* Manage **all tests**: upcoming, mock, past.
+
+### Sections
+
+1. Tabs:
+
+   * Upcoming tests.
+   * Mock tests.
+   * Past tests.
+
+2. Test list:
+
+   * `TestCard`: title, subjects, duration, marks, date, type.
+
+3. Filters:
+
+   * Subject, exam, difficulty.
+
+### Actions
+
+* “Attempt now” → `TestAttemptScreen`.
+* “Review result” → `TestReviewScreen`.
+
+---
+
+## 4.8 `TestAttemptScreen`
+
+### Purpose
+
+* Actual exam mode.
+
+### Sections
+
+1. Top bar:
+
+   * Timer, question index, test name.
+2. Question area:
+
+   * Question text, math rendering, image if needed.
+3. Answer area:
+
+   * Depending on type:
+
+     * MCQ (radio buttons).
+     * MSQ (checkboxes).
+     * Numeric entry.
+     * Short answer.
+4. Bottom bar:
+
+   * Prev/Next, “Mark for review”, “Clear”.
+5. Question grid drawer:
+
+   * Overview of all questions with statuses.
+
+### Data
+
+* `tests`, `test_questions`, temporary `test_attempt` local state synced to DB.
+
+---
+
+## 4.9 `TestReviewScreen`
+
+### Purpose
+
+* Show detailed performance after test.
+
+### Sections
+
+1. Summary:
+
+   * Score, rank (if applicable), time used vs total.
+2. Topic breakdown:
+
+   * Per topic: accuracy, time spent.
+3. Question review:
+
+   * For each question:
+
+     * Your answer, correct answer, explanation.
+4. Actions:
+
+   * “Practice weak topics” → AIStudy.
+   * “Share result” → Share card.
+
+---
+
+## 4.10 `NotificationCenterScreen`
+
+### Purpose
+
+* Unified view of **all alerts**.
+
+### Sections
+
+1. Filter chips:
+
+   * All, Classes, Assignments, Tests, Doubts, Rewards.
+2. Notification list:
+
+   * `NotificationRow`:
+
+     * Icon, title, short text, timestamp, unread dot.
+
+### Actions
+
+* Tap → deep link (class detail, assignment detail, etc.).
+* “Mark all as read”.
+
+---
+
+## 4.11 `StudentProfileScreen`
+
+### Purpose
+
+* Manage profile & key academic info.
+
+### Sections
+
+1. Profile header:
+
+   * Avatar, name, edit icon.
+
+2. Academic info:
+
+   * Board, class, exam goals.
+   * Button: “Edit learning profile” → `EditOnboardingScreen`.
+
+3. Study stats:
+
+   * Total study hours, this week’s hours, streak.
+
+4. Account:
+
+   * Phone/email, logout button.
+
+---
+
+## 4.12 `SettingsScreen`
+
+### Purpose
+
+* App preferences & system settings.
+
+### Sections
+
+1. Notifications:
+
+   * Toggles for:
+
+     * Class reminders.
+     * Assignment due alerts.
+     * Doubt replies.
+     * Gamification updates.
+
+2. Appearance:
+
+   * Theme (Light/Dark/System).
+
+3. Language:
+
+   * Language picker.
+
+4. Data & privacy:
+
+   * Data saver toggle.
+   * Clear cache.
+   * Privacy policy, terms.
+
+---
+
+## 4.13 `HelpAndSupportScreen`
+
+### Purpose
+
+* Help section for how to use the app, plus support.
+
+### Sections
+
+1. FAQ list:
+
+   * Common questions (joining class, asking doubts, etc.).
+2. Tutorials:
+
+   * Link to help playlist in Study Library.
+3. Contact:
+
+   * “Email support”.
+   * “Report a problem”.
+
+---
+
+## 4.14 `AIStudyCompanionPanel` (pattern)
+
+### Purpose
+
+* Reusable bottom sheet that acts as **AI assistant**.
+
+### Where it appears
+
+* Dashboard, Library, CourseRoadmap, AssignmentDetail, TestReview, Doubt screens.
+
+### Sections
+
+1. Context area:
+
+   * Shows current context: chapter, resource, question.
+2. Chat area:
+
+   * Messages (student ↔ AI).
+3. Quick actions:
+
+   * “Explain this”.
+   * “Give me 5 practice questions”.
+   * “Summarize key points”.
+
+---
+
+## 4.15 `TodayReviewsSection` (inside `NewEnhancedAIStudy`)
+
+### Purpose
+
+* Spaced repetition for flashcards & micro‑quizzes.
+
+### Sections
+
+* List of due items:
+
+  * Each card: topic, number of cards/questions due, estimated time.
+* Button: “Start review” → starts `GuidedStudySessionScreen` in review mode.
+
+---
+
+## 4.16 `DownloadsManagerScreen`
+
+### Purpose
+
+* Manage offline content.
+
+### Sections
+
+1. Storage bar.
+2. Filter chips (All, Video, PDF, Other).
+3. Download list:
+
+   * Resource title, subject, size, last opened.
+4. Actions:
+
+   * Remove, open, refresh.
+
+---
+
+## 4.17 `NotesAndHighlightsScreen`
+
+### Purpose
+
+* Single place for all notes and highlights from resources.
+
+### Sections
+
+1. Filters:
+
+   * Subject, resource type, date.
+2. Notes list:
+
+   * Each item: snippet, source resource, timestamp.
+3. AI actions:
+
+   * “Summarize selected notes”.
+   * “Create flashcards from these notes”.
+
+---
+
+## 4.18 `ClassRecapScreen`
+
+### Purpose
+
+* After-class summary screen.
+
+### Sections
+
+1. Summary info:
+
+   * Class title, date/time, duration.
+2. Recording:
+
+   * Play button if recording exists.
+3. AI summary:
+
+   * Bullet‑point recap + key formulas/concepts.
+4. Related resources:
+
+   * Links to Library items for revision.
+5. Quick actions:
+
+   * “Practice questions from this class”.
+   * “Add to notes”.
+
+---
+
+## 4.19 `SubjectAnalyticsScreen`
+
+### Purpose
+
+* Deep dive for a single subject.
+
+### Sections
+
+1. Top stats:
+
+   * Average score, time spent, questions attempted.
+2. Topic mastery map:
+
+   * Chips/cards showing status per topic (Strong, Okay, Weak).
+3. Trend chart:
+
+   * Score over time.
+4. Actions:
+
+   * “Focus this week on [weak topics]” → AI plan.
+
+---
+
+## 4.20 `ShareProgressReportScreen`
+
+### Purpose
+
+* Render shareable progress card.
+
+### Sections
+
+1. Preview card:
+
+   * Name, class, key stats, graph.
+2. Buttons:
+
+   * “Share image” (WhatsApp, etc.).
+   * “Save to device”.
+
+---
+
+## 4.21 `GlobalAnalyticsScreen`
+
+### Purpose
+
+* Higher‑level view (for power users / maybe parents later).
+
+### Sections
+
+1. Weekly study time graph.
+2. Subject comparison chart.
+3. Activity breakdown (live vs self‑study vs tests).
+4. Streak & consistency metrics.
+
+---
+
+## 4.22 `LeaderboardScreen`
+
+### Purpose
+
+* Show XP/points ranking among peers.
+
+### Sections
+
+1. Tabs:
+
+   * Class leaderboard, School leaderboard.
+2. Rankings list:
+
+   * Rank, avatar, name, XP.
+3. Your position:
+
+   * Sticky section showing user rank.
+
+---
+
+## 4.23 `QuestsScreen`
+
+### Purpose
+
+* Structured goals with rewards.
+
+### Sections
+
+1. Daily quests.
+2. Weekly quests.
+3. Long‑term goals (e.g., finish entire syllabus unit).
+4. Rewards linked to completion.
+
+---
+
+## 4.24 `StudyGroupDetailScreen`
+
+### Purpose
+
+* Home for a specific study group.
+
+### Sections
+
+1. Group header:
+
+   * Name, description, members list.
+2. Chat preview (or full chat tab).
+3. Upcoming group sessions.
+4. Shared resources.
+
+---
+
+## 4.25 `PeerChatScreen`
+
+### Purpose
+
+* 1‑to‑1 or group chat between students.
+
+### Components
+
+* Use `react-native-gifted-chat`.
+* Support text, images, links to resources.
+
+---
+
+## 4.26 `ClassFeedScreen`
+
+### Purpose
+
+* Class/community feed.
+
+### Sections
+
+1. Post composer (teacher/student).
+2. Feed of posts:
+
+   * Text, attachments, polls.
+3. Reactions & comments.
+
+---
+
+## 4.27 `DoubtDetailScreen`
+
+### Purpose
+
+* Full thread of a single doubt.
+
+### Sections
+
+1. Top: question, subject, chapter, images.
+2. Status: Pending / Answered / Closed.
+3. Thread:
+
+   * Messages (student, teacher, AI).
+4. Rating:
+
+   * “Was this helpful?” yes/no.
+
+---
+
+## 4.28 `DoubtsExploreScreen`
+
+### Purpose
+
+* Explore/search solved doubts.
+
+### Sections
+
+1. Search bar.
+2. Filters: subject, chapter, difficulty.
+3. Doubt list:
+
+   * Snippet, tags, answer status.
+
+---
+
+## 4.29 `DoubtSessionsScreen`
+
+### Purpose
+
+* Show upcoming **group doubt sessions**.
+
+### Sections
+
+1. Upcoming sessions.
+2. Past sessions (with recording if any).
+3. Button: “Join session” at appropriate time.
+
+---
+
+## 4.30 `TaskHubScreen`
+
+### Purpose
+
+* Global to‑do list from **assignments, tests, AI tasks, personal tasks**.
+
+### Sections
+
+1. Filters: Today, This week, All.
+2. Tasks list:
+
+   * Task type icon (assignment/test/AI/personal).
+   * Title, subject, due time, status.
+3. New task:
+
+   * Add personal tasks (“Revise Chemistry for 20 minutes”).
+
+---
+
+## 4.31 `GuidedStudySessionScreen`
+
+### Purpose
+
+* Focus mode study session (like Pomodoro).
+
+### Sections
+
+1. Session header:
+
+   * Topic, estimated time.
+2. Timer:
+
+   * Countdown with pause/end.
+3. Checklist:
+
+   * Subtasks (“Watch video”, “Solve questions”).
+4. End screen:
+
+   * Reflection (“How was this?”), XP reward.
+
+---
+
+That’s the full **screen-level spec** for all improvements and new development, with sections, components, data hints, and behaviors.
+
+I
