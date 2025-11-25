@@ -19,11 +19,11 @@ import {
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
-import { T } from '../../ui';
+import { T, Button } from '../../ui';
+import { Colors, Spacing, BorderRadius } from '../../theme/designSystem';
 import { trackAction, trackScreenView } from '../../utils/navigationAnalytics';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
-import HamburgerMenu from './HamburgerMenu';
 import ResourceViewerScreen from './ResourceViewerScreen';
 import AddToPlaylistModal from './AddToPlaylistModal';
 import PlaylistsView from './PlaylistsView';
@@ -46,7 +46,6 @@ type FilterType = string;
 export default function NewStudyLibraryScreen() {
   const { user } = useAuth();
   const navigation = useNavigation<any>();
-  const [menuVisible, setMenuVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<FilterType>('All');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -149,27 +148,6 @@ export default function NewStudyLibraryScreen() {
     enabled: !!user?.id,
   });
 
-  // Fetch student profile data for HamburgerMenu
-  const { data: studentData } = useQuery({
-    queryKey: ['student-profile-menu', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-
-      const { data, error } = await supabase
-        .from('students')
-        .select('name, grade, section, student_id')
-        .eq('id', user.id)
-        .single();
-
-      if (error) {
-        console.error('Error fetching student profile:', error);
-        return null;
-      }
-      return data;
-    },
-    enabled: !!user?.id,
-  });
-
   const toggleBookmark = async (materialId: string) => {
     if (!user?.id) return;
 
@@ -257,26 +235,18 @@ export default function NewStudyLibraryScreen() {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#F6F7F8" />
 
-      {/* Hamburger Menu */}
-      <HamburgerMenu
-        visible={menuVisible}
-        onClose={() => setMenuVisible(false)}
-        currentRoute="NewStudyLibraryScreen"
-        studentData={studentData || undefined}
-      />
-
       {/* Top Bar - Material Design Standard */}
       <View style={styles.topBar}>
         <TouchableOpacity
           style={styles.iconButton}
           onPress={() => {
-            trackAction('open_menu', 'NewStudyLibraryScreen');
-            setMenuVisible(true);
+            trackAction('back', 'NewStudyLibraryScreen');
+            navigation.goBack();
           }}
           accessibilityRole="button"
-          accessibilityLabel="Open menu"
+          accessibilityLabel="Go back"
         >
-          <T variant="h2" style={styles.icon}>☰</T>
+          <T variant="h2" style={styles.icon}>←</T>
         </TouchableOpacity>
         <T variant="title" weight="bold" style={styles.topBarTitle}>Study Library</T>
         <TouchableOpacity
@@ -314,6 +284,222 @@ export default function NewStudyLibraryScreen() {
             />
           </View>
         </View>
+
+        {/* Course Roadmap CTA */}
+        <TouchableOpacity
+          style={styles.roadmapCard}
+          onPress={() => {
+            trackAction('open_course_roadmap', 'NewStudyLibraryScreen');
+            navigation.navigate('CourseRoadmapScreen');
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Open course roadmap"
+        >
+          <View style={{ flex: 1 }}>
+            <T variant="subtitle" weight="bold" style={{ marginBottom: Spacing.xs }}>
+              Course roadmap
+            </T>
+            <T variant="caption" color="textSecondary">
+              See your syllabus by subject and track chapters.
+            </T>
+          </View>
+          <Button variant="primary" onPress={() => navigation.navigate('CourseRoadmapScreen')}>
+            View
+          </Button>
+        </TouchableOpacity>
+
+        {/* Temporary: Notes & Highlights entry point */}
+        <TouchableOpacity
+          style={styles.roadmapCard}
+          onPress={() => {
+            trackAction('open_notes_highlights', 'NewStudyLibraryScreen');
+            navigation.navigate('NotesAndHighlightsScreen');
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Open notes and highlights"
+        >
+          <View style={{ flex: 1 }}>
+            <T variant="subtitle" weight="bold" style={{ marginBottom: Spacing.xs }}>
+              Notes & highlights
+            </T>
+            <T variant="caption" color="textSecondary">
+              Access saved notes, highlights, and doubt snippets.
+            </T>
+          </View>
+          <Button variant="primary" onPress={() => navigation.navigate('NotesAndHighlightsScreen')}>
+            Open
+          </Button>
+        </TouchableOpacity>
+
+        {/* Assignments CTA */}
+        <TouchableOpacity
+          style={styles.roadmapCard}
+          onPress={() => {
+            trackAction('open_assignments_home', 'NewStudyLibraryScreen');
+            navigation.navigate('AssignmentsHomeScreen');
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Open assignments"
+        >
+          <View style={{ flex: 1 }}>
+            <T variant="subtitle" weight="bold" style={{ marginBottom: Spacing.xs }}>
+              Assignments
+            </T>
+            <T variant="caption" color="textSecondary">
+              View all homework, quizzes, and projects with filters.
+            </T>
+          </View>
+          <Button variant="primary" onPress={() => navigation.navigate('AssignmentsHomeScreen')}>
+            Open
+          </Button>
+        </TouchableOpacity>
+
+        {/* Downloads Manager CTA */}
+        <TouchableOpacity
+          style={styles.roadmapCard}
+          onPress={() => {
+            trackAction('open_downloads_manager', 'NewStudyLibraryScreen');
+            navigation.navigate('DownloadsManagerScreen');
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Open downloads manager"
+        >
+          <View style={{ flex: 1 }}>
+            <T variant="subtitle" weight="bold" style={{ marginBottom: Spacing.xs }}>
+              Downloads
+            </T>
+            <T variant="caption" color="textSecondary">
+              Manage offline content and storage.
+            </T>
+          </View>
+          <Button variant="primary" onPress={() => navigation.navigate('DownloadsManagerScreen')}>
+            Open
+          </Button>
+        </TouchableOpacity>
+
+        {/* Task Hub CTA */}
+        <TouchableOpacity
+          style={styles.roadmapCard}
+          onPress={() => {
+            trackAction('open_task_hub', 'NewStudyLibraryScreen');
+            navigation.navigate('TaskHubScreen');
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Open task hub"
+        >
+          <View style={{ flex: 1 }}>
+            <T variant="subtitle" weight="bold" style={{ marginBottom: Spacing.xs }}>
+              Task Hub
+            </T>
+            <T variant="caption" color="textSecondary">
+              All your assignments, tests and AI tasks in one place.
+            </T>
+          </View>
+          <Button variant="primary" onPress={() => navigation.navigate('TaskHubScreen')}>
+            Open
+          </Button>
+        </TouchableOpacity>
+
+        {/* Guided Study Session CTA */}
+        <TouchableOpacity
+          style={styles.roadmapCard}
+          onPress={() => {
+            trackAction('start_study_session', 'NewStudyLibraryScreen');
+            navigation.navigate('GuidedStudySessionScreen', {
+              topic: 'Algebra – Linear equations',
+              mode: 'focus',
+              duration: 25,
+              fromPlan: 'Algebra this week'
+            });
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Start guided study session"
+        >
+          <View style={{ flex: 1 }}>
+            <T variant="subtitle" weight="bold" style={{ marginBottom: Spacing.xs }}>
+              Guided Study Session
+            </T>
+            <T variant="caption" color="textSecondary">
+              Start a focused 25-minute study session with timer.
+            </T>
+          </View>
+          <Button variant="primary" onPress={() => navigation.navigate('GuidedStudySessionScreen', {
+            topic: 'Algebra – Linear equations',
+            mode: 'focus',
+            duration: 25
+          })}>
+            Start
+          </Button>
+        </TouchableOpacity>
+
+        {/* Global Analytics CTA */}
+        <TouchableOpacity
+          style={styles.roadmapCard}
+          onPress={() => {
+            trackAction('view_analytics', 'NewStudyLibraryScreen');
+            navigation.navigate('GlobalAnalyticsScreen');
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="View overall analytics"
+        >
+          <View style={{ flex: 1 }}>
+            <T variant="subtitle" weight="bold" style={{ marginBottom: Spacing.xs }}>
+              Overall Analytics
+            </T>
+            <T variant="caption" color="textSecondary">
+              Track your progress across all subjects and habits.
+            </T>
+          </View>
+          <Button variant="primary" onPress={() => navigation.navigate('GlobalAnalyticsScreen')}>
+            View
+          </Button>
+        </TouchableOpacity>
+
+        {/* Leaderboard CTA */}
+        <TouchableOpacity
+          style={styles.roadmapCard}
+          onPress={() => {
+            trackAction('view_leaderboard', 'NewStudyLibraryScreen');
+            navigation.navigate('LeaderboardScreen');
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="View leaderboard"
+        >
+          <View style={{ flex: 1 }}>
+            <T variant="subtitle" weight="bold" style={{ marginBottom: Spacing.xs }}>
+              Leaderboard
+            </T>
+            <T variant="caption" color="textSecondary">
+              See your ranking by XP in class, school, and globally.
+            </T>
+          </View>
+          <Button variant="primary" onPress={() => navigation.navigate('LeaderboardScreen')}>
+            View
+          </Button>
+        </TouchableOpacity>
+
+        {/* Quests CTA */}
+        <TouchableOpacity
+          style={styles.roadmapCard}
+          onPress={() => {
+            trackAction('view_quests', 'NewStudyLibraryScreen');
+            navigation.navigate('QuestsScreen');
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="View quests"
+        >
+          <View style={{ flex: 1 }}>
+            <T variant="subtitle" weight="bold" style={{ marginBottom: Spacing.xs }}>
+              Quests
+            </T>
+            <T variant="caption" color="textSecondary">
+              Complete daily and weekly challenges to earn XP.
+            </T>
+          </View>
+          <Button variant="primary" onPress={() => navigation.navigate('QuestsScreen')}>
+            View
+          </Button>
+        </TouchableOpacity>
 
         {/* AI Assistant Card (Floating) - Dismissible */}
         {aiPopupVisible && (
@@ -610,6 +796,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333333',
   },
+  roadmapCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    marginHorizontal: 16,
+    marginBottom: 12,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
+  },
   // AI Assistant Card (Floating)
   aiContainer: {
     paddingHorizontal: 16,
@@ -639,6 +840,21 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: '#6B7280',
     lineHeight: 24,
+  },
+  roadmapCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    marginHorizontal: 16,
+    marginBottom: 12,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
   },
   aiCardContent: {
     flexDirection: 'row',

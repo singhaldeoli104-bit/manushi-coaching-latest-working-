@@ -1,0 +1,594 @@
+// OTP Verification Screen - Content-only (NO chrome)
+// Shell provides top bar, back button, and navigation
+import { addPropertyControls, ControlType } from "framer"
+import { motion, useAnimation } from "framer-motion"
+import { useState, useCallback, useEffect, useRef, useMemo } from "react"
+
+interface OTPVerificationProps {
+    phoneNumber: string
+    timerDuration: number
+    primaryColor: string
+    backgroundColor: string
+    onVerify?: (otp: string) => Promise<void>
+    onResend?: () => Promise<void>
+    onChangeNumber?: () => void
+    onBack?: () => void
+    style?: any
+}
+
+// SVG Icons
+const Icons = {
+    Check: () => (
+        <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="3"
+        >
+            <polyline points="20 6 9 17 4 12" />
+        </svg>
+    ),
+    Loader: () => (
+        <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+        >
+            <path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" />
+        </svg>
+    ),
+    WifiOff: () => (
+        <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+        >
+            <line x1="1" y1="1" x2="23" y2="23" />
+            <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55" />
+            <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39" />
+            <path d="M10.71 5.05A16 16 0 0 1 22.58 9" />
+            <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88" />
+            <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
+            <line x1="12" y1="20" x2="12.01" y2="20" />
+        </svg>
+    ),
+}
+
+/**
+ * @framerSupportedLayoutWidth fixed
+ * @framerSupportedLayoutHeight fixed
+ */
+export default function OTPVerification(props: OTPVerificationProps) {
+    const {
+        phoneNumber = "+91 9832xx221",
+        timerDuration = 30,
+        primaryColor = "#2D5BFF",
+        backgroundColor = "#F7F7F7",
+        onVerify,
+        onResend,
+        onChangeNumber,
+    } = props
+
+    const [otp, setOtp] = useState(["", "", "", "", "", ""])
+    const [activeIndex, setActiveIndex] = useState(0)
+    const [isLoading, setIsLoading] = useState(false)
+    const [error, setError] = useState("")
+    const [timeLeft, setTimeLeft] = useState(timerDuration)
+    const [canResend, setCanResend] = useState(false)
+    const [isOnline, setIsOnline] = useState(true)
+    const [showSuccess, setShowSuccess] = useState(false)
+
+    const inputRefs = useRef<(HTMLInputElement | null)[]>([])
+    const otpBoxControls = useAnimation()
+
+    // Online/Offline detection
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            const handleOnline = () => setIsOnline(true)
+            const handleOffline = () => setIsOnline(false)
+
+            setIsOnline(navigator.onLine)
+            window.addEventListener("online", handleOnline)
+            window.addEventListener("offline", handleOffline)
+
+            return () => {
+                window.removeEventListener("online", handleOnline)
+                window.removeEventListener("offline", handleOffline)
+            }
+        }
+    }, [])
+
+    // Timer countdown
+    useEffect(() => {
+        if (timeLeft > 0 && !canResend) {
+            const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000)
+            return () => clearTimeout(timer)
+        } else if (timeLeft === 0) {
+            setCanResend(true)
+        }
+    }, [timeLeft, canResend])
+
+    // Auto-focus first input on mount
+    useEffect(() => {
+        inputRefs.current[0]?.focus()
+    }, [])
+
+    const isOtpComplete = useMemo(() => {
+        return otp.every((digit) => digit !== "")
+    }, [otp])
+
+    const handleChange = useCallback(
+        (index: number, value: string) => {
+            if (!/^\d*$/.test(value)) return
+
+            const newOtp = [...otp]
+            newOtp[index] = value.slice(-1)
+
+            setOtp(newOtp)
+            setError("")
+
+            if (value && index < 5) {
+                inputRefs.current[index + 1]?.focus()
+                setActiveIndex(index + 1)
+            }
+        },
+        [otp]
+    )
+
+    const handleKeyDown = useCallback(
+        (index: number, e: React.KeyboardEvent) => {
+            if (e.key === "Backspace") {
+                if (!otp[index] && index > 0) {
+                    inputRefs.current[index - 1]?.focus()
+                    setActiveIndex(index - 1)
+                } else {
+                    const newOtp = [...otp]
+                    newOtp[index] = ""
+                    setOtp(newOtp)
+                }
+            } else if (e.key === "ArrowLeft" && index > 0) {
+                inputRefs.current[index - 1]?.focus()
+                setActiveIndex(index - 1)
+            } else if (e.key === "ArrowRight" && index < 5) {
+                inputRefs.current[index + 1]?.focus()
+                setActiveIndex(index + 1)
+            }
+        },
+        [otp]
+    )
+
+    const handlePaste = useCallback((e: React.ClipboardEvent) => {
+        e.preventDefault()
+        const pastedData = e.clipboardData
+            .getData("text")
+            .replace(/\D/g, "")
+            .slice(0, 6)
+
+        if (pastedData.length === 6) {
+            const newOtp = pastedData.split("")
+            setOtp(newOtp)
+            inputRefs.current[5]?.focus()
+            setActiveIndex(5)
+        }
+    }, [])
+
+    const handleVerify = useCallback(async () => {
+        if (!isOtpComplete || isLoading || !isOnline) return
+
+        setIsLoading(true)
+        setError("")
+
+        try {
+            const otpString = otp.join("")
+            if (onVerify) {
+                await onVerify(otpString)
+                setShowSuccess(true)
+            } else {
+                await new Promise((resolve) => setTimeout(resolve, 1500))
+
+                if (otpString === "000000") {
+                    throw new Error("Invalid OTP")
+                }
+                setShowSuccess(true)
+            }
+        } catch (err) {
+            setError("The code you entered is incorrect.")
+            otpBoxControls.start({
+                x: [0, -10, 10, -10, 10, -10, 0],
+                transition: { duration: 0.4 },
+            })
+            setTimeout(() => {
+                setOtp(["", "", "", "", "", ""])
+                inputRefs.current[0]?.focus()
+                setActiveIndex(0)
+            }, 400)
+        } finally {
+            setIsLoading(false)
+        }
+    }, [otp, isOtpComplete, isLoading, isOnline, onVerify, otpBoxControls])
+
+    const handleResend = useCallback(async () => {
+        if (!canResend || isLoading) return
+
+        setIsLoading(true)
+        setCanResend(false)
+
+        try {
+            if (onResend) {
+                await onResend()
+            } else {
+                await new Promise((resolve) => setTimeout(resolve, 1000))
+            }
+
+            setTimeLeft(timerDuration)
+            setOtp(["", "", "", "", "", ""])
+            inputRefs.current[0]?.focus()
+            setActiveIndex(0)
+        } catch (err) {
+            setError("Failed to resend code. Please try again.")
+        } finally {
+            setIsLoading(false)
+        }
+    }, [canResend, isLoading, onResend, timerDuration])
+
+    const formatTime = (seconds: number) => {
+        const mins = Math.floor(seconds / 60)
+        const secs = seconds % 60
+        return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`
+    }
+
+    return (
+        <div
+            style={{
+                width: 390,
+                height: 844,
+                background: backgroundColor,
+                fontFamily: "Inter, -apple-system, sans-serif",
+                overflow: "hidden",
+                position: "relative",
+            }}
+        >
+            {!isOnline && (
+                <motion.div
+                    initial={{ y: -50, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        background: "#FEF3C7",
+                        color: "#92400E",
+                        padding: "8px 16px",
+                        fontSize: 13,
+                        fontWeight: 500,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        zIndex: 100,
+                        boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                    }}
+                >
+                    <Icons.WifiOff />
+                    No internet connection
+                </motion.div>
+            )}
+
+            <div
+                style={{
+                    height: "100%",
+                    overflowY: "auto",
+                    padding: "40px 24px 24px",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                }}
+            >
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                    style={{
+                        textAlign: "center",
+                        marginBottom: 40,
+                        width: "100%",
+                    }}
+                >
+                    <h2
+                        style={{
+                            fontSize: 24,
+                            fontWeight: 700,
+                            color: "#1A1A1A",
+                            margin: 0,
+                            marginBottom: 12,
+                        }}
+                    >
+                        Enter the 6-digit code
+                    </h2>
+                    <p
+                        style={{
+                            fontSize: 15,
+                            color: "#6B7280",
+                            margin: 0,
+                            marginBottom: 8,
+                        }}
+                    >
+                        We've sent a verification code to
+                        <br />
+                        <strong>{phoneNumber}</strong>
+                    </p>
+                    <motion.button
+                        whileHover={{ textDecoration: "underline" }}
+                        onClick={onChangeNumber}
+                        style={{
+                            background: "transparent",
+                            border: "none",
+                            color: primaryColor,
+                            fontSize: 14,
+                            fontWeight: 500,
+                            cursor: "pointer",
+                            padding: 0,
+                        }}
+                        aria-label="Change number"
+                    >
+                        Change number
+                    </motion.button>
+                </motion.div>
+
+                <motion.div
+                    animate={otpBoxControls}
+                    style={{
+                        display: "flex",
+                        gap: 12,
+                        marginBottom: 24,
+                        justifyContent: "center",
+                    }}
+                >
+                    {otp.map((digit, index) => (
+                        <motion.input
+                            key={index}
+                            ref={(el: HTMLInputElement | null) =>
+                                (inputRefs.current[index] = el)
+                            }
+                            type="text"
+                            inputMode="numeric"
+                            maxLength={1}
+                            value={digit}
+                            onChange={(
+                                e: React.ChangeEvent<HTMLInputElement>
+                            ) => handleChange(index, e.target.value)}
+                            onKeyDown={(
+                                e: React.KeyboardEvent<HTMLInputElement>
+                            ) => handleKeyDown(index, e)}
+                            onPaste={index === 0 ? handlePaste : undefined}
+                            onFocus={() => setActiveIndex(index)}
+                            animate={{
+                                borderColor: error
+                                    ? "#FF3B30"
+                                    : activeIndex === index
+                                      ? primaryColor
+                                      : "#DADCE0",
+                                scale: activeIndex === index ? 1.05 : 1,
+                            }}
+                            style={{
+                                width: 48,
+                                height: 56,
+                                borderRadius: 10,
+                                border: "1px solid",
+                                background: "#FFF",
+                                fontSize: 22,
+                                fontWeight: 600,
+                                textAlign: "center",
+                                outline: "none",
+                                transition: "border-color 0.2s",
+                            }}
+                            aria-label={`Digit ${index + 1} of 6`}
+                            disabled={isLoading}
+                        />
+                    ))}
+                </motion.div>
+
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                    style={{
+                        fontSize: 14,
+                        color: "#757575",
+                        marginBottom: 16,
+                        textAlign: "center",
+                    }}
+                >
+                    {!canResend ? (
+                        `Resend code in ${formatTime(timeLeft)}`
+                    ) : (
+                        <motion.button
+                            whileHover={{ textDecoration: "underline" }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={handleResend}
+                            disabled={isLoading}
+                            style={{
+                                background: "transparent",
+                                border: "none",
+                                color: primaryColor,
+                                fontSize: 14,
+                                fontWeight: 600,
+                                cursor: isLoading ? "not-allowed" : "pointer",
+                                padding: 0,
+                                minHeight: 44,
+                                minWidth: 44,
+                            }}
+                            aria-label="Resend code"
+                        >
+                            Resend Code
+                        </motion.button>
+                    )}
+                </motion.div>
+
+                {error && (
+                    <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        style={{
+                            color: "#FF3B30",
+                            fontSize: 14,
+                            fontWeight: 600,
+                            marginBottom: 24,
+                            textAlign: "center",
+                        }}
+                        role="alert"
+                    >
+                        {error}
+                    </motion.div>
+                )}
+
+                {showSuccess && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        style={{
+                            position: "absolute",
+                            top: "50%",
+                            left: "50%",
+                            transform: "translate(-50%, -50%)",
+                            background: "#10B981",
+                            color: "#FFF",
+                            padding: "16px 24px",
+                            borderRadius: 12,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 12,
+                            boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+                        }}
+                    >
+                        <Icons.Check />
+                        <span style={{ fontSize: 16, fontWeight: 600 }}>
+                            OTP Verified!
+                        </span>
+                    </motion.div>
+                )}
+
+                <motion.button
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: isOtpComplete ? 1 : 0.6, y: 0 }}
+                    whileHover={
+                        isOtpComplete && !isLoading && isOnline
+                            ? { scale: 1.02 }
+                            : {}
+                    }
+                    whileTap={
+                        isOtpComplete && !isLoading && isOnline
+                            ? { scale: 0.98 }
+                            : {}
+                    }
+                    onClick={handleVerify}
+                    disabled={!isOtpComplete || isLoading || !isOnline}
+                    style={{
+                        width: "100%",
+                        maxWidth: 342,
+                        height: 52,
+                        borderRadius: 12,
+                        border: "none",
+                        background:
+                            isOtpComplete && isOnline
+                                ? primaryColor
+                                : "#E0E0E0",
+                        color: isOtpComplete && isOnline ? "#FFF" : "#9CA3AF",
+                        fontSize: 16,
+                        fontWeight: 600,
+                        cursor:
+                            isOtpComplete && !isLoading && isOnline
+                                ? "pointer"
+                                : "not-allowed",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 8,
+                        marginBottom: 32,
+                    }}
+                    aria-label="Verify OTP"
+                >
+                    {isLoading ? (
+                        <>
+                            <motion.div
+                                animate={{ rotate: 360 }}
+                                transition={{
+                                    duration: 1,
+                                    repeat: Infinity,
+                                    ease: "linear",
+                                }}
+                            >
+                                <Icons.Loader />
+                            </motion.div>
+                            Verifying...
+                        </>
+                    ) : (
+                        "Verify"
+                    )}
+                </motion.button>
+
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                    style={{
+                        textAlign: "center",
+                        fontSize: 14,
+                        color: "#6B7280",
+                    }}
+                >
+                    Didn't receive the OTP?{" "}
+                    <motion.button
+                        whileHover={{ textDecoration: "underline" }}
+                        onClick={onChangeNumber}
+                        style={{
+                            background: "transparent",
+                            border: "none",
+                            color: primaryColor,
+                            fontWeight: 600,
+                            cursor: "pointer",
+                            padding: 0,
+                        }}
+                        aria-label="Try another number"
+                    >
+                        Try another number
+                    </motion.button>
+                </motion.div>
+            </div>
+        </div>
+    )
+}
+
+addPropertyControls(OTPVerification, {
+    phoneNumber: {
+        type: ControlType.String,
+        defaultValue: "+91 9832xx221",
+        title: "Phone Number",
+    },
+    timerDuration: {
+        type: ControlType.Number,
+        defaultValue: 30,
+        min: 10,
+        max: 120,
+        step: 5,
+        title: "Timer (seconds)",
+    },
+    primaryColor: {
+        type: ControlType.Color,
+        defaultValue: "#2D5BFF",
+        title: "Primary Color",
+    },
+    backgroundColor: {
+        type: ControlType.Color,
+        defaultValue: "#F7F7F7",
+        title: "Background Color",
+    },
+})

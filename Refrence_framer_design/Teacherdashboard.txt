@@ -1,0 +1,868 @@
+// Enhanced Teacher Dashboard - Prodruction Ready
+import { addPropertyControls, ControlType } from "framer"
+import { motion, useInView } from "framer-motion"
+import { useRef, useMemo } from "react"
+
+// TypeScript Interfaces
+interface Card {
+    title: string
+    subtitle: string
+    detail: string
+    buttonText: string
+    isPrimary: boolean
+}
+
+interface Action {
+    label: string
+    color: string
+}
+
+interface Activity {
+    text: string
+    time: string
+}
+
+interface TeacherDashboardProps {
+    teacherName: string
+    primaryColor: string
+    cards: Card[]
+    actions: Action[]
+    activities: Activity[]
+    showAnalytics: boolean
+    style?: any
+}
+
+// SVG Icons
+const Icons = {
+    Video: () => (
+        <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            aria-hidden="true"
+        >
+            <polygon points="23 7 16 12 23 17" />
+            <rect x="1" y="5" width="15" height="14" rx="2" />
+        </svg>
+    ),
+    File: () => (
+        <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            aria-hidden="true"
+        >
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
+        </svg>
+    ),
+    Clipboard: () => (
+        <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            aria-hidden="true"
+        >
+            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+            <rect x="8" y="2" width="8" height="4" rx="1" />
+        </svg>
+    ),
+    Help: () => (
+        <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            aria-hidden="true"
+        >
+            <circle cx="12" cy="12" r="10" />
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
+        </svg>
+    ),
+    Plus: () => (
+        <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="white"
+            strokeWidth="2"
+            aria-hidden="true"
+        >
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+    ),
+    TrendUp: () => (
+        <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            aria-hidden="true"
+        >
+            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+            <polyline points="17 6 23 6 23 12" />
+        </svg>
+    ),
+    Bell: () => (
+        <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            aria-hidden="true"
+        >
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+        </svg>
+    ),
+    Clock: () => (
+        <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            aria-hidden="true"
+        >
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+        </svg>
+    ),
+}
+
+// Animation Variants
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.08,
+            delayChildren: 0.1,
+        },
+    },
+}
+
+const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+        y: 0,
+        opacity: 1,
+        transition: {
+            type: "spring",
+            stiffness: 120,
+            damping: 15,
+        },
+    },
+}
+
+/**
+ * @framerSupportedLayoutWidth fixed
+ * @framerSupportedLayoutHeight fixed
+ */
+export default function TeacherDashboard(props: TeacherDashboardProps) {
+    const {
+        teacherName = "Ms. Khushi",
+        primaryColor = "#2D5BFF",
+        cards = [
+            {
+                title: "Next Class",
+                subtitle: "Math — Algebra Basics",
+                detail: "10:00 AM · Batch JEE Mains",
+                buttonText: "Start Live Class",
+                isPrimary: true,
+            },
+            {
+                title: "Assignments",
+                subtitle: "8 submissions to review",
+                detail: "From Physics Chapter 5",
+                buttonText: "Review Now",
+                isPrimary: false,
+            },
+            {
+                title: "Tests",
+                subtitle: "Physics Topic Test in 3 hrs",
+                detail: "15 students registered",
+                buttonText: "View Details",
+                isPrimary: false,
+            },
+            {
+                title: "Doubts",
+                subtitle: "12 new doubts from students",
+                detail: "Avg. response time: 2.5 hrs",
+                buttonText: "Open Inbox",
+                isPrimary: false,
+            },
+        ],
+        actions = [
+            { label: "Assignment", color: "#3B82F6" },
+            { label: "Test", color: "#22C55E" },
+            { label: "Announce", color: "#F97316" },
+            { label: "Analytics", color: "#EC4899" },
+        ],
+        activities = [
+            { text: "12 students submitted Assignment #4", time: "2m ago" },
+            { text: "Physics topic test scheduled", time: "15m ago" },
+            { text: "3 new doubts from NEET 2026", time: "1h ago" },
+        ],
+        showAnalytics = true,
+    } = props
+
+    const analyticsRef = useRef(null)
+    const activityRef = useRef(null)
+
+    const analyticsInView = useInView(analyticsRef, { once: true, amount: 0.3 })
+    const activityInView = useInView(activityRef, { once: true, amount: 0.3 })
+
+    const iconMap: Record<string, () => JSX.Element> = useMemo(
+        () => ({
+            "Next Class": Icons.Video,
+            Assignments: Icons.File,
+            Tests: Icons.Clipboard,
+            Doubts: Icons.Help,
+        }),
+        []
+    )
+
+    return (
+        <div
+            style={{
+                width: 390,
+                height: 844,
+                background: "#F7F7F7",
+                fontFamily: "Inter, -apple-system, sans-serif",
+                overflow: "hidden",
+            }}
+        >
+            <motion.div
+                style={{
+                    height: "100%",
+                    overflowY: "auto",
+                    padding: 16,
+                    paddingBottom: 40,
+                    WebkitOverflowScrolling: "touch",
+                }}
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+            >
+                <motion.header
+                    variants={itemVariants}
+                    style={{
+                        background: "#FFF",
+                        borderRadius: 20,
+                        padding: 20,
+                        marginBottom: 20,
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                    }}
+                    role="banner"
+                >
+                    <div
+                        style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "start",
+                        }}
+                    >
+                        <div>
+                            <h1
+                                style={{
+                                    fontSize: 24,
+                                    fontWeight: 700,
+                                    color: "#1A1A1A",
+                                    margin: 0,
+                                    marginBottom: 6,
+                                    lineHeight: 1.2,
+                                }}
+                            >
+                                Good morning, {teacherName} 👋
+                            </h1>
+                            <p
+                                style={{
+                                    fontSize: 14,
+                                    color: "#6B7280",
+                                    margin: 0,
+                                    marginTop: 6,
+                                }}
+                            >
+                                Here's what's coming up today.
+                            </p>
+                        </div>
+                        <motion.button
+                            whileHover={{ scale: 1.1, rotate: 5 }}
+                            whileTap={{ scale: 0.95 }}
+                            style={{
+                                background: "#FEF3C7",
+                                borderRadius: 12,
+                                padding: 10,
+                                position: "relative",
+                                border: "none",
+                                cursor: "pointer",
+                            }}
+                            aria-label="Notifications"
+                        >
+                            <Icons.Bell />
+                            <motion.div
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                transition={{ delay: 0.5, type: "spring" }}
+                                style={{
+                                    position: "absolute",
+                                    top: -4,
+                                    right: -4,
+                                    background: "#EF4444",
+                                    color: "white",
+                                    fontSize: 10,
+                                    fontWeight: 600,
+                                    borderRadius: 10,
+                                    padding: "2px 6px",
+                                }}
+                            >
+                                3
+                            </motion.div>
+                        </motion.button>
+                    </div>
+                </motion.header>
+
+                <motion.section
+                    variants={itemVariants}
+                    style={{ marginBottom: 24 }}
+                >
+                    <h2
+                        style={{
+                            fontSize: 20,
+                            fontWeight: 700,
+                            color: "#1A1A1A",
+                            margin: 0,
+                            marginBottom: 14,
+                        }}
+                    >
+                        Today's Overview
+                    </h2>
+                    <div
+                        style={{
+                            display: "grid",
+                            gridTemplateColumns: "1fr 1fr",
+                            gap: 12,
+                        }}
+                        role="list"
+                    >
+                        {cards.map((card, i) => {
+                            const CardIcon = iconMap[card.title] || Icons.Help
+                            return (
+                                <motion.div
+                                    key={i}
+                                    variants={itemVariants}
+                                    whileHover={{
+                                        y: -6,
+                                        boxShadow:
+                                            "0 16px 40px rgba(0,0,0,0.16)",
+                                    }}
+                                    style={{
+                                        background: "#FFF",
+                                        borderRadius: 18,
+                                        padding: 16,
+                                        boxShadow:
+                                            "0 4px 12px rgba(0,0,0,0.08)",
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        cursor: "pointer",
+                                    }}
+                                    role="listitem"
+                                >
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 8,
+                                            marginBottom: 12,
+                                        }}
+                                    >
+                                        <div
+                                            style={{
+                                                background: `${primaryColor}15`,
+                                                padding: 8,
+                                                borderRadius: 10,
+                                                color: primaryColor,
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                            }}
+                                        >
+                                            <CardIcon />
+                                        </div>
+                                        <span
+                                            style={{
+                                                fontSize: 12,
+                                                color: "#6B7280",
+                                                fontWeight: 500,
+                                            }}
+                                        >
+                                            {card.title}
+                                        </span>
+                                    </div>
+                                    <div style={{ flex: 1, marginBottom: 12 }}>
+                                        <h3
+                                            style={{
+                                                fontSize: 14,
+                                                fontWeight: 600,
+                                                color: "#1A1A1A",
+                                                margin: 0,
+                                                marginBottom: 4,
+                                            }}
+                                        >
+                                            {card.subtitle}
+                                        </h3>
+                                        <p
+                                            style={{
+                                                fontSize: 11,
+                                                color: "#9CA3AF",
+                                                margin: 0,
+                                            }}
+                                        >
+                                            {card.detail}
+                                        </p>
+                                    </div>
+                                    <motion.button
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        style={{
+                                            width: "100%",
+                                            padding: "10px 0",
+                                            borderRadius: 10,
+                                            border: "none",
+                                            background: card.isPrimary
+                                                ? primaryColor
+                                                : "#F3F4F6",
+                                            color: card.isPrimary
+                                                ? "#FFF"
+                                                : "#374151",
+                                            fontSize: 12,
+                                            fontWeight: 600,
+                                            cursor: "pointer",
+                                        }}
+                                        aria-label={card.buttonText}
+                                    >
+                                        {card.buttonText}
+                                    </motion.button>
+                                </motion.div>
+                            )
+                        })}
+                    </div>
+                </motion.section>
+
+                <motion.section
+                    variants={itemVariants}
+                    style={{ marginBottom: 24 }}
+                >
+                    <h2
+                        style={{
+                            fontSize: 20,
+                            fontWeight: 700,
+                            color: "#1A1A1A",
+                            margin: 0,
+                            marginBottom: 14,
+                        }}
+                    >
+                        Quick Actions
+                    </h2>
+                    <div
+                        style={{
+                            display: "flex",
+                            justifyContent: "space-around",
+                        }}
+                        role="list"
+                    >
+                        {actions.map((action, i) => (
+                            <motion.button
+                                key={i}
+                                whileHover={{ scale: 1.15, y: -4 }}
+                                whileTap={{ scale: 0.9 }}
+                                style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "center",
+                                    cursor: "pointer",
+                                    background: "transparent",
+                                    border: "none",
+                                    padding: 0,
+                                }}
+                                aria-label={action.label}
+                                role="listitem"
+                            >
+                                <div
+                                    style={{
+                                        width: 56,
+                                        height: 56,
+                                        borderRadius: 28,
+                                        background: action.color,
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        boxShadow: `0 6px 16px ${action.color}40`,
+                                        marginBottom: 8,
+                                    }}
+                                >
+                                    <Icons.Plus />
+                                </div>
+                                <span
+                                    style={{
+                                        fontSize: 11,
+                                        color: "#374151",
+                                        fontWeight: 500,
+                                    }}
+                                >
+                                    {action.label}
+                                </span>
+                            </motion.button>
+                        ))}
+                    </div>
+                </motion.section>
+
+                {showAnalytics && (
+                    <motion.section
+                        ref={analyticsRef}
+                        initial={{ opacity: 0, y: 50 }}
+                        animate={
+                            analyticsInView
+                                ? { opacity: 1, y: 0 }
+                                : { opacity: 0, y: 50 }
+                        }
+                        transition={{ duration: 0.6 }}
+                        style={{ marginBottom: 24 }}
+                    >
+                        <h2
+                            style={{
+                                fontSize: 20,
+                                fontWeight: 700,
+                                color: "#1A1A1A",
+                                margin: 0,
+                                marginBottom: 14,
+                            }}
+                        >
+                            Analytics Snapshot
+                        </h2>
+                        <div
+                            style={{
+                                display: "grid",
+                                gridTemplateColumns: "1fr 1fr",
+                                gap: 12,
+                            }}
+                        >
+                            {[
+                                {
+                                    label: "Attendance",
+                                    value: "86%",
+                                    trend: "+2%",
+                                    sub: "this week",
+                                },
+                                {
+                                    label: "Performance",
+                                    value: "72%",
+                                    trend: "+4%",
+                                    sub: "avg",
+                                },
+                            ].map((stat, i) => (
+                                <motion.div
+                                    key={i}
+                                    whileHover={{
+                                        y: -6,
+                                        boxShadow:
+                                            "0 12px 32px rgba(0,0,0,0.12)",
+                                    }}
+                                    style={{
+                                        background: "#FFF",
+                                        borderRadius: 18,
+                                        padding: 16,
+                                        boxShadow:
+                                            "0 4px 12px rgba(0,0,0,0.08)",
+                                    }}
+                                >
+                                    <div
+                                        style={{
+                                            fontSize: 12,
+                                            color: "#6B7280",
+                                            marginBottom: 6,
+                                            fontWeight: 500,
+                                        }}
+                                    >
+                                        {stat.label}
+                                    </div>
+                                    <div
+                                        style={{
+                                            fontSize: 28,
+                                            fontWeight: 800,
+                                            marginBottom: 4,
+                                            color: "#1A1A1A",
+                                        }}
+                                    >
+                                        {stat.value}
+                                    </div>
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 4,
+                                            color: "#16A34A",
+                                            fontSize: 12,
+                                            fontWeight: 600,
+                                            marginBottom: 10,
+                                        }}
+                                    >
+                                        <Icons.TrendUp />
+                                        {stat.trend}{" "}
+                                        <span
+                                            style={{
+                                                color: "#9CA3AF",
+                                                fontWeight: 400,
+                                            }}
+                                        >
+                                            {stat.sub}
+                                        </span>
+                                    </div>
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            alignItems: "end",
+                                            gap: 3,
+                                            height: 36,
+                                        }}
+                                    >
+                                        {[
+                                            35, 50, 42, 62, 55, 70, 65, 80, 75,
+                                            90,
+                                        ].map((h, j) => (
+                                            <motion.div
+                                                key={j}
+                                                initial={{ height: 0 }}
+                                                animate={
+                                                    analyticsInView
+                                                        ? { height: `${h}%` }
+                                                        : { height: 0 }
+                                                }
+                                                transition={{
+                                                    delay: 0.3 + j * 0.05,
+                                                    type: "spring",
+                                                }}
+                                                style={{
+                                                    flex: 1,
+                                                    background: `${primaryColor}30`,
+                                                    borderRadius: 3,
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </div>
+                    </motion.section>
+                )}
+
+                <motion.section
+                    ref={activityRef}
+                    initial={{ opacity: 0, y: 50 }}
+                    animate={
+                        activityInView
+                            ? { opacity: 1, y: 0 }
+                            : { opacity: 0, y: 50 }
+                    }
+                    transition={{ duration: 0.6 }}
+                >
+                    <h2
+                        style={{
+                            fontSize: 20,
+                            fontWeight: 700,
+                            color: "#1A1A1A",
+                            margin: 0,
+                            marginBottom: 14,
+                        }}
+                    >
+                        Activity Feed
+                    </h2>
+                    <div
+                        style={{
+                            background: "#FFF",
+                            borderRadius: 18,
+                            padding: 16,
+                            boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                        }}
+                        role="list"
+                    >
+                        {activities.map((a, i) => (
+                            <motion.div
+                                key={i}
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={
+                                    activityInView
+                                        ? { opacity: 1, x: 0 }
+                                        : { opacity: 0, x: -10 }
+                                }
+                                transition={{ delay: 0.5 + i * 0.1 }}
+                                style={{
+                                    padding: "10px 0",
+                                    borderBottom:
+                                        i < activities.length - 1
+                                            ? "1px solid #F3F4F6"
+                                            : "none",
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    alignItems: "center",
+                                }}
+                                role="listitem"
+                            >
+                                <span
+                                    style={{
+                                        fontSize: 13,
+                                        color: "#374151",
+                                        flex: 1,
+                                    }}
+                                >
+                                    {a.text}
+                                </span>
+                                <span
+                                    style={{
+                                        fontSize: 10,
+                                        color: "#9CA3AF",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 3,
+                                        marginLeft: 8,
+                                        whiteSpace: "nowrap",
+                                    }}
+                                >
+                                    <Icons.Clock /> {a.time}
+                                </span>
+                            </motion.div>
+                        ))}
+                    </div>
+                </motion.section>
+            </motion.div>
+        </div>
+    )
+}
+
+addPropertyControls(TeacherDashboard, {
+    teacherName: {
+        type: ControlType.String,
+        defaultValue: "Ms. Khushi",
+        title: "Teacher Name",
+    },
+    primaryColor: {
+        type: ControlType.Color,
+        defaultValue: "#2D5BFF",
+        title: "Primary Color",
+    },
+    cards: {
+        type: ControlType.Array,
+        control: {
+            type: ControlType.Object,
+            controls: {
+                title: { type: ControlType.String, defaultValue: "Next Class" },
+                subtitle: {
+                    type: ControlType.String,
+                    defaultValue: "Math — Algebra Basics",
+                },
+                detail: {
+                    type: ControlType.String,
+                    defaultValue: "10:00 AM · Batch JEE Mains",
+                },
+                buttonText: {
+                    type: ControlType.String,
+                    defaultValue: "Start Live Class",
+                },
+                isPrimary: { type: ControlType.Boolean, defaultValue: true },
+            },
+        },
+        defaultValue: [
+            {
+                title: "Next Class",
+                subtitle: "Math — Algebra Basics",
+                detail: "10:00 AM · Batch JEE Mains",
+                buttonText: "Start Live Class",
+                isPrimary: true,
+            },
+            {
+                title: "Assignments",
+                subtitle: "8 submissions to review",
+                detail: "From Physics Chapter 5",
+                buttonText: "Review Now",
+                isPrimary: false,
+            },
+            {
+                title: "Tests",
+                subtitle: "Physics Topic Test in 3 hrs",
+                detail: "15 students registered",
+                buttonText: "View Details",
+                isPrimary: false,
+            },
+            {
+                title: "Doubts",
+                subtitle: "12 new doubts from students",
+                detail: "Avg. response time: 2.5 hrs",
+                buttonText: "Open Inbox",
+                isPrimary: false,
+            },
+        ],
+        maxCount: 6,
+    },
+    actions: {
+        type: ControlType.Array,
+        control: {
+            type: ControlType.Object,
+            controls: {
+                label: { type: ControlType.String, defaultValue: "Assignment" },
+                color: { type: ControlType.Color, defaultValue: "#3B82F6" },
+            },
+        },
+        defaultValue: [
+            { label: "Assignment", color: "#3B82F6" },
+            { label: "Test", color: "#22C55E" },
+            { label: "Announce", color: "#F97316" },
+            { label: "Analytics", color: "#EC4899" },
+        ],
+        maxCount: 6,
+    },
+    activities: {
+        type: ControlType.Array,
+        control: {
+            type: ControlType.Object,
+            controls: {
+                text: {
+                    type: ControlType.String,
+                    defaultValue: "Activity text",
+                    displayTextArea: true,
+                },
+                time: { type: ControlType.String, defaultValue: "2m ago" },
+            },
+        },
+        defaultValue: [
+            { text: "12 students submitted Assignment #4", time: "2m ago" },
+            { text: "Physics topic test scheduled", time: "15m ago" },
+            { text: "3 new doubts from NEET 2026", time: "1h ago" },
+        ],
+        maxCount: 10,
+    },
+    showAnalytics: {
+        type: ControlType.Boolean,
+        defaultValue: true,
+        title: "Analytics Section",
+    },
+})

@@ -15,8 +15,10 @@ import {
   StatusBar,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
-import { T } from '../../ui';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { T, Button } from '../../ui';
 import { trackScreenView, trackAction } from '../../utils/navigationAnalytics';
+import { Colors, Spacing, BorderRadius, Shadows } from '../../theme/designSystem';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../config/supabaseClient';
 
@@ -47,7 +49,9 @@ interface UpcomingEvent {
   type: 'scheduled' | 'assignment';
 }
 
-export default function NewEnhancedSchedule() {
+type Props = NativeStackScreenProps<any, 'NewEnhancedSchedule'>;
+
+export default function NewEnhancedSchedule({ navigation }: Props) {
   const { user } = useAuth();
   const [, setSelectedDay] = useState(1); // For future use
 
@@ -184,6 +188,29 @@ export default function NewEnhancedSchedule() {
           <RefreshControl refreshing={isLoading} onRefresh={refetch} />
         }
       >
+        <TouchableOpacity
+          style={styles.testCTA}
+          onPress={() => {
+            trackAction('open_test_center', 'NewEnhancedSchedule');
+            // @ts-ignore
+            navigation.navigate('TestCenterScreen');
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Open test center"
+        >
+          <View style={{ flex: 1 }}>
+            <T variant="subtitle" weight="bold" style={{ marginBottom: 4 }}>
+              Tests & practice
+            </T>
+            <T variant="caption" color="textSecondary">
+              See upcoming, mock, and past tests in one place.
+            </T>
+          </View>
+          <Button variant="primary" onPress={() => navigation.navigate('TestCenterScreen')}>
+            Open
+          </Button>
+        </TouchableOpacity>
+
         {/* Week Navigation Header */}
         <View style={styles.weekNavHeader}>
           <T variant="title" weight="bold" style={styles.weekRange}>
@@ -676,6 +703,17 @@ const styles = StyleSheet.create({
   upcomingEventTime: {
     fontSize: 14,
     color: '#6B7280',
+  },
+  testCTA: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    marginHorizontal: 16,
+    marginBottom: 12,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    ...Shadows.resting,
   },
   statusBadge: {
     paddingHorizontal: 12,

@@ -236,14 +236,22 @@ const SettingsScreen: React.FC<Props> = ({ route, navigation }) => {
               subtitle={t('settings.privacyPolicySubtitle')}
               leading={<T variant="headline">🔐</T>}
               trailing={<T variant="body" color="textSecondary">›</T>}
-              onPress={() => handleOpenLink('https://example.com/privacy', 'Privacy Policy')}
+              onPress={() => {
+                trackAction('view_legal_privacy', 'Settings');
+                // @ts-expect-error - Student routes not in ParentStackParamList
+                safeNavigate('LegalScreen');
+              }}
             />
             <ListItem
               title={t('settings.termsOfService')}
               subtitle={t('settings.termsOfServiceSubtitle')}
               leading={<T variant="headline">📄</T>}
               trailing={<T variant="body" color="textSecondary">›</T>}
-              onPress={() => handleOpenLink('https://example.com/terms', 'Terms of Service')}
+              onPress={() => {
+                trackAction('view_legal_terms', 'Settings');
+                // @ts-expect-error - Student routes not in ParentStackParamList
+                safeNavigate('LegalScreen');
+              }}
             />
             <ListItem
               title={t('settings.appVersion')}

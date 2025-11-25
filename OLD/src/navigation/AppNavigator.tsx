@@ -27,6 +27,7 @@ import { useAuth } from '../context/AuthContext';
 import ModernWelcomeScreen from '../screens/auth/ModernWelcomeScreen';
 import UltraModernLoginScreen from '../screens/auth/UltraModernLoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
+import StudentLoginScreen from '../screens/student/StudentLoginScreen';
 // import StudentDashboard from '../screens/dashboard/StudentDashboard'; // OLD - Using StudentNavigator instead
 import StudentNavigator from './StudentNavigator'; // NEW - All 27 student screens with bottom tabs
 import TeacherDashboard from '../screens/dashboard/TeacherDashboard';
@@ -183,6 +184,7 @@ const { width, height } = Dimensions.get('window');
 export type UserRole = 'Student' | 'Teacher' | 'Parent' | 'Admin';
 export type NavigationScreen = 
   | 'welcome' 
+  | 'student-login'
   | 'login' 
   | 'register'
   | 'forgot-password' 
@@ -276,6 +278,7 @@ export interface NavigationState {
   params?: any;
   isAuthenticated: boolean;
   drawerOpen: boolean;
+  manualAuth?: boolean;
 }
 
 interface AppNavigatorProps {
@@ -371,7 +374,7 @@ const NAVIGATION_ITEMS = {
 };
 
 export const AppNavigator: React.FC<AppNavigatorProps> = ({
-  initialRoute = 'welcome',
+  initialRoute = 'student-login',
   initialUser = null,
 }) => {
   // Use real Supabase authentication
@@ -384,6 +387,7 @@ export const AppNavigator: React.FC<AppNavigatorProps> = ({
     params: {},
     isAuthenticated: !!initialUser,
     drawerOpen: false,
+    manualAuth: false,
   });
 
   const [drawerAnimation] = useState(new Animated.Value(0));
@@ -396,7 +400,7 @@ export const AppNavigator: React.FC<AppNavigatorProps> = ({
       return;
     }
 
-    if (authUser && !navState.isAuthenticated) {
+        if (authUser && !navState.isAuthenticated) {
       // User just logged in
       const role = authUser.user_metadata?.role || 'Student';
       const mockUser: User = {
@@ -409,25 +413,31 @@ export const AppNavigator: React.FC<AppNavigatorProps> = ({
       };
 
       const dashboardRoute: NavigationScreen = `${role.toLowerCase()}-dashboard` as NavigationScreen;
-      console.log('🔐 [AppNavigator] User logged in, navigating to:', dashboardRoute);
+      console.log('dY"? [AppNavigator] User logged in, navigating to:', dashboardRoute);
 
       setNavState(prev => ({
         ...prev,
         currentUser: mockUser,
         currentRoute: dashboardRoute,
         isAuthenticated: true,
+        manualAuth: false,
       }));
     } else if (!authUser && navState.isAuthenticated) {
+      if (navState.manualAuth) {
+        // Allow manual/bypass sessions to persist for testing
+        return;
+      }
       // User logged out
-      console.log('🔐 [AppNavigator] User logged out, navigating to welcome');
+      console.log('dY"? [AppNavigator] User logged out, navigating to welcome');
       setNavState(prev => ({
         ...prev,
         currentUser: null,
         currentRoute: 'welcome',
         isAuthenticated: false,
+        manualAuth: false,
       }));
     }
-  }, [authUser, authLoading, navState.isAuthenticated]);
+  }, [authUser, authLoading, navState.isAuthenticated, navState.manualAuth]);
 
   const navigate = (route: NavigationScreen, params?: any, user?: User) => {
     setNavState(prev => ({
@@ -438,6 +448,7 @@ export const AppNavigator: React.FC<AppNavigatorProps> = ({
       currentUser: user || prev.currentUser,
       isAuthenticated: !!(user || prev.currentUser),
       drawerOpen: false,
+      manualAuth: prev.manualAuth,
     }));
 
     if (navState.drawerOpen) {
@@ -497,6 +508,28 @@ export const AppNavigator: React.FC<AppNavigatorProps> = ({
       console.error('🔐 [AppNavigator] Login exception:', error);
       Alert.alert('Login Error', error?.message || 'An unexpected error occurred. Please try again.');
     }
+  };
+
+  const handleStudentBypassLogin = (email: string) => {
+    const mockStudent: User = {
+      id: `student_${Date.now()}`,
+      firstName: email?.split('@')[0] || 'Student',
+      lastName: '',
+      email: email || 'student@example.com',
+      role: 'Student',
+      isVerified: true,
+    };
+
+    setNavState(prev => ({
+      ...prev,
+      previousRoute: prev.currentRoute,
+      currentRoute: 'student-dashboard',
+      params: {},
+      currentUser: mockStudent,
+      isAuthenticated: true,
+      drawerOpen: false,
+      manualAuth: true,
+    }));
   };
 
   const handleLogout = () => {
@@ -655,7 +688,7 @@ export const AppNavigator: React.FC<AppNavigatorProps> = ({
   };
 
   const renderHeader = () => {
-    if (!navState.isAuthenticated || ['welcome', 'login', 'register'].includes(navState.currentRoute)) {
+    if (!navState.isAuthenticated || ['welcome', 'login', 'register', 'student-login'].includes(navState.currentRoute)) {
       return null;
     }
 
@@ -720,6 +753,14 @@ export const AppNavigator: React.FC<AppNavigatorProps> = ({
             onForgotPassword={() => navigate('forgot-password')}
             onSignUp={() => navigate('register', navState.params)}
             onBackToRoleSelection={() => navigate('welcome')}
+          />
+        );
+
+      case 'student-login':
+        return (
+          <StudentLoginScreen
+            bypassAuth
+            onSuccessOverride={handleStudentBypassLogin}
           />
         );
       
@@ -2202,3 +2243,4 @@ const styles = StyleSheet.create({
 });
 
 export default AppNavigator;
+

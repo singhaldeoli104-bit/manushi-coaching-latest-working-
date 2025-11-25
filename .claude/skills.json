@@ -1,0 +1,25 @@
+{
+  "skills": [
+    {
+      "name": "framer-screen-builder",
+      "displayName": "Framer Screen Builder",
+      "description": "Creates and updates React Native screens with complete Framer design system (colors, typography, spacing, shadows, icons, animations). Use when user asks to create or update screens with Framer design.",
+      "triggers": [
+        "create.*screen.*framer",
+        "update.*screen.*framer",
+        "add framer design",
+        "apply framer",
+        "build.*screen",
+        "new.*screen.*design",
+        "create.*screen"
+      ],
+      "examples": [
+        "Create TeacherDashboardScreen with Framer design",
+        "Update StudentProfileScreen with Framer design patterns",
+        "Build AssignmentDetailScreen using Framer UI",
+        "Create TaskHubScreen"
+      ],
+      "path": "framer-screen-builder"
+    }
+  ]
+}

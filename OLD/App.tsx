@@ -1,7 +1,7 @@
 /**
  * Manushi Coaching Platform - Main Application
  * React Native 0.80.2 with Multi-Role Navigation
- * ✅ Enhanced with Navigation Persistence, Analytics, and Deep Linking
+ * âœ… Enhanced with Navigation Persistence, Analytics, and Deep Linking
  */
 
 import React, {useEffect, useState, useRef} from 'react';
@@ -34,12 +34,13 @@ import StudentWelcomeScreen from './src/screens/auth/StudentWelcomeScreen';
 // Import Role Selection Screen (multi-role mode - currently disabled)
 // import { RoleSelectionScreen } from './src/screens/common/RoleSelectionScreen';
 
-// ⚠️ DEV MODE FLAGS
+// âš ï¸ DEV MODE FLAGS
 // SHOW_ROLE_SELECTION: Set to true to show student welcome screen on app open (student-only focus)
 // SHOW_NEW_DASHBOARD_DIRECTLY: Set to true to see NEW parent dashboard directly (ignored if SHOW_ROLE_SELECTION is true)
 // Set both to false to use normal login flow
-const SHOW_ROLE_SELECTION = true;
-const SHOW_NEW_DASHBOARD_DIRECTLY = true;
+const SHOW_ROLE_SELECTION = false;
+const SHOW_NEW_DASHBOARD_DIRECTLY = false;
+const FORCE_STUDENT_LOGIN = true; // force fresh login flow + new student login screen
 
 // Import dev auth helper for auto-login
 import { devAutoLogin } from './src/utils/devAuth';
@@ -65,7 +66,7 @@ import {initI18n} from './src/i18n';
 import {queryClient} from './src/config/queryClient';
 
 // ============================================
-// ✅ NEW: Navigation Enhancements
+// âœ… NEW: Navigation Enhancements
 // ============================================
 import {navigationRef} from './src/utils/navigationService';
 import {onNavigationStateChange, trackScreenView} from './src/utils/navigationAnalytics';
@@ -112,7 +113,7 @@ const AppContent = ({ initialState }: { initialState?: InitialState }) => {
   // Initialize on first mount
   useEffect(() => {
     if (!hasInitialized.current) {
-      console.log('🎬 [App] First mount - Initializing selectedRole to null');
+      console.log('ðŸŽ¬ [App] First mount - Initializing selectedRole to null');
       setSelectedRole(null);
       hasInitialized.current = true;
     }
@@ -123,9 +124,9 @@ const AppContent = ({ initialState }: { initialState?: InitialState }) => {
     if (SHOW_ROLE_SELECTION) {
       // Listen to auth state changes
       const subscription = supabase.auth.onAuthStateChange((event, session) => {
-        console.log('🔐 [App] Auth state changed:', event, 'hasSession:', !!session);
+        console.log('ðŸ” [App] Auth state changed:', event, 'hasSession:', !!session);
         if (event === 'SIGNED_OUT' || !session) {
-          console.log('🚪 [App] User signed out, resetting role selection');
+          console.log('ðŸšª [App] User signed out, resetting role selection');
           setSelectedRole(null);
         }
       });
@@ -141,10 +142,10 @@ const AppContent = ({ initialState }: { initialState?: InitialState }) => {
   const showDevDashboard = SHOW_ROLE_SELECTION ? selectedRole !== null : SHOW_NEW_DASHBOARD_DIRECTLY;
 
   // Debug logs
-  console.log('🔍 [App] SHOW_ROLE_SELECTION:', SHOW_ROLE_SELECTION);
-  console.log('🔍 [App] selectedRole:', selectedRole);
-  console.log('🔍 [App] showRoleSelection:', showRoleSelection);
-  console.log('🔍 [App] showDevDashboard:', showDevDashboard);
+  console.log('ðŸ” [App] SHOW_ROLE_SELECTION:', SHOW_ROLE_SELECTION);
+  console.log('ðŸ” [App] selectedRole:', selectedRole);
+  console.log('ðŸ” [App] showRoleSelection:', showRoleSelection);
+  console.log('ðŸ” [App] showDevDashboard:', showDevDashboard);
 
   return (
     <>
@@ -163,7 +164,7 @@ const AppContent = ({ initialState }: { initialState?: InitialState }) => {
           linking={deepLinkConfig}
           fallback={<LoadingScreen />}
           onReady={() => {
-            console.log('✅ [Navigation] Container ready');
+            console.log('âœ… [Navigation] Container ready');
             // Track initial screen view
             const state = navigationRef.getRootState();
             if (state) {
@@ -179,7 +180,7 @@ const AppContent = ({ initialState }: { initialState?: InitialState }) => {
           }}
           onStateChange={(state) => {
             // Save state on navigation
-            // ⚠️ DISABLED TEMPORARILY - Not saving state to prevent persistence issues
+            // âš ï¸ DISABLED TEMPORARILY - Not saving state to prevent persistence issues
             // saveNavigationState(state);
             // Track screen views
             onNavigationStateChange(state);
@@ -210,20 +211,20 @@ function App(): React.JSX.Element {
   const [initialState, setInitialState] = useState<InitialState>();
 
   // ============================================
-  // ✅ Initialize i18n and restore navigation state on app start
+  // âœ… Initialize i18n and restore navigation state on app start
   // ============================================
   useEffect(() => {
     const restore = async () => {
       try {
-        console.log('🚀 [App] Starting app initialization...');
+        console.log('ðŸš€ [App] Starting app initialization...');
 
         // Initialize i18n
-        console.log('🌐 [App] Initializing i18n...');
+        console.log('ðŸŒ [App] Initializing i18n...');
         await initI18n();
-        console.log('✅ [App] i18n initialized');
+        console.log('âœ… [App] i18n initialized');
 
         // Check if we should restore state
-        // ⚠️ DISABLED TEMPORARILY - Navigation state restoration causing Home tab to show wrong screen
+        // âš ï¸ DISABLED TEMPORARILY - Navigation state restoration causing Home tab to show wrong screen
         // Re-enable after implementing proper tab reset logic
         /*
         const shouldRestore = await shouldRestoreNavigationState({
@@ -234,16 +235,16 @@ function App(): React.JSX.Element {
         if (shouldRestore) {
           const savedState = await restoreNavigationState();
           if (savedState) {
-            console.log('✅ [App] Navigation state restored');
+            console.log('âœ… [App] Navigation state restored');
             setInitialState(savedState);
           } else {
-            console.log('📍 [App] No saved state to restore');
+            console.log('ðŸ“ [App] No saved state to restore');
           }
         }
         */
-        console.log('📍 [App] Navigation state restoration disabled - using initial routes');
+        console.log('ðŸ“ [App] Navigation state restoration disabled - using initial routes');
       } catch (error) {
-        console.error('❌ [App] Failed to restore navigation state:', error);
+        console.error('âŒ [App] Failed to restore navigation state:', error);
       } finally {
         setIsReady(true);
       }
@@ -253,16 +254,24 @@ function App(): React.JSX.Element {
     setTimeout(restore, 100);
   }, []);
 
-  // Auto-login ENABLED - Login as admin for testing
+  // Auto-login (dev) - disabled when forcing manual student login
   useEffect(() => {
-    if (SHOW_ROLE_SELECTION) {
-      // Auto-login as admin when app starts
+    if (SHOW_ROLE_SELECTION && !FORCE_STUDENT_LOGIN) {
       devAutoLogin('admin').then(success => {
         if (success) {
-          console.log('✅ [App] Auto-login successful');
+          console.log('ƒo. [App] Auto-login successful');
         } else {
-          console.log('⚠️ [App] Auto-login failed - please check Supabase credentials');
+          console.log('ƒsÿ‹,? [App] Auto-login failed - please check Supabase credentials');
         }
+      });
+    }
+  }, []);
+
+  // Force fresh session for manual student login
+  useEffect(() => {
+    if (FORCE_STUDENT_LOGIN) {
+      supabase.auth.signOut({ scope: 'local' }).catch(err => {
+        console.warn('dY"? [App] Forced sign-out failed:', err?.message);
       });
     }
   }, []);
@@ -300,3 +309,4 @@ function App(): React.JSX.Element {
 }
 
 export default App;
+

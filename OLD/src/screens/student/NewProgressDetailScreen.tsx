@@ -21,7 +21,6 @@ import { trackAction, trackScreenView } from '../../utils/navigationAnalytics';
 import { safeNavigate } from '../../utils/navigationService';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../config/supabaseClient';
-import HamburgerMenu from './HamburgerMenu';
 
 type Props = NativeStackScreenProps<any, 'NewProgressDetailScreen'>;
 
@@ -50,9 +49,8 @@ interface StreakDay {
   isToday: boolean;
 }
 
-export default function NewProgressDetailScreen({ navigation: _navigation }: Props) {
+export default function NewProgressDetailScreen({ navigation }: Props) {
   const { user } = useAuth();
-  const [menuVisible, setMenuVisible] = useState(false);
 
   useEffect(() => {
     trackScreenView('NewProgressDetailScreen');
@@ -145,27 +143,6 @@ export default function NewProgressDetailScreen({ navigation: _navigation }: Pro
     enabled: !!user?.id,
   });
 
-  // Fetch student profile data for HamburgerMenu
-  const { data: studentData } = useQuery({
-    queryKey: ['student-profile-menu', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-
-      const { data, error } = await supabase
-        .from('students')
-        .select('name, grade, section, student_id')
-        .eq('id', user.id)
-        .single();
-
-      if (error) {
-        console.error('Error fetching student profile:', error);
-        return null;
-      }
-      return data;
-    },
-    enabled: !!user?.id,
-  });
-
   const streakDays: StreakDay[] = [
     { day: 'M', completed: true, isToday: false },
     { day: 'T', completed: false, isToday: false },
@@ -193,26 +170,18 @@ export default function NewProgressDetailScreen({ navigation: _navigation }: Pro
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      {/* Hamburger Menu */}
-      <HamburgerMenu
-        visible={menuVisible}
-        onClose={() => setMenuVisible(false)}
-        currentRoute="NewProgressDetailScreen"
-        studentData={studentData || undefined}
-      />
-
       {/* Top App Bar - Material Design Standard */}
       <View style={styles.topBar}>
         <TouchableOpacity
           style={styles.iconButton}
           onPress={() => {
-            trackAction('open_menu', 'NewProgressDetailScreen');
-            setMenuVisible(true);
+            trackAction('back', 'NewProgressDetailScreen');
+            navigation.goBack();
           }}
           accessibilityRole="button"
-          accessibilityLabel="Open menu"
+          accessibilityLabel="Go back"
         >
-          <T variant="h2" style={styles.icon}>☰</T>
+          <T variant="h2" style={styles.icon}>←</T>
         </TouchableOpacity>
         <T variant="title" weight="bold" style={styles.topBarTitle}>My Progress</T>
         <TouchableOpacity

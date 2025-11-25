@@ -12,14 +12,12 @@ import { trackScreenView, trackAction } from '../../utils/navigationAnalytics';
 import { safeNavigate } from '../../utils/navigationService';
 import { supabase } from '../../config/supabaseClient';
 import { useAuth } from '../../context/AuthContext';
-import HamburgerMenu from './HamburgerMenu';
 
 type Props = NativeStackScreenProps<any, 'NewStudentDashboard'>;
 
-const NewStudentDashboard: React.FC<Props> = () => {
+const NewStudentDashboard: React.FC<Props> = ({ navigation }) => {
   const { user } = useAuth();
   const studentId = user?.id || 'test-student-id';
-  const [menuVisible, setMenuVisible] = useState(false);
 
   useEffect(() => {
     trackScreenView('NewStudentDashboard', { userId: studentId });
@@ -138,26 +136,6 @@ const NewStudentDashboard: React.FC<Props> = () => {
     },
   });
 
-  // Fetch student profile data for HamburgerMenu
-  const { data: studentData } = useQuery({
-    queryKey: ['student-profile-menu', studentId],
-    queryFn: async () => {
-      try {
-        const { data, error } = await supabase
-          .from('students')
-          .select('name, grade, section, student_id')
-          .eq('id', studentId)
-          .single();
-
-        if (error) throw error;
-        return data;
-      } catch (error: any) {
-        console.error('Error fetching student profile:', error);
-        return null;
-      }
-    },
-  });
-
   const isLoading = summaryLoading || classesLoading || assignmentsLoading;
 
   const formatTime = (dateString: string) => {
@@ -169,39 +147,32 @@ const NewStudentDashboard: React.FC<Props> = () => {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      {/* Hamburger Menu */}
-      <HamburgerMenu
-        visible={menuVisible}
-        onClose={() => setMenuVisible(false)}
-        currentRoute="NewStudentDashboard"
-        studentData={studentData || undefined}
-      />
-
       {/* Sticky Header - Edge to Edge */}
       <View style={styles.stickyHeader}>
         <TouchableOpacity
           style={styles.headerIconButton}
           onPress={() => {
-            trackAction('open_menu', 'NewStudentDashboard');
-            setMenuVisible(true);
+            trackAction('open_profile', 'NewStudentDashboard');
+            // @ts-expect-error - Student routes not yet in ParentStackParamList
+            navigation.navigate('Profile', { screen: 'StudentProfileScreen' });
           }}
           accessibilityRole="button"
-          accessibilityLabel="Open menu"
+          accessibilityLabel="Open profile"
         >
-          <T variant="h2" style={styles.headerIcon}>☰</T>
+          <T variant="h2" style={styles.headerIcon}>👤</T>
         </TouchableOpacity>
         <T variant="title" weight="bold" style={styles.headerTitle}>Dashboard</T>
         <TouchableOpacity
           style={styles.headerIconButton}
           onPress={() => {
-            trackAction('open_profile', 'NewStudentDashboard');
+            trackAction('open_notifications', 'NewStudentDashboard');
             // @ts-expect-error - Student routes not yet in ParentStackParamList
-            safeNavigate('StudentProfileScreen');
+            safeNavigate('NotificationsScreen');
           }}
           accessibilityRole="button"
-          accessibilityLabel="Open profile"
+          accessibilityLabel="View notifications"
         >
-          <T variant="h2" style={styles.headerIcon}>⋮</T>
+          <T variant="h2" style={styles.headerIcon}>🔔</T>
         </TouchableOpacity>
       </View>
 
@@ -635,15 +606,15 @@ const NewStudentDashboard: React.FC<Props> = () => {
               <TouchableOpacity
                 style={styles.quickAccessItem}
                 onPress={() => {
-                  trackAction('quick_access_doubt', 'NewStudentDashboard');
+                  trackAction('quick_access_doubts_home', 'NewStudentDashboard');
                   // @ts-expect-error - Student routes not yet in ParentStackParamList
-                  safeNavigate('NewDoubtSubmission');
+                  safeNavigate('DoubtsHomeScreen');
                 }}
               >
                 <View style={styles.quickAccessButton}>
                   <T style={styles.quickAccessIcon}>❓</T>
                 </View>
-                <T variant="caption" style={styles.quickAccessLabel}>Ask Doubt</T>
+                <T variant="caption" style={styles.quickAccessLabel}>My Doubts</T>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -658,6 +629,25 @@ const NewStudentDashboard: React.FC<Props> = () => {
                   <T style={styles.quickAccessIcon}>📅</T>
                 </View>
                 <T variant="caption" style={styles.quickAccessLabel}>Schedule</T>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.quickAccessItem}
+                onPress={() => {
+                  trackAction('quick_access_test_center', 'NewStudentDashboard');
+                  // Navigate to Classes tab, then to TestCenterScreen
+                  // @ts-expect-error - Student routes not yet in ParentStackParamList
+                  navigation.navigate('Classes', {
+                    screen: 'TestCenterScreen',
+                  });
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="Tests & Practice"
+              >
+                <View style={styles.quickAccessButton}>
+                  <T style={styles.quickAccessIcon}>📝</T>
+                </View>
+                <T variant="caption" style={styles.quickAccessLabel}>Tests</T>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -706,6 +696,38 @@ const NewStudentDashboard: React.FC<Props> = () => {
                   <T style={styles.quickAccessIcon}>👥</T>
                 </View>
                 <T variant="caption" style={styles.quickAccessLabel}>Peers</T>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.quickAccessItem}
+                onPress={() => {
+                  trackAction('quick_access_class_feed', 'NewStudentDashboard');
+                  // @ts-expect-error - Student routes not yet in ParentStackParamList
+                  safeNavigate('ClassFeedScreen', { classId: 'algebra_class_11' });
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="Class Feed"
+              >
+                <View style={styles.quickAccessButton}>
+                  <T style={styles.quickAccessIcon}>ƒ?‚</T>
+                </View>
+                <T variant="caption" style={styles.quickAccessLabel}>Class Feed</T>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.quickAccessItem}
+                onPress={() => {
+                  trackAction('quick_access_peer_chat', 'NewStudentDashboard');
+                  // @ts-expect-error - Student routes not yet in ParentStackParamList
+                  safeNavigate('PeerChatScreen', { chatId: 'chat_group_algebra_champs', groupId: 'algebra' });
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="Peer Chat"
+              >
+                <View style={styles.quickAccessButton}>
+                  <T style={styles.quickAccessIcon}>ƒ?°</T>
+                </View>
+                <T variant="caption" style={styles.quickAccessLabel}>Peer Chat</T>
               </TouchableOpacity>
 
               <TouchableOpacity

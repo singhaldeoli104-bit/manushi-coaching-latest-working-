@@ -46,6 +46,7 @@ export type StudentStackParamList = {
   StudentNotifications: undefined;
   StudentSettings: undefined;
   EditStudentProfile: undefined;
+  NotesAndHighlightsScreen: undefined;
 };
 
 // Teacher Stack
@@ -192,13 +193,26 @@ export type ParentStackParamList = {
   CommunityEngagement: undefined;
 };
 
+// Profile Stack
+export type ProfileStackParamList = {
+  StudentOnboardingFlow: undefined;
+  StudentProfileScreen: undefined;
+  EditOnboardingScreen: undefined;
+  SettingsScreen: undefined;
+  HelpAndSupportScreen: undefined;
+  LegalScreen: {
+    docType: 'terms' | 'privacy';
+  };
+};
+
 // Bottom Tab Navigators
 export type StudentTabParamList = {
   Home: undefined;
   Classes: undefined;
-  Assignments: undefined;
-  Performance: undefined;
-  More: undefined;
+  Study: undefined;
+  Progress: undefined;
+  Connect: undefined;
+  Profile: undefined;
 };
 
 export type TeacherTabParamList = {
@@ -267,6 +281,9 @@ export type TeacherTabScreenProps<T extends keyof TeacherTabParamList> =
 
 export type ParentTabScreenProps<T extends keyof ParentTabParamList> =
   BottomTabScreenProps<ParentTabParamList, T>;
+
+export type ProfileStackScreenProps<T extends keyof ProfileStackParamList> =
+  NativeStackScreenProps<ProfileStackParamList, T>;
 
 // Declare global navigation types for useNavigation hook
 declare global {

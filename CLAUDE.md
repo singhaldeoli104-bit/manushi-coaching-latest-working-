@@ -233,3 +233,4 @@ C:\PC\OLD\
 ---
 
 **Remember:** Always start by reading PROJECT_MEMORY.md to restore full context! 🧠
+- dont create docuemtn untill i ask

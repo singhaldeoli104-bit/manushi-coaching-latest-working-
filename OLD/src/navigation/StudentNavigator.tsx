@@ -1,7 +1,8 @@
 /**
- * Student Navigation
- * Bottom tab navigator with nested stacks - CORRECTED VERSION
- * Uses actual existing screen files from migration
+ * Student Navigation - Clean 5-Tab Structure
+ * Bottom tab navigator with nested stacks
+ * Tabs: Home, Study, Ask, Progress, Profile
+ * Updated: 2025-01-27 (Cleanup Phase 5)
  */
 
 import React from 'react';
@@ -12,56 +13,90 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useTheme } from '../context/ThemeContext';
 
 // ==========================================
-// OLD SCREENS - REMOVED (Backed up to OLD/backup/screens/student/)
+// SCREEN IMPORTS - Organized by Tab
 // ==========================================
-// All old screens have been backed up and removed from the codebase
-// Only NEW Premium Minimal Design screens remain active
 
-// ==========================================
-// NEW SCREENS - Premium Minimal Design (21 screens)
-// ==========================================
+// Home Tab Screens
 import NewStudentDashboard from '../screens/student/NewStudentDashboard';
-// import NewScheduleScreen from '../screens/student/NewScheduleScreen'; // Not used - using NewEnhancedSchedule
-import NewClassDetailScreen from '../screens/student/NewClassDetailScreen';
-import NewAssignmentDetailScreen from '../screens/student/NewAssignmentDetailScreen';
-import NewProgressDetailScreen from '../screens/student/NewProgressDetailScreen';
-import NewStudyLibraryScreen from '../screens/student/NewStudyLibraryScreen';
-import NewAIStudyScreen from '../screens/student/NewAIStudyScreen';
-import NewAITutorChat from '../screens/student/NewAITutorChat';
-import NewAILearningDashboard from '../screens/student/NewAILearningDashboard';
-import NewCollaborativeAssignment from '../screens/student/NewCollaborativeAssignment';
-import NewPeerLearningNetwork from '../screens/student/NewPeerLearningNetwork';
-import NewVirtualClassroom from '../screens/student/NewVirtualClassroom';
-import NewLiveClassScreen from '../screens/student/NewLiveClassScreen';
-import NewInteractiveClassroom from '../screens/student/NewInteractiveClassroom';
-import NewGamifiedLearningHub from '../screens/student/NewGamifiedLearningHub';
-import NewEnhancedAIStudy from '../screens/student/NewEnhancedAIStudy';
-import NewEnhancedLiveClass from '../screens/student/NewEnhancedLiveClass';
 import NewEnhancedSchedule from '../screens/student/NewEnhancedSchedule';
 import NewActivityDetail from '../screens/student/NewActivityDetail';
-import NewSimpleDoubt from '../screens/student/NewSimpleDoubt';
-import NewDoubtSubmission from '../screens/student/NewDoubtSubmission';
-import StudentProfileScreen from '../screens/student/StudentProfileScreen';
+import NotificationsScreen from '../screens/student/NotificationsScreen';
+import ClassFeedScreen from '../screens/student/ClassFeedScreen';
+import NewClassDetailScreen from '../screens/student/NewClassDetailScreen';
+import NewEnhancedLiveClass from '../screens/student/NewEnhancedLiveClass';
+import NewInteractiveClassroom from '../screens/student/NewInteractiveClassroom';
+import ClassChat from '../screens/student/ClassChat';
+import ClassNotes from '../screens/student/ClassNotes';
+import Whiteboard from '../screens/student/Whiteboard';
 
-// ==========================================
-// RECENTLY CREATED SCREENS (8 screens)
-// ==========================================
+// Study Tab Screens
+import StudyHomeScreen from '../screens/student/StudyHomeScreen';
+import NewStudyLibraryScreen from '../screens/student/NewStudyLibraryScreen';
+import CourseRoadmapScreen from '../screens/student/CourseRoadmapScreen';
+import ChapterDetailScreen from '../screens/student/ChapterDetailScreen';
+import ResourceDetailScreen from '../screens/student/ResourceDetailScreen';
+import ResourceViewerScreen from '../screens/student/ResourceViewerScreen';
+import PlaylistsView from '../screens/student/PlaylistsView';
+import PlaylistDetailScreen from '../screens/student/PlaylistDetailScreen';
+import AddToPlaylistModal from '../screens/student/AddToPlaylistModal';
+import AssignmentsHomeScreen from '../screens/student/AssignmentsHomeScreen';
+import AssignmentsList from '../screens/student/AssignmentsList';
+import NewAssignmentDetailScreen from '../screens/student/NewAssignmentDetailScreen';
+import NewCollaborativeAssignment from '../screens/student/NewCollaborativeAssignment';
+import TaskHubScreen from '../screens/student/TaskHubScreen';
+import TaskDetailScreen from '../screens/student/TaskDetailScreen';
+import GuidedStudySessionScreen from '../screens/student/GuidedStudySessionScreen';
+import TestCenterScreen from '../screens/student/TestCenterScreen';
+import TestAttemptScreen from '../screens/student/TestAttemptScreen';
+import TestReviewScreen from '../screens/student/TestReviewScreen';
+import NewAILearningDashboard from '../screens/student/NewAILearningDashboard';
+import NewEnhancedAIStudy from '../screens/student/NewEnhancedAIStudy';
+import NewAITutorChat from '../screens/student/NewAITutorChat';
 import AIPracticeProblems from '../screens/student/AIPracticeProblems';
 import PracticeProblemDetail from '../screens/student/PracticeProblemDetail';
 import AIStudySummaries from '../screens/student/AIStudySummaries';
 import SummaryDetail from '../screens/student/SummaryDetail';
-import PeerDetail from '../screens/student/PeerDetail';
-import Whiteboard from '../screens/student/Whiteboard';
-import ClassChat from '../screens/student/ClassChat';
-import ClassNotes from '../screens/student/ClassNotes';
+import NotesAndHighlightsScreen from '../screens/NotesAndHighlightsScreen';
+import NoteDetailScreen from '../screens/NoteDetailScreen';
+import DownloadsManagerScreen from '../screens/student/DownloadsManagerScreen';
+
+// Ask Tab Screens
+import DoubtsHomeScreen from '../screens/student/DoubtsHomeScreen';
+import NewSimpleDoubt from '../screens/student/NewSimpleDoubt';
+import NewDoubtSubmission from '../screens/student/NewDoubtSubmission';
 import DoubtDetailScreen from '../screens/student/DoubtDetailScreen';
-import ResourceViewerScreen from '../screens/student/ResourceViewerScreen';
-import PlaylistDetailScreen from '../screens/student/PlaylistDetailScreen';
+import DoubtsExploreScreen from '../screens/student/DoubtsExploreScreen';
+
+// Progress Tab Screens
+import NewProgressDetailScreen from '../screens/student/NewProgressDetailScreen';
+import GlobalAnalyticsScreen from '../screens/student/GlobalAnalyticsScreen';
+import SubjectAnalyticsScreen from '../screens/student/SubjectAnalyticsScreen';
+import NewGamifiedLearningHub from '../screens/student/NewGamifiedLearningHub';
+import QuestsScreen from '../screens/student/QuestsScreen';
+import QuestDetailScreen from '../screens/student/QuestDetailScreen';
+import LeaderboardScreen from '../screens/student/LeaderboardScreen';
+import ShareProgressReportScreen from '../screens/student/ShareProgressReportScreen';
+
+// Profile Tab Screens
+import StudentProfileScreen from '../screens/student/StudentProfileScreen';
+import StudentOnboardingFlow from '../screens/student/StudentOnboardingFlow';
+import EditOnboardingScreen from '../screens/student/EditOnboardingScreen';
+import SettingsScreen from '../screens/common/SettingsScreen';
+import HelpFeedbackScreen from '../screens/common/HelpFeedbackScreen';
+import LegalScreen from '../screens/student/LegalScreen';
+import NewPeerLearningNetwork from '../screens/student/NewPeerLearningNetwork';
+import PeerDetail from '../screens/student/PeerDetail';
+import PeerChatScreen from '../screens/student/PeerChatScreen';
+import StudyGroupDetailScreen from '../screens/student/StudyGroupDetailScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
-// Home Stack (Dashboard + Doubts)
+// ==========================================
+// HOME STACK (16 screens)
+// Root: NewStudentDashboard
+// Purpose: Dashboard, daily schedule, live classes
+// ==========================================
 function HomeStack() {
   const { theme } = useTheme();
 
@@ -74,16 +109,289 @@ function HomeStack() {
         headerShadowVisible: false,
       }}
     >
-      {/* ✅ NEW SCREENS - Premium Minimal Design (DEFAULT) */}
       <Stack.Screen
         name="NewStudentDashboard"
         component={NewStudentDashboard}
         options={{ headerShown: false, title: 'Dashboard' }}
       />
       <Stack.Screen
+        name="NewEnhancedSchedule"
+        component={NewEnhancedSchedule}
+        options={{ headerShown: false, title: 'Schedule' }}
+      />
+      <Stack.Screen
         name="NewActivityDetail"
         component={NewActivityDetail}
         options={{ headerShown: false, title: 'Activity' }}
+      />
+      <Stack.Screen
+        name="NotificationsScreen"
+        component={NotificationsScreen}
+        options={{ headerShown: false, title: 'Notifications' }}
+      />
+      <Stack.Screen
+        name="ClassFeedScreen"
+        component={ClassFeedScreen}
+        options={{ headerShown: false, title: 'Class Feed' }}
+      />
+      <Stack.Screen
+        name="NewClassDetailScreen"
+        component={NewClassDetailScreen}
+        options={{ headerShown: false, title: 'Class Details' }}
+      />
+      <Stack.Screen
+        name="NewEnhancedLiveClass"
+        component={NewEnhancedLiveClass}
+        options={{ headerShown: false, title: 'Live Class' }}
+      />
+      <Stack.Screen
+        name="NewInteractiveClassroom"
+        component={NewInteractiveClassroom}
+        options={{ headerShown: false, title: 'Interactive Class' }}
+      />
+      <Stack.Screen
+        name="ClassChat"
+        component={ClassChat}
+        options={{ headerShown: false, title: 'Class Chat' }}
+      />
+      <Stack.Screen
+        name="ClassNotes"
+        component={ClassNotes}
+        options={{ headerShown: false, title: 'Class Notes' }}
+      />
+      <Stack.Screen
+        name="Whiteboard"
+        component={Whiteboard}
+        options={{ headerShown: false, title: 'Whiteboard' }}
+      />
+      {/* Cross-stack screens accessible from Home */}
+      <Stack.Screen
+        name="PeerChatScreen"
+        component={PeerChatScreen}
+        options={{ headerShown: false, title: 'Peer Chat' }}
+      />
+      <Stack.Screen
+        name="DoubtDetailScreen"
+        component={DoubtDetailScreen}
+        options={{ headerShown: false, title: 'Doubt Details' }}
+      />
+      <Stack.Screen
+        name="ResourceViewerScreen"
+        component={ResourceViewerScreen}
+        options={{ headerShown: false, title: 'Resource Viewer' }}
+      />
+      <Stack.Screen
+        name="PlaylistDetail"
+        component={PlaylistDetailScreen}
+        options={{ headerShown: false, title: 'Playlist' }}
+      />
+      <Stack.Screen
+        name="NewAITutorChat"
+        component={NewAITutorChat}
+        options={{ headerShown: false, title: 'AI Tutor' }}
+      />
+    </Stack.Navigator>
+  );
+}
+
+// ==========================================
+// STUDY STACK (32 screens)
+// Root: StudyHomeScreen
+// Purpose: All learning activities - library, assignments, tests, AI practice
+// ==========================================
+function StudyStack() {
+  const { theme } = useTheme();
+
+  return (
+    <Stack.Navigator
+      initialRouteName="StudyHomeScreen"
+      screenOptions={{
+        headerStyle: { backgroundColor: theme.Surface },
+        headerTintColor: theme.OnSurface,
+        headerShadowVisible: false,
+      }}
+    >
+      {/* Root Screen */}
+      <Stack.Screen
+        name="StudyHomeScreen"
+        component={StudyHomeScreen}
+        options={{ headerShown: false, title: 'Study' }}
+      />
+
+      {/* Library & Resources (8) */}
+      <Stack.Screen
+        name="NewStudyLibraryScreen"
+        component={NewStudyLibraryScreen}
+        options={{ headerShown: false, title: 'Study Library' }}
+      />
+      <Stack.Screen
+        name="CourseRoadmapScreen"
+        component={CourseRoadmapScreen}
+        options={{ headerShown: false, title: 'Course Roadmap' }}
+      />
+      <Stack.Screen
+        name="ChapterDetailScreen"
+        component={ChapterDetailScreen}
+        options={{ headerShown: false, title: 'Chapter Detail' }}
+      />
+      <Stack.Screen
+        name="ResourceDetailScreen"
+        component={ResourceDetailScreen}
+        options={{ headerShown: false, title: 'Resource Detail' }}
+      />
+      <Stack.Screen
+        name="ResourceViewerScreen"
+        component={ResourceViewerScreen}
+        options={{ headerShown: false, title: 'Resource Viewer' }}
+      />
+      <Stack.Screen
+        name="PlaylistsView"
+        component={PlaylistsView}
+        options={{ headerShown: false, title: 'Playlists' }}
+      />
+      <Stack.Screen
+        name="PlaylistDetail"
+        component={PlaylistDetailScreen}
+        options={{ headerShown: false, title: 'Playlist Details' }}
+      />
+      <Stack.Screen
+        name="AddToPlaylistModal"
+        component={AddToPlaylistModal}
+        options={{ headerShown: false, title: 'Add to Playlist', presentation: 'modal' }}
+      />
+
+      {/* Assignments & Tasks (7) */}
+      <Stack.Screen
+        name="AssignmentsHomeScreen"
+        component={AssignmentsHomeScreen}
+        options={{ headerShown: false, title: 'Assignments' }}
+      />
+      <Stack.Screen
+        name="AssignmentsList"
+        component={AssignmentsList}
+        options={{ headerShown: false, title: 'Assignments List' }}
+      />
+      <Stack.Screen
+        name="NewAssignmentDetailScreen"
+        component={NewAssignmentDetailScreen}
+        options={{ headerShown: false, title: 'Assignment' }}
+      />
+      <Stack.Screen
+        name="NewCollaborativeAssignment"
+        component={NewCollaborativeAssignment}
+        options={{ headerShown: false, title: 'Collaborative Work' }}
+      />
+      <Stack.Screen
+        name="TaskHubScreen"
+        component={TaskHubScreen}
+        options={{ headerShown: false, title: 'Task Hub' }}
+      />
+      <Stack.Screen
+        name="TaskDetailScreen"
+        component={TaskDetailScreen}
+        options={{ headerShown: false, title: 'Task Details' }}
+      />
+      <Stack.Screen
+        name="GuidedStudySessionScreen"
+        component={GuidedStudySessionScreen}
+        options={{ headerShown: false, title: 'Study Session' }}
+      />
+
+      {/* Tests (3) */}
+      <Stack.Screen
+        name="TestCenterScreen"
+        component={TestCenterScreen}
+        options={{ headerShown: false, title: 'Test Center' }}
+      />
+      <Stack.Screen
+        name="TestAttemptScreen"
+        component={TestAttemptScreen}
+        options={{ headerShown: false, title: 'Test' }}
+      />
+      <Stack.Screen
+        name="TestReviewScreen"
+        component={TestReviewScreen}
+        options={{ headerShown: false, title: 'Test Review' }}
+      />
+
+      {/* AI Learning (8) */}
+      <Stack.Screen
+        name="NewAILearningDashboard"
+        component={NewAILearningDashboard}
+        options={{ headerShown: false, title: 'AI Learning' }}
+      />
+      <Stack.Screen
+        name="NewEnhancedAIStudy"
+        component={NewEnhancedAIStudy}
+        options={{ headerShown: false, title: 'AI Study' }}
+      />
+      <Stack.Screen
+        name="NewAITutorChat"
+        component={NewAITutorChat}
+        options={{ headerShown: false, title: 'AI Tutor' }}
+      />
+      <Stack.Screen
+        name="AIPracticeProblems"
+        component={AIPracticeProblems}
+        options={{ headerShown: false, title: 'AI Practice' }}
+      />
+      <Stack.Screen
+        name="PracticeProblemDetail"
+        component={PracticeProblemDetail}
+        options={{ headerShown: false, title: 'Practice Problem' }}
+      />
+      <Stack.Screen
+        name="AIStudySummaries"
+        component={AIStudySummaries}
+        options={{ headerShown: false, title: 'AI Summaries' }}
+      />
+      <Stack.Screen
+        name="SummaryDetail"
+        component={SummaryDetail}
+        options={{ headerShown: false, title: 'Summary' }}
+      />
+
+      {/* Notes & Downloads (4) */}
+      <Stack.Screen
+        name="NotesAndHighlightsScreen"
+        component={NotesAndHighlightsScreen}
+        options={{ headerShown: false, title: 'Notes & Highlights' }}
+      />
+      <Stack.Screen
+        name="NoteDetailScreen"
+        component={NoteDetailScreen}
+        options={{ headerShown: false, title: 'Note Detail' }}
+      />
+      <Stack.Screen
+        name="DownloadsManagerScreen"
+        component={DownloadsManagerScreen}
+        options={{ headerShown: false, title: 'Downloads' }}
+      />
+    </Stack.Navigator>
+  );
+}
+
+// ==========================================
+// ASK STACK (7 screens)
+// Root: DoubtsHomeScreen
+// Purpose: Ask doubts, AI tutor help, explore solved doubts
+// ==========================================
+function AskStack() {
+  const { theme } = useTheme();
+
+  return (
+    <Stack.Navigator
+      initialRouteName="DoubtsHomeScreen"
+      screenOptions={{
+        headerStyle: { backgroundColor: theme.Surface },
+        headerTintColor: theme.OnSurface,
+        headerShadowVisible: false,
+      }}
+    >
+      <Stack.Screen
+        name="DoubtsHomeScreen"
+        component={DoubtsHomeScreen}
+        options={{ headerShown: false, title: 'My Doubts' }}
       />
       <Stack.Screen
         name="NewSimpleDoubt"
@@ -101,224 +409,25 @@ function HomeStack() {
         options={{ headerShown: false, title: 'Doubt Details' }}
       />
       <Stack.Screen
-        name="NewAILearningDashboard"
-        component={NewAILearningDashboard}
-        options={{ headerShown: false, title: 'AI Dashboard' }}
-      />
-
-      <Stack.Screen
-        name="NewStudyLibraryScreen"
-        component={NewStudyLibraryScreen}
-        options={{ headerShown: false, title: 'Study Library' }}
-      />
-      <Stack.Screen
-        name="ResourceViewer"
-        component={ResourceViewerScreen}
-        options={{ headerShown: false, title: 'Resource Viewer' }}
-      />
-      <Stack.Screen
-        name="PlaylistDetail"
-        component={PlaylistDetailScreen}
-        options={{ headerShown: false, title: 'Playlist Details' }}
-      />
-      <Stack.Screen
-        name="NewEnhancedAIStudy"
-        component={NewEnhancedAIStudy}
-        options={{ headerShown: false, title: 'AI Study' }}
-      />
-      <Stack.Screen
-        name="NewPeerLearningNetwork"
-        component={NewPeerLearningNetwork}
-        options={{ headerShown: false, title: 'Study Network' }}
-      />
-      <Stack.Screen
-        name="NewEnhancedLiveClass"
-        component={NewEnhancedLiveClass}
-        options={{ headerShown: false, title: 'Live Class' }}
-      />
-      <Stack.Screen
-        name="NewAssignmentDetailScreen"
-        component={NewAssignmentDetailScreen}
-        options={{ headerShown: false, title: 'Assignment' }}
-      />
-      <Stack.Screen
-        name="NewAITutorChat"
-        component={NewAITutorChat}
-        options={{ headerShown: false, title: 'AI Tutor Chat' }}
-      />
-      <Stack.Screen
-        name="NewVirtualClassroom"
-        component={NewVirtualClassroom}
-        options={{ headerShown: false, title: 'Virtual Classroom' }}
-      />
-      <Stack.Screen
-        name="Whiteboard"
-        component={Whiteboard}
-        options={{ headerShown: false, title: 'Whiteboard' }}
-      />
-      <Stack.Screen
-        name="NewClassDetailScreen"
-        component={NewClassDetailScreen}
-        options={{ headerShown: false, title: 'Class Details' }}
-      />
-      <Stack.Screen
-        name="StudentProfileScreen"
-        component={StudentProfileScreen}
-        options={{ headerShown: false, title: 'Profile' }}
-      />
-
-    </Stack.Navigator>
-  );
-}
-
-// Classes Stack
-function ClassesStack() {
-  const { theme } = useTheme();
-
-  return (
-    <Stack.Navigator
-      initialRouteName="NewEnhancedSchedule"
-      screenOptions={{
-        headerStyle: { backgroundColor: theme.Surface },
-        headerTintColor: theme.OnSurface,
-      }}
-    >
-      {/* ✅ NEW SCREENS - Premium Minimal Design (DEFAULT) */}
-      <Stack.Screen
-        name="NewEnhancedSchedule"
-        component={NewEnhancedSchedule}
-        options={{ headerShown: false, title: 'Schedule' }}
-      />
-
-      <Stack.Screen
-        name="NewClassDetailScreen"
-        component={NewClassDetailScreen}
-        options={{ headerShown: false, title: 'Class Details' }}
-      />
-      <Stack.Screen
-        name="NewLiveClassScreen"
-        component={NewLiveClassScreen}
-        options={{ headerShown: false, title: 'Live Class' }}
-      />
-      <Stack.Screen
-        name="NewEnhancedLiveClass"
-        component={NewEnhancedLiveClass}
-        options={{ headerShown: false, title: 'Live Session' }}
-      />
-      <Stack.Screen
-        name="NewVirtualClassroom"
-        component={NewVirtualClassroom}
-        options={{ headerShown: false, title: 'Virtual Classroom' }}
-      />
-      <Stack.Screen
-        name="NewInteractiveClassroom"
-        component={NewInteractiveClassroom}
-        options={{ headerShown: false, title: 'Interactive Class' }}
-      />
-
-      {/* ✅ LIVE CLASS FEATURE SCREENS - Recently Created */}
-      <Stack.Screen
-        name="Whiteboard"
-        component={Whiteboard}
-        options={{ headerShown: false, title: 'Whiteboard' }}
-      />
-      <Stack.Screen
-        name="ClassChat"
-        component={ClassChat}
-        options={{ headerShown: false, title: 'Class Chat' }}
-      />
-      <Stack.Screen
-        name="ClassNotes"
-        component={ClassNotes}
-        options={{ headerShown: false, title: 'Class Notes' }}
-      />
-
-    </Stack.Navigator>
-  );
-}
-
-// Assignments & Study Stack
-function AssignmentsStack() {
-  const { theme } = useTheme();
-
-  return (
-    <Stack.Navigator
-      initialRouteName="NewStudyLibraryScreen"
-      screenOptions={{
-        headerStyle: { backgroundColor: theme.Surface },
-        headerTintColor: theme.OnSurface,
-      }}
-    >
-      {/* ✅ NEW SCREENS - Premium Minimal Design (DEFAULT) */}
-      <Stack.Screen
-        name="NewStudyLibraryScreen"
-        component={NewStudyLibraryScreen}
-        options={{ headerShown: false, title: 'Study Resources' }}
-      />
-      <Stack.Screen
-        name="ResourceViewerScreen"
-        component={ResourceViewerScreen}
-        options={{ headerShown: false, title: 'Resource Viewer' }}
-      />
-      <Stack.Screen
-        name="PlaylistDetail"
-        component={PlaylistDetailScreen}
-        options={{ headerShown: false, title: 'Playlist Details' }}
-      />
-      <Stack.Screen
-        name="NewAssignmentDetailScreen"
-        component={NewAssignmentDetailScreen}
-        options={{ headerShown: false, title: 'Assignment' }}
-      />
-      <Stack.Screen
-        name="NewCollaborativeAssignment"
-        component={NewCollaborativeAssignment}
-        options={{ headerShown: false, title: 'Collaborative Work' }}
-      />
-      <Stack.Screen
-        name="NewAIStudyScreen"
-        component={NewAIStudyScreen}
-        options={{ headerShown: false, title: 'AI Study' }}
-      />
-      <Stack.Screen
-        name="NewEnhancedAIStudy"
-        component={NewEnhancedAIStudy}
-        options={{ headerShown: false, title: 'Smart Study' }}
+        name="DoubtsExploreScreen"
+        component={DoubtsExploreScreen}
+        options={{ headerShown: false, title: 'Explore Doubts' }}
       />
       <Stack.Screen
         name="NewAITutorChat"
         component={NewAITutorChat}
         options={{ headerShown: false, title: 'AI Tutor' }}
       />
-
-      {/* ✅ AI PRACTICE & SUMMARY SCREENS - Recently Created */}
-      <Stack.Screen
-        name="AIPracticeProblems"
-        component={AIPracticeProblems}
-        options={{ headerShown: false, title: 'AI Practice Problems' }}
-      />
-      <Stack.Screen
-        name="PracticeProblemDetail"
-        component={PracticeProblemDetail}
-        options={{ headerShown: false, title: 'Practice Problem' }}
-      />
-      <Stack.Screen
-        name="AIStudySummaries"
-        component={AIStudySummaries}
-        options={{ headerShown: false, title: 'AI Study Summaries' }}
-      />
-      <Stack.Screen
-        name="SummaryDetail"
-        component={SummaryDetail}
-        options={{ headerShown: false, title: 'Summary Detail' }}
-      />
-
     </Stack.Navigator>
   );
 }
 
-// Performance & Learning Stack
-function PerformanceStack() {
+// ==========================================
+// PROGRESS STACK (8 screens)
+// Root: NewProgressDetailScreen
+// Purpose: Track progress, analytics, gamification
+// ==========================================
+function ProgressStack() {
   const { theme } = useTheme();
 
   return (
@@ -327,55 +436,131 @@ function PerformanceStack() {
       screenOptions={{
         headerStyle: { backgroundColor: theme.Surface },
         headerTintColor: theme.OnSurface,
+        headerShadowVisible: false,
       }}
     >
-      {/* ✅ NEW SCREENS - Premium Minimal Design (DEFAULT) */}
       <Stack.Screen
         name="NewProgressDetailScreen"
         component={NewProgressDetailScreen}
         options={{ headerShown: false, title: 'My Progress' }}
       />
       <Stack.Screen
+        name="GlobalAnalyticsScreen"
+        component={GlobalAnalyticsScreen}
+        options={{ headerShown: false, title: 'Analytics' }}
+      />
+      <Stack.Screen
+        name="SubjectAnalyticsScreen"
+        component={SubjectAnalyticsScreen}
+        options={{ headerShown: false, title: 'Subject Analytics' }}
+      />
+      <Stack.Screen
         name="NewGamifiedLearningHub"
         component={NewGamifiedLearningHub}
         options={{ headerShown: false, title: 'Learning Hub' }}
       />
-
+      <Stack.Screen
+        name="QuestsScreen"
+        component={QuestsScreen}
+        options={{ headerShown: false, title: 'Quests' }}
+      />
+      <Stack.Screen
+        name="QuestDetailScreen"
+        component={QuestDetailScreen}
+        options={{ headerShown: false, title: 'Quest Details' }}
+      />
+      <Stack.Screen
+        name="LeaderboardScreen"
+        component={LeaderboardScreen}
+        options={{ headerShown: false, title: 'Leaderboard' }}
+      />
+      <Stack.Screen
+        name="ShareProgressReportScreen"
+        component={ShareProgressReportScreen}
+        options={{ headerShown: false, title: 'Share Progress' }}
+      />
     </Stack.Navigator>
   );
 }
 
-// Collaboration Stack
-function CollaborationStack() {
+// ==========================================
+// PROFILE STACK (11 screens)
+// Root: StudentProfileScreen
+// Purpose: Profile, settings, peer connections, study groups
+// ==========================================
+function ProfileStack() {
   const { theme } = useTheme();
 
   return (
     <Stack.Navigator
-      initialRouteName="NewPeerLearningNetwork"
+      initialRouteName="StudentProfileScreen"
       screenOptions={{
         headerStyle: { backgroundColor: theme.Surface },
         headerTintColor: theme.OnSurface,
+        headerShadowVisible: false,
       }}
     >
-      {/* ✅ NEW SCREENS - Premium Minimal Design (DEFAULT) */}
+      {/* Profile & Settings (6) */}
+      <Stack.Screen
+        name="StudentProfileScreen"
+        component={StudentProfileScreen}
+        options={{ headerShown: false, title: 'Profile' }}
+      />
+      <Stack.Screen
+        name="StudentOnboardingFlow"
+        component={StudentOnboardingFlow}
+        options={{ headerShown: false, title: 'Onboarding' }}
+      />
+      <Stack.Screen
+        name="EditOnboardingScreen"
+        component={EditOnboardingScreen}
+        options={{ headerShown: false, title: 'Edit Profile' }}
+      />
+      <Stack.Screen
+        name="SettingsScreen"
+        component={SettingsScreen}
+        options={{ headerShown: false, title: 'Settings' }}
+      />
+      <Stack.Screen
+        name="HelpAndSupportScreen"
+        component={HelpFeedbackScreen}
+        options={{ headerShown: false, title: 'Help & Support' }}
+      />
+      <Stack.Screen
+        name="LegalScreen"
+        component={LegalScreen}
+        options={{ headerShown: false, title: 'Legal' }}
+      />
+
+      {/* Peer & Groups (5) */}
       <Stack.Screen
         name="NewPeerLearningNetwork"
         component={NewPeerLearningNetwork}
         options={{ headerShown: false, title: 'Peer Network' }}
       />
-
-      {/* ✅ PEER DETAIL SCREEN - Recently Created */}
       <Stack.Screen
         name="PeerDetail"
         component={PeerDetail}
         options={{ headerShown: false, title: 'Peer Profile' }}
       />
-
+      <Stack.Screen
+        name="PeerChatScreen"
+        component={PeerChatScreen}
+        options={{ headerShown: false, title: 'Chat' }}
+      />
+      <Stack.Screen
+        name="StudyGroupDetailScreen"
+        component={StudyGroupDetailScreen}
+        options={{ headerShown: false, title: 'Study Group' }}
+      />
     </Stack.Navigator>
   );
 }
 
-// Main Student Tab Navigator
+// ==========================================
+// MAIN TAB NAVIGATOR - 5 TABS
+// Home | Study | Ask | Progress | Profile
+// ==========================================
 export default function StudentNavigator() {
   const { theme } = useTheme();
 
@@ -393,7 +578,6 @@ export default function StudentNavigator() {
           fontSize: 12,
           fontWeight: '600',
         },
-        // Reset stack to initial route when tab is pressed
         tabBarButton: (props) => {
           return (
             <TouchableOpacity
@@ -418,7 +602,6 @@ export default function StudentNavigator() {
         }}
         listeners={({ navigation }) => ({
           tabPress: (e) => {
-            // Reset Home stack to initial route when tab is pressed
             navigation.reset({
               index: 0,
               routes: [{ name: 'Home' }],
@@ -427,26 +610,8 @@ export default function StudentNavigator() {
         })}
       />
       <Tab.Screen
-        name="Classes"
-        component={ClassesStack}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <Icon name="school" size={size} color={color} />
-          ),
-        }}
-        listeners={({ navigation }) => ({
-          tabPress: (e) => {
-            // Reset Classes stack to initial route when tab is pressed
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'Classes' }],
-            });
-          },
-        })}
-      />
-      <Tab.Screen
         name="Study"
-        component={AssignmentsStack}
+        component={StudyStack}
         options={{
           tabBarIcon: ({ color, size }) => (
             <Icon name="library-books" size={size} color={color} />
@@ -454,7 +619,6 @@ export default function StudentNavigator() {
         }}
         listeners={({ navigation }) => ({
           tabPress: (e) => {
-            // Reset Study stack to initial route when tab is pressed
             navigation.reset({
               index: 0,
               routes: [{ name: 'Study' }],
@@ -463,8 +627,25 @@ export default function StudentNavigator() {
         })}
       />
       <Tab.Screen
+        name="Ask"
+        component={AskStack}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Icon name="help-outline" size={size} color={color} />
+          ),
+        }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Ask' }],
+            });
+          },
+        })}
+      />
+      <Tab.Screen
         name="Progress"
-        component={PerformanceStack}
+        component={ProgressStack}
         options={{
           tabBarIcon: ({ color, size }) => (
             <Icon name="trending-up" size={size} color={color} />
@@ -472,7 +653,6 @@ export default function StudentNavigator() {
         }}
         listeners={({ navigation }) => ({
           tabPress: (e) => {
-            // Reset Progress stack to initial route when tab is pressed
             navigation.reset({
               index: 0,
               routes: [{ name: 'Progress' }],
@@ -481,19 +661,18 @@ export default function StudentNavigator() {
         })}
       />
       <Tab.Screen
-        name="Connect"
-        component={CollaborationStack}
+        name="Profile"
+        component={ProfileStack}
         options={{
           tabBarIcon: ({ color, size }) => (
-            <Icon name="people" size={size} color={color} />
+            <Icon name="person" size={size} color={color} />
           ),
         }}
         listeners={({ navigation }) => ({
-          tabPress: (e) => {
-            // Reset Connect stack to initial route when tab is pressed
+          tabPress: () => {
             navigation.reset({
               index: 0,
-              routes: [{ name: 'Connect' }],
+              routes: [{ name: 'Profile' }],
             });
           },
         })}
