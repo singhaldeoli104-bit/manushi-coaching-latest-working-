@@ -15,7 +15,10 @@ import {
   Switch,
   TextInput,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '../../lib/supabase';
 
 import { LightTheme } from '../../theme/colors';
 import { Typography } from '../../theme/typography';
@@ -48,6 +51,103 @@ interface FeeStructure {
   applicableFor: string[];
 }
 
+interface SecuritySetting {
+  id: string;
+  settingKey: string;
+  settingValue: boolean;
+  settingType: string;
+  numericValue?: number;
+  description?: string;
+  category: string;
+}
+
+// Database type interfaces
+interface PaymentGatewayDB {
+  id: string;
+  name: string;
+  enabled: boolean;
+  api_key: string | null;
+  secret_key: string | null;
+  webhook_url: string | null;
+  transaction_fee: number;
+  currency: string[];
+  test_mode: boolean;
+  provider_type: string | null;
+  configuration: any;
+  updated_at: string;
+}
+
+interface FeeStructureDB {
+  id: string;
+  name: string;
+  type: string;
+  value: number;
+  min_amount: number | null;
+  max_amount: number | null;
+  applicable_for: string[];
+  is_active: boolean;
+  description: string | null;
+  created_at: string;
+}
+
+interface SecuritySettingDB {
+  id: string;
+  setting_key: string;
+  setting_value: boolean;
+  setting_type: string;
+  numeric_value: number | null;
+  description: string | null;
+  category: string;
+}
+
+// Fetch functions
+const fetchPaymentGateways = async (): Promise<PaymentGateway[]> => {
+  const { data, error } = await supabase.rpc('get_payment_gateways');
+  if (error) throw error;
+
+  return (data || []).map((gateway: PaymentGatewayDB) => ({
+    id: gateway.id,
+    name: gateway.name,
+    enabled: gateway.enabled,
+    apiKey: gateway.api_key || '',
+    secretKey: gateway.secret_key || '',
+    webhookUrl: gateway.webhook_url || '',
+    transactionFee: gateway.transaction_fee,
+    currency: gateway.currency,
+    testMode: gateway.test_mode,
+  }));
+};
+
+const fetchFeeStructures = async (): Promise<FeeStructure[]> => {
+  const { data, error } = await supabase.rpc('get_fee_structures');
+  if (error) throw error;
+
+  return (data || []).map((fee: FeeStructureDB) => ({
+    id: fee.id,
+    name: fee.name,
+    type: fee.type as 'fixed' | 'percentage',
+    value: fee.value,
+    minAmount: fee.min_amount || undefined,
+    maxAmount: fee.max_amount || undefined,
+    applicableFor: fee.applicable_for,
+  }));
+};
+
+const fetchSecuritySettings = async (): Promise<SecuritySetting[]> => {
+  const { data, error } = await supabase.rpc('get_payment_security_settings');
+  if (error) throw error;
+
+  return (data || []).map((setting: SecuritySettingDB) => ({
+    id: setting.id,
+    settingKey: setting.setting_key,
+    settingValue: setting.setting_value,
+    settingType: setting.setting_type,
+    numericValue: setting.numeric_value || undefined,
+    description: setting.description || undefined,
+    category: setting.category,
+  }));
+};
+
 const PaymentSettingsScreen: React.FC<PaymentSettingsScreenProps> = ({
   adminId,
   onNavigate,
@@ -55,87 +155,72 @@ const PaymentSettingsScreen: React.FC<PaymentSettingsScreenProps> = ({
   const [activeTab, setActiveTab] = useState<'gateways' | 'fees' | 'security'>('gateways');
   const [editingGateway, setEditingGateway] = useState<string | null>(null);
 
-  // Mock payment gateways data
-  const [paymentGateways, setPaymentGateways] = useState<PaymentGateway[]>([
-    {
-      id: '1',
-      name: 'Razorpay',
-      enabled: true,
-      apiKey: 'rzp_test_***************',
-      secretKey: '***************',
-      webhookUrl: 'https://api.manushi.edu/webhooks/razorpay',
-      transactionFee: 2.3,
-      currency: ['INR', 'USD'],
-      testMode: false,
-    },
-    {
-      id: '2',
-      name: 'Stripe',
-      enabled: true,
-      apiKey: 'pk_test_***************',
-      secretKey: 'sk_test_***************',
-      webhookUrl: 'https://api.manushi.edu/webhooks/stripe',
-      transactionFee: 2.9,
-      currency: ['USD', 'EUR', 'GBP'],
-      testMode: true,
-    },
-    {
-      id: '3',
-      name: 'PayPal',
-      enabled: false,
-      apiKey: '',
-      secretKey: '',
-      webhookUrl: 'https://api.manushi.edu/webhooks/paypal',
-      transactionFee: 3.4,
-      currency: ['USD', 'EUR'],
-      testMode: true,
-    },
-  ]);
+  // Fetch data using React Query
+  const {
+    data: paymentGateways = [],
+    isLoading: gatewaysLoading,
+    error: gatewaysError,
+    refetch: refetchGateways,
+  } = useQuery({
+    queryKey: ['payment_gateways'],
+    queryFn: fetchPaymentGateways,
+    refetchInterval: 60000, // Refetch every 60 seconds
+  });
 
-  const [feeStructures, setFeeStructures] = useState<FeeStructure[]>([
-    {
-      id: '1',
-      name: 'Course Fee',
-      type: 'fixed',
-      value: 5000,
-      applicableFor: ['courses', 'subscriptions'],
-    },
-    {
-      id: '2',
-      name: 'Processing Fee',
-      type: 'percentage',
-      value: 2.5,
-      minAmount: 10,
-      maxAmount: 500,
-      applicableFor: ['all'],
-    },
-    {
-      id: '3',
-      name: 'Late Payment Fee',
-      type: 'fixed',
-      value: 100,
-      applicableFor: ['overdue'],
-    },
-  ]);
+  const {
+    data: feeStructures = [],
+    isLoading: feesLoading,
+    error: feesError,
+    refetch: refetchFees,
+  } = useQuery({
+    queryKey: ['fee_structures'],
+    queryFn: fetchFeeStructures,
+    refetchInterval: 60000,
+  });
 
-  const toggleGateway = (gatewayId: string) => {
-    setPaymentGateways(prev => 
-      prev.map(gateway => 
-        gateway.id === gatewayId 
-          ? { ...gateway, enabled: !gateway.enabled }
-          : gateway
-      )
-    );
+  const {
+    data: securitySettings = [],
+    isLoading: securityLoading,
+    error: securityError,
+    refetch: refetchSecurity,
+  } = useQuery({
+    queryKey: ['payment_security_settings'],
+    queryFn: fetchSecuritySettings,
+    refetchInterval: 60000,
+  });
+
+  // Combined loading and error states
+  const isLoading = gatewaysLoading || feesLoading || securityLoading;
+  const error = gatewaysError || feesError || securityError;
+
+  const toggleGateway = async (gatewayId: string) => {
+    // TODO: Implement database update using update_payment_gateway RPC
+    // const gateway = paymentGateways.find(g => g.id === gatewayId);
+    // await supabase.rpc('update_payment_gateway', {
+    //   p_gateway_id: gatewayId,
+    //   p_enabled: !gateway?.enabled
+    // });
+    // refetchGateways();
+    Alert.alert('Info', 'Gateway toggle functionality requires database update implementation');
   };
 
-  const toggleTestMode = (gatewayId: string) => {
-    setPaymentGateways(prev => 
-      prev.map(gateway => 
-        gateway.id === gatewayId 
-          ? { ...gateway, testMode: !gateway.testMode }
-          : gateway
-      )
-    );
+  const toggleTestMode = async (gatewayId: string) => {
+    // TODO: Implement database update using update_payment_gateway RPC
+    // const gateway = paymentGateways.find(g => g.id === gatewayId);
+    // await supabase.rpc('update_payment_gateway', {
+    //   p_gateway_id: gatewayId,
+    //   p_test_mode: !gateway?.testMode
+    // });
+    // refetchGateways();
+    Alert.alert('Info', 'Test mode toggle functionality requires database update implementation');
+  };
+
+  const handleRefresh = async () => {
+    await Promise.all([
+      refetchGateways(),
+      refetchFees(),
+      refetchSecurity(),
+    ]);
   };
 
   const renderHeader = () => (
@@ -348,75 +433,118 @@ const PaymentSettingsScreen: React.FC<PaymentSettingsScreenProps> = ({
     </View>
   );
 
-  const renderSecurity = () => (
-    <View style={styles.securityContainer}>
-      <View style={styles.securitySection}>
-        <Text style={styles.securityTitle}>Fraud Detection</Text>
-        <View style={styles.securityOption}>
-          <Text style={styles.securityLabel}>Enable fraud detection</Text>
-          <Switch
-            value={true}
-            trackColor={{ false: LightTheme.OutlineVariant, true: LightTheme.Primary }}
-            thumbColor={LightTheme.OnPrimary}
-          />
-        </View>
-        <View style={styles.securityOption}>
-          <Text style={styles.securityLabel}>Velocity checking</Text>
-          <Switch
-            value={true}
-            trackColor={{ false: LightTheme.OutlineVariant, true: LightTheme.Primary }}
-            thumbColor={LightTheme.OnPrimary}
-          />
-        </View>
-      </View>
+  const renderSecurity = () => {
+    const fraudSettings = securitySettings.filter(s => s.category === 'fraud_detection');
+    const limitSettings = securitySettings.filter(s => s.category === 'transaction_limits');
+    const notificationSettings = securitySettings.filter(s => s.category === 'notifications');
 
-      <View style={styles.securitySection}>
-        <Text style={styles.securityTitle}>Transaction Limits</Text>
-        <View style={styles.limitRow}>
-          <Text style={styles.limitLabel}>Daily Limit</Text>
-          <TextInput
-            style={styles.limitInput}
-            value="100000"
-            placeholder="Daily limit"
-          />
-        </View>
-        <View style={styles.limitRow}>
-          <Text style={styles.limitLabel}>Transaction Limit</Text>
-          <TextInput
-            style={styles.limitInput}
-            value="50000"
-            placeholder="Per transaction limit"
-          />
-        </View>
-      </View>
+    const toggleSecuritySetting = (settingKey: string) => {
+      // TODO: Implement database update using update_security_setting RPC
+      // const setting = securitySettings.find(s => s.settingKey === settingKey);
+      // await supabase.rpc('update_security_setting', {
+      //   p_setting_key: settingKey,
+      //   p_setting_value: !setting?.settingValue
+      // });
+      // refetchSecurity();
+      Alert.alert('Info', 'Security setting toggle requires database update implementation');
+    };
 
-      <View style={styles.securitySection}>
-        <Text style={styles.securityTitle}>Notifications</Text>
-        <View style={styles.securityOption}>
-          <Text style={styles.securityLabel}>Failed payment alerts</Text>
-          <Switch
-            value={true}
-            trackColor={{ false: LightTheme.OutlineVariant, true: LightTheme.Primary }}
-            thumbColor={LightTheme.OnPrimary}
-          />
-        </View>
-        <View style={styles.securityOption}>
-          <Text style={styles.securityLabel}>Large transaction alerts</Text>
-          <Switch
-            value={true}
-            trackColor={{ false: LightTheme.OutlineVariant, true: LightTheme.Primary }}
-            thumbColor={LightTheme.OnPrimary}
-          />
+    return (
+      <View style={styles.securityContainer}>
+        {fraudSettings.length > 0 && (
+          <View style={styles.securitySection}>
+            <Text style={styles.securityTitle}>Fraud Detection</Text>
+            {fraudSettings.map((setting) => (
+              <View key={setting.id} style={styles.securityOption}>
+                <Text style={styles.securityLabel}>
+                  {setting.description || setting.settingKey.replace(/_/g, ' ')}
+                </Text>
+                <Switch
+                  value={setting.settingValue}
+                  onValueChange={() => toggleSecuritySetting(setting.settingKey)}
+                  trackColor={{ false: LightTheme.OutlineVariant, true: LightTheme.Primary }}
+                  thumbColor={setting.settingValue ? LightTheme.OnPrimary : LightTheme.OnSurface}
+                />
+              </View>
+            ))}
+          </View>
+        )}
+
+        {limitSettings.length > 0 && (
+          <View style={styles.securitySection}>
+            <Text style={styles.securityTitle}>Transaction Limits</Text>
+            {limitSettings.map((setting) => (
+              <View key={setting.id} style={styles.limitRow}>
+                <Text style={styles.limitLabel}>
+                  {setting.description || setting.settingKey.replace(/_/g, ' ')}
+                </Text>
+                <TextInput
+                  style={styles.limitInput}
+                  value={setting.numericValue?.toString() || '0'}
+                  placeholder="Enter limit"
+                  editable={false}
+                />
+              </View>
+            ))}
+          </View>
+        )}
+
+        {notificationSettings.length > 0 && (
+          <View style={styles.securitySection}>
+            <Text style={styles.securityTitle}>Notifications</Text>
+            {notificationSettings.map((setting) => (
+              <View key={setting.id} style={styles.securityOption}>
+                <Text style={styles.securityLabel}>
+                  {setting.description || setting.settingKey.replace(/_/g, ' ')}
+                </Text>
+                <Switch
+                  value={setting.settingValue}
+                  onValueChange={() => toggleSecuritySetting(setting.settingKey)}
+                  trackColor={{ false: LightTheme.OutlineVariant, true: LightTheme.Primary }}
+                  thumbColor={setting.settingValue ? LightTheme.OnPrimary : LightTheme.OnSurface}
+                />
+              </View>
+            ))}
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <View style={styles.container}>
+        {renderHeader()}
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={LightTheme.Primary} />
+          <Text style={styles.loadingText}>Loading payment settings...</Text>
         </View>
       </View>
-    </View>
-  );
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <View style={styles.container}>
+        {renderHeader()}
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Failed to load payment settings</Text>
+          <Text style={styles.errorSubtext}>{error.message}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={handleRefresh}>
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
       {renderHeader()}
       {renderTabSelector()}
-      <ScrollView 
+      <ScrollView
         style={styles.content}
         showsVerticalScrollIndicator={false}
       >
@@ -444,8 +572,8 @@ const styles = StyleSheet.create({
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: Spacing.MD,
-    paddingVertical: Spacing.LG,
+    paddingHorizontal: Spacing?.MD ?? 12,
+    paddingVertical: Spacing?.LG ?? 24,
   },
   backButton: {
     width: 40,
@@ -454,7 +582,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: Spacing.MD,
+    marginRight: Spacing?.MD ?? 12,
   },
   backButtonText: {
     fontSize: 24,
@@ -478,8 +606,8 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingHorizontal: Spacing.LG,
-    paddingVertical: Spacing.SM,
+    paddingHorizontal: Spacing?.LG ?? 24,
+    paddingVertical: Spacing?.SM ?? 8,
     borderRadius: 20,
   },
   saveButtonText: {
@@ -491,7 +619,7 @@ const styles = StyleSheet.create({
   tabContainer: {
     flexDirection: 'row',
     backgroundColor: LightTheme.Surface,
-    margin: Spacing.MD,
+    margin: Spacing?.MD ?? 12,
     borderRadius: 16,
     padding: 4,
     elevation: 2,
@@ -503,7 +631,7 @@ const styles = StyleSheet.create({
   tab: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: Spacing.MD,
+    paddingVertical: Spacing?.MD ?? 12,
     borderRadius: 12,
   },
   tabActive: {
@@ -511,7 +639,7 @@ const styles = StyleSheet.create({
   },
   tabIcon: {
     fontSize: 20,
-    marginBottom: Spacing.XS,
+    marginBottom: Spacing?.XS ?? 4,
   },
   tabText: {
     fontSize: Typography.bodySmall.fontSize,
@@ -527,13 +655,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   gatewaysContainer: {
-    padding: Spacing.MD,
+    padding: Spacing?.MD ?? 12,
   },
   gatewayCard: {
     backgroundColor: LightTheme.Surface,
-    padding: Spacing.LG,
+    padding: Spacing?.LG ?? 24,
     borderRadius: 16,
-    marginBottom: Spacing.MD,
+    marginBottom: Spacing?.MD ?? 12,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -553,7 +681,7 @@ const styles = StyleSheet.create({
     fontFamily: Typography.titleMedium.fontFamily,
     fontWeight: Typography.titleMedium.fontWeight,
     color: LightTheme.OnSurface,
-    marginBottom: Spacing.SM,
+    marginBottom: Spacing?.SM ?? 8,
   },
   gatewayStatusRow: {
     flexDirection: 'row',
@@ -567,8 +695,8 @@ const styles = StyleSheet.create({
     color: LightTheme.OnSurfaceVariant,
   },
   testModeTag: {
-    paddingHorizontal: Spacing.SM,
-    paddingVertical: Spacing.XS,
+    paddingHorizontal: Spacing?.SM ?? 8,
+    paddingVertical: Spacing?.XS ?? 4,
     borderRadius: 12,
   },
   testModeActive: {
@@ -589,15 +717,15 @@ const styles = StyleSheet.create({
     color: '#4CAF50',
   },
   gatewayDetails: {
-    marginTop: Spacing.LG,
-    paddingTop: Spacing.LG,
+    marginTop: Spacing?.LG ?? 24,
+    paddingTop: Spacing?.LG ?? 24,
     borderTopWidth: 1,
     borderTopColor: LightTheme.OutlineVariant,
   },
   configRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: Spacing.MD,
+    marginBottom: Spacing?.MD ?? 12,
   },
   configLabel: {
     fontSize: Typography.bodyMedium.fontSize,
@@ -609,20 +737,20 @@ const styles = StyleSheet.create({
   configInput: {
     flex: 1,
     backgroundColor: LightTheme.SurfaceVariant,
-    padding: Spacing.SM,
+    padding: Spacing?.SM ?? 8,
     borderRadius: 8,
     fontSize: Typography.bodyMedium.fontSize,
     fontFamily: Typography.bodyMedium.fontFamily,
     color: LightTheme.OnSurface,
-    marginRight: Spacing.SM,
+    marginRight: Spacing?.SM ?? 8,
   },
   configInputFull: {
     marginRight: 0,
   },
   editButton: {
     backgroundColor: LightTheme.Primary,
-    paddingHorizontal: Spacing.MD,
-    paddingVertical: Spacing.SM,
+    paddingHorizontal: Spacing?.MD ?? 12,
+    paddingVertical: Spacing?.SM ?? 8,
     borderRadius: 8,
   },
   editButtonText: {
@@ -632,20 +760,20 @@ const styles = StyleSheet.create({
     color: LightTheme.OnPrimary,
   },
   currencyContainer: {
-    marginTop: Spacing.SM,
+    marginTop: Spacing?.SM ?? 8,
   },
   currencyList: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginTop: Spacing.SM,
+    marginTop: Spacing?.SM ?? 8,
   },
   currencyTag: {
     backgroundColor: LightTheme.primaryContainer,
-    paddingHorizontal: Spacing.SM,
-    paddingVertical: Spacing.XS,
+    paddingHorizontal: Spacing?.SM ?? 8,
+    paddingVertical: Spacing?.XS ?? 4,
     borderRadius: 12,
-    marginRight: Spacing.SM,
-    marginBottom: Spacing.XS,
+    marginRight: Spacing?.SM ?? 8,
+    marginBottom: Spacing?.XS ?? 4,
   },
   currencyText: {
     fontSize: Typography.bodySmall.fontSize,
@@ -655,7 +783,7 @@ const styles = StyleSheet.create({
   },
   addGatewayButton: {
     backgroundColor: LightTheme.SurfaceVariant,
-    padding: Spacing.XL,
+    padding: Spacing?.XL ?? 32,
     borderRadius: 16,
     alignItems: 'center',
     borderWidth: 2,
@@ -665,7 +793,7 @@ const styles = StyleSheet.create({
   addGatewayIcon: {
     fontSize: 32,
     color: LightTheme.OnSurfaceVariant,
-    marginBottom: Spacing.SM,
+    marginBottom: Spacing?.SM ?? 8,
   },
   addGatewayText: {
     fontSize: Typography.bodyLarge.fontSize,
@@ -674,13 +802,13 @@ const styles = StyleSheet.create({
     color: LightTheme.OnSurfaceVariant,
   },
   feesContainer: {
-    padding: Spacing.MD,
+    padding: Spacing?.MD ?? 12,
   },
   feeCard: {
     backgroundColor: LightTheme.Surface,
-    padding: Spacing.LG,
+    padding: Spacing?.LG ?? 24,
     borderRadius: 16,
-    marginBottom: Spacing.MD,
+    marginBottom: Spacing?.MD ?? 12,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -691,7 +819,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing.LG,
+    marginBottom: Spacing?.LG ?? 24,
   },
   feeName: {
     fontSize: Typography.titleMedium.fontSize,
@@ -700,8 +828,8 @@ const styles = StyleSheet.create({
     color: LightTheme.OnSurface,
   },
   feeTypeTag: {
-    paddingHorizontal: Spacing.SM,
-    paddingVertical: Spacing.XS,
+    paddingHorizontal: Spacing?.SM ?? 8,
+    paddingVertical: Spacing?.XS ?? 4,
     borderRadius: 12,
   },
   feeTypeFixed: {
@@ -718,13 +846,13 @@ const styles = StyleSheet.create({
     textTransform: 'capitalize',
   },
   feeDetails: {
-    marginBottom: Spacing.LG,
+    marginBottom: Spacing?.LG ?? 24,
   },
   feeRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing.SM,
+    marginBottom: Spacing?.SM ?? 8,
   },
   feeLabel: {
     fontSize: Typography.bodyMedium.fontSize,
@@ -738,20 +866,20 @@ const styles = StyleSheet.create({
     color: LightTheme.OnSurface,
   },
   applicableContainer: {
-    marginTop: Spacing.SM,
+    marginTop: Spacing?.SM ?? 8,
   },
   applicableList: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginTop: Spacing.SM,
+    marginTop: Spacing?.SM ?? 8,
   },
   applicableTag: {
     backgroundColor: LightTheme.secondaryContainer,
-    paddingHorizontal: Spacing.SM,
-    paddingVertical: Spacing.XS,
+    paddingHorizontal: Spacing?.SM ?? 8,
+    paddingVertical: Spacing?.XS ?? 4,
     borderRadius: 12,
-    marginRight: Spacing.SM,
-    marginBottom: Spacing.XS,
+    marginRight: Spacing?.SM ?? 8,
+    marginBottom: Spacing?.XS ?? 4,
   },
   applicableText: {
     fontSize: Typography.bodySmall.fontSize,
@@ -765,10 +893,10 @@ const styles = StyleSheet.create({
   },
   editFeeButton: {
     backgroundColor: LightTheme.Primary,
-    paddingHorizontal: Spacing.MD,
-    paddingVertical: Spacing.SM,
+    paddingHorizontal: Spacing?.MD ?? 12,
+    paddingVertical: Spacing?.SM ?? 8,
     borderRadius: 8,
-    marginRight: Spacing.SM,
+    marginRight: Spacing?.SM ?? 8,
   },
   editFeeText: {
     fontSize: Typography.bodySmall.fontSize,
@@ -778,8 +906,8 @@ const styles = StyleSheet.create({
   },
   deleteFeeButton: {
     backgroundColor: LightTheme.errorContainer,
-    paddingHorizontal: Spacing.MD,
-    paddingVertical: Spacing.SM,
+    paddingHorizontal: Spacing?.MD ?? 12,
+    paddingVertical: Spacing?.SM ?? 8,
     borderRadius: 8,
   },
   deleteFeeText: {
@@ -790,7 +918,7 @@ const styles = StyleSheet.create({
   },
   addFeeButton: {
     backgroundColor: LightTheme.SurfaceVariant,
-    padding: Spacing.XL,
+    padding: Spacing?.XL ?? 32,
     borderRadius: 16,
     alignItems: 'center',
     borderWidth: 2,
@@ -800,7 +928,7 @@ const styles = StyleSheet.create({
   addFeeIcon: {
     fontSize: 32,
     color: LightTheme.OnSurfaceVariant,
-    marginBottom: Spacing.SM,
+    marginBottom: Spacing?.SM ?? 8,
   },
   addFeeText: {
     fontSize: Typography.bodyLarge.fontSize,
@@ -809,13 +937,13 @@ const styles = StyleSheet.create({
     color: LightTheme.OnSurfaceVariant,
   },
   securityContainer: {
-    padding: Spacing.MD,
+    padding: Spacing?.MD ?? 12,
   },
   securitySection: {
     backgroundColor: LightTheme.Surface,
-    padding: Spacing.LG,
+    padding: Spacing?.LG ?? 24,
     borderRadius: 16,
-    marginBottom: Spacing.MD,
+    marginBottom: Spacing?.MD ?? 12,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -827,13 +955,13 @@ const styles = StyleSheet.create({
     fontFamily: Typography.titleMedium.fontFamily,
     fontWeight: Typography.titleMedium.fontWeight,
     color: LightTheme.OnSurface,
-    marginBottom: Spacing.LG,
+    marginBottom: Spacing?.LG ?? 24,
   },
   securityOption: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing.MD,
+    marginBottom: Spacing?.MD ?? 12,
   },
   securityLabel: {
     fontSize: Typography.bodyMedium.fontSize,
@@ -845,7 +973,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing.MD,
+    marginBottom: Spacing?.MD ?? 12,
   },
   limitLabel: {
     fontSize: Typography.bodyMedium.fontSize,
@@ -856,12 +984,56 @@ const styles = StyleSheet.create({
   limitInput: {
     flex: 1,
     backgroundColor: LightTheme.SurfaceVariant,
-    padding: Spacing.SM,
+    padding: Spacing?.SM ?? 8,
     borderRadius: 8,
     fontSize: Typography.bodyMedium.fontSize,
     fontFamily: Typography.bodyMedium.fontFamily,
     color: LightTheme.OnSurface,
     textAlign: 'right',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: Spacing?.XL ?? 32,
+  },
+  loadingText: {
+    fontSize: Typography.bodyLarge.fontSize,
+    fontFamily: Typography.bodyLarge.fontFamily,
+    color: LightTheme.OnSurfaceVariant,
+    marginTop: Spacing?.LG ?? 24,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: Spacing?.XL ?? 32,
+  },
+  errorText: {
+    fontSize: Typography.titleMedium.fontSize,
+    fontFamily: Typography.titleMedium.fontFamily,
+    fontWeight: Typography.titleMedium.fontWeight,
+    color: LightTheme.Error,
+    marginBottom: Spacing?.SM ?? 8,
+  },
+  errorSubtext: {
+    fontSize: Typography.bodyMedium.fontSize,
+    fontFamily: Typography.bodyMedium.fontFamily,
+    color: LightTheme.OnSurfaceVariant,
+    textAlign: 'center',
+    marginBottom: Spacing?.LG ?? 24,
+  },
+  retryButton: {
+    backgroundColor: LightTheme.Primary,
+    paddingHorizontal: Spacing?.XL ?? 32,
+    paddingVertical: Spacing?.MD ?? 12,
+    borderRadius: 20,
+  },
+  retryButtonText: {
+    fontSize: Typography.bodyLarge.fontSize,
+    fontFamily: Typography.bodyLarge.fontFamily,
+    fontWeight: '600',
+    color: LightTheme.OnPrimary,
   },
 });
 

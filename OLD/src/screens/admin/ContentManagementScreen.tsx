@@ -1,1630 +1,809 @@
-/**
- * ContentManagementScreen - Phase 38.2: Content and Resource Management
- * Educational content administration with curriculum mapping, digital resource management,
- * content approval workflows, version control, and usage analytics
- * Manushi Coaching Platform
- */
+import React from 'react';
+import { ScrollView, View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+import { useQuery } from '@tanstack/react-query';
+import { BaseScreen } from '../../shared/components/BaseScreen';
+import { Colors, Spacing, BorderRadius } from '../../theme/designSystem';
+import { supabase } from '../../lib/supabase';
 
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  FlatList,
-  Modal,
-  Alert,
-  RefreshControl,
-  Dimensions,
-} from 'react-native';
-
-// Import theme and styling
-import { LightTheme } from '../../theme/colors';
-import { Typography } from '../../theme/typography';
-import { Spacing, BorderRadius } from '../../theme/spacing';
-
-const { width } = Dimensions.get('window');
-
-// Type definitions for Content Management System
-interface CurriculumMap {
-  id: string;
-  subject: string;
-  grade: string;
-  academicYear: string;
-  totalUnits: number;
-  completedUnits: number;
-  units: CurriculumUnit[];
-  lastUpdated: string;
-  updatedBy: string;
-  status: 'draft' | 'active' | 'archived';
-}
-
-interface CurriculumUnit {
-  id: string;
-  unitNumber: number;
-  title: string;
-  description: string;
-  learningObjectives: string[];
-  estimatedHours: number;
-  resources: EducationalResource[];
-  assessments: Assessment[];
-  prerequisites?: string[];
-  status: 'planned' | 'in_progress' | 'completed';
-}
-
-interface EducationalResource {
+// Database type interfaces
+interface AnnouncementDB {
   id: string;
   title: string;
-  description: string;
-  type: 'document' | 'video' | 'audio' | 'interactive' | 'assessment' | 'presentation' | 'image';
-  category: 'lesson_plan' | 'textbook' | 'exercise' | 'reference' | 'multimedia' | 'tool';
-  subject: string;
-  grade: string;
-  fileUrl?: string;
-  fileSize?: number; // in bytes
-  duration?: number; // in minutes for video/audio
-  thumbnailUrl?: string;
+  description: string | null;
+  priority: string;
+  status: string;
   tags: string[];
-  visibility: 'public' | 'restricted' | 'private';
-  approvalStatus: 'pending' | 'approved' | 'rejected' | 'revision_required';
-  version: string;
-  createdBy: string;
-  createdAt: string;
-  lastModified: string;
-  modifiedBy: string;
-  downloadCount: number;
-  viewCount: number;
-  rating: number;
-  reviews: ResourceReview[];
-  isActive: boolean;
+  view_count: number;
+  reaction_count: number;
+  author_id: string | null;
+  author_name: string | null;
+  target_audience: string[];
+  scheduled_at: string | null;
+  published_at: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
-interface ResourceReview {
+interface AnalyticsDB {
   id: string;
-  userId: string;
-  userName: string;
-  userRole: string;
-  rating: number;
-  comment: string;
-  createdAt: string;
+  metric_name: string;
+  metric_value: number;
+  metric_unit: string | null;
+  change_value: number | null;
+  change_percentage: number | null;
+  trend: string | null;
+  period: string;
+  metadata: any;
+  updated_at: string;
 }
 
-interface Assessment {
+interface ResourceDB {
+  id: string;
+  name: string;
+  file_type: string;
+  file_size: number | null;
+  file_url: string | null;
+  storage_path: string | null;
+  category: string | null;
+  description: string | null;
+  tags: string[];
+  uploaded_by: string | null;
+  uploader_name: string | null;
+  download_count: number;
+  is_public: boolean;
+  created_at: string;
+}
+
+interface QuickActionDB {
+  id: string;
+  name: string;
+  description: string | null;
+  icon: string;
+  action_type: string;
+  action_data: any;
+  is_enabled: boolean;
+  sort_order: number;
+  required_permission: string | null;
+}
+
+interface StatisticsDB {
+  total_announcements: number;
+  published_announcements: number;
+  draft_announcements: number;
+  total_resources: number;
+  total_resource_size: number;
+  total_views: number;
+  total_reactions: number;
+  average_engagement_rate: number;
+}
+
+// Component interfaces (camelCase)
+interface Announcement {
   id: string;
   title: string;
-  type: 'quiz' | 'assignment' | 'project' | 'exam' | 'practical';
-  maxScore: number;
-  passingScore: number;
-  timeLimit?: number; // in minutes
-  instructions: string;
-  resources: string[];
-  isActive: boolean;
+  description?: string;
+  priority: string;
+  status: string;
+  tags: string[];
+  viewCount: number;
+  reactionCount: number;
+  authorId?: string;
+  authorName?: string;
+  targetAudience: string[];
+  scheduledAt?: string;
+  publishedAt?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-interface ContentApprovalWorkflow {
+interface Analytics {
   id: string;
-  resourceId: string;
-  resourceTitle: string;
-  submittedBy: string;
-  submittedAt: string;
-  reviewers: ApprovalReviewer[];
-  currentStage: 'submitted' | 'under_review' | 'revision_required' | 'approved' | 'rejected';
-  comments: ApprovalComment[];
-  approvedAt?: string;
-  approvedBy?: string;
-  rejectionReason?: string;
+  metricName: string;
+  metricValue: number;
+  metricUnit?: string;
+  changeValue?: number;
+  changePercentage?: number;
+  trend?: string;
+  period: string;
+  metadata: any;
+  updatedAt: string;
 }
 
-interface ApprovalReviewer {
-  userId: string;
-  userName: string;
-  role: string;
-  status: 'pending' | 'approved' | 'rejected' | 'revision_required';
-  reviewedAt?: string;
-  comments?: string;
-}
-
-interface ApprovalComment {
+interface Resource {
   id: string;
-  userId: string;
-  userName: string;
-  comment: string;
-  timestamp: string;
-  isInternal: boolean;
+  name: string;
+  fileType: string;
+  fileSize?: number;
+  fileUrl?: string;
+  storagePath?: string;
+  category?: string;
+  description?: string;
+  tags: string[];
+  uploadedBy?: string;
+  uploaderName?: string;
+  downloadCount: number;
+  isPublic: boolean;
+  createdAt: string;
 }
 
-interface VersionControl {
+interface QuickAction {
   id: string;
-  resourceId: string;
-  version: string;
-  changes: string[];
-  changedBy: string;
-  changedAt: string;
-  fileUrl: string;
-  isActive: boolean;
-  parentVersion?: string;
-  mergedFrom?: string[];
+  name: string;
+  description?: string;
+  icon: string;
+  actionType: string;
+  actionData: any;
+  isEnabled: boolean;
+  sortOrder: number;
+  requiredPermission?: string;
 }
 
-interface ContentAnalytics {
-  id: string;
-  resourceId: string;
-  resourceTitle: string;
-  period: 'day' | 'week' | 'month' | 'year';
-  views: number;
-  downloads: number;
-  uniqueUsers: number;
-  averageRating: number;
-  engagementTime: number; // in minutes
-  completionRate: number; // percentage
-  topViewers: UserEngagement[];
-  deviceBreakdown: DeviceUsage[];
-  geographicDistribution: GeographicUsage[];
+interface Statistics {
+  totalAnnouncements: number;
+  publishedAnnouncements: number;
+  draftAnnouncements: number;
+  totalResources: number;
+  totalResourceSize: number;
+  totalViews: number;
+  totalReactions: number;
+  averageEngagementRate: number;
 }
 
-interface UserEngagement {
-  userId: string;
-  userName: string;
-  role: string;
-  views: number;
-  downloads: number;
-  engagementTime: number;
-  lastAccessed: string;
-}
+// Fetch functions
+const fetchAnnouncements = async (): Promise<Announcement[]> => {
+  const { data, error } = await supabase.rpc('get_content_announcements');
+  if (error) throw error;
 
-interface DeviceUsage {
-  device: 'mobile' | 'tablet' | 'desktop';
-  count: number;
-  percentage: number;
-}
+  return (data || []).map((ann: AnnouncementDB) => ({
+    id: ann.id,
+    title: ann.title,
+    description: ann.description || undefined,
+    priority: ann.priority,
+    status: ann.status,
+    tags: ann.tags,
+    viewCount: ann.view_count,
+    reactionCount: ann.reaction_count,
+    authorId: ann.author_id || undefined,
+    authorName: ann.author_name || undefined,
+    targetAudience: ann.target_audience,
+    scheduledAt: ann.scheduled_at || undefined,
+    publishedAt: ann.published_at || undefined,
+    createdAt: ann.created_at,
+    updatedAt: ann.updated_at,
+  }));
+};
 
-interface GeographicUsage {
-  location: string;
-  count: number;
-  percentage: number;
-}
+const fetchAnalytics = async (): Promise<Analytics[]> => {
+  const { data, error } = await supabase.rpc('get_content_analytics');
+  if (error) throw error;
 
-interface ContentManagementScreenProps {
-  adminId: string;
-  onNavigate: (screen: string) => void;
-}
+  return (data || []).map((metric: AnalyticsDB) => ({
+    id: metric.id,
+    metricName: metric.metric_name,
+    metricValue: metric.metric_value,
+    metricUnit: metric.metric_unit || undefined,
+    changeValue: metric.change_value || undefined,
+    changePercentage: metric.change_percentage || undefined,
+    trend: metric.trend || undefined,
+    period: metric.period,
+    metadata: metric.metadata,
+    updatedAt: metric.updated_at,
+  }));
+};
 
-const ContentManagementScreen: React.FC<ContentManagementScreenProps> = ({
-  adminId,
-  onNavigate,
-}) => {
-  // State management
-  const [activeTab, setActiveTab] = useState<'curriculum' | 'resources' | 'approval' | 'versions' | 'analytics'>('curriculum');
-  const [curriculumMaps, setCurriculumMaps] = useState<CurriculumMap[]>([]);
-  const [resources, setResources] = useState<EducationalResource[]>([]);
-  const [approvalWorkflows, setApprovalWorkflows] = useState<ContentApprovalWorkflow[]>([]);
-  const [versionHistory, setVersionHistory] = useState<VersionControl[]>([]);
-  const [contentAnalytics, setContentAnalytics] = useState<ContentAnalytics[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterSubject, setFilterSubject] = useState<string>('');
-  const [filterGrade, setFilterGrade] = useState<string>('');
-  const [refreshing, setRefreshing] = useState(false);
-  const [loading, setLoading] = useState(true);
+const fetchResources = async (): Promise<Resource[]> => {
+  const { data, error } = await supabase.rpc('get_content_resources');
+  if (error) throw error;
 
-  // Modal states
-  const [showResourceModal, setShowResourceModal] = useState(false);
-  const [showApprovalModal, setShowApprovalModal] = useState(false);
-  const [selectedResource, setSelectedResource] = useState<EducationalResource | null>(null);
-  const [selectedWorkflow, setSelectedWorkflow] = useState<ContentApprovalWorkflow | null>(null);
+  return (data || []).map((res: ResourceDB) => ({
+    id: res.id,
+    name: res.name,
+    fileType: res.file_type,
+    fileSize: res.file_size || undefined,
+    fileUrl: res.file_url || undefined,
+    storagePath: res.storage_path || undefined,
+    category: res.category || undefined,
+    description: res.description || undefined,
+    tags: res.tags,
+    uploadedBy: res.uploaded_by || undefined,
+    uploaderName: res.uploader_name || undefined,
+    downloadCount: res.download_count,
+    isPublic: res.is_public,
+    createdAt: res.created_at,
+  }));
+};
 
-  // Initialize data
-  useEffect(() => {
-    loadData();
-  }, []);
+const fetchQuickActions = async (): Promise<QuickAction[]> => {
+  const { data, error } = await supabase.rpc('get_content_quick_actions');
+  if (error) throw error;
 
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      // Load curriculum mapping data
-      const curriculumData: CurriculumMap[] = [
-        {
-          id: 'curr_001',
-          subject: 'Mathematics',
-          grade: '10th Grade',
-          academicYear: '2024-2025',
-          totalUnits: 12,
-          completedUnits: 8,
-          units: [
-            {
-              id: 'unit_001',
-              unitNumber: 1,
-              title: 'Linear Equations',
-              description: 'Introduction to linear equations and their applications',
-              learningObjectives: [
-                'Solve linear equations in one variable',
-                'Graph linear equations',
-                'Apply linear equations to real-world problems'
-              ],
-              estimatedHours: 15,
-              resources: [],
-              assessments: [
-                {
-                  id: 'assess_001',
-                  title: 'Linear Equations Quiz',
-                  type: 'quiz',
-                  maxScore: 100,
-                  passingScore: 70,
-                  timeLimit: 45,
-                  instructions: 'Complete all questions within the time limit',
-                  resources: ['textbook_ch1', 'practice_problems'],
-                  isActive: true,
-                }
-              ],
-              status: 'completed',
-            },
-            {
-              id: 'unit_002',
-              unitNumber: 2,
-              title: 'Quadratic Equations',
-              description: 'Solving quadratic equations using various methods',
-              learningObjectives: [
-                'Solve quadratic equations by factoring',
-                'Use the quadratic formula',
-                'Complete the square method'
-              ],
-              estimatedHours: 20,
-              resources: [],
-              assessments: [],
-              prerequisites: ['unit_001'],
-              status: 'in_progress',
-            },
-          ],
-          lastUpdated: '2024-11-15T10:00:00Z',
-          updatedBy: adminId,
-          status: 'active',
-        },
-        {
-          id: 'curr_002',
-          subject: 'Physics',
-          grade: '11th Grade',
-          academicYear: '2024-2025',
-          totalUnits: 10,
-          completedUnits: 5,
-          units: [],
-          lastUpdated: '2024-10-20T14:30:00Z',
-          updatedBy: 'teacher_001',
-          status: 'active',
-        },
-      ];
+  return (data || []).map((action: QuickActionDB) => ({
+    id: action.id,
+    name: action.name,
+    description: action.description || undefined,
+    icon: action.icon,
+    actionType: action.action_type,
+    actionData: action.action_data,
+    isEnabled: action.is_enabled,
+    sortOrder: action.sort_order,
+    requiredPermission: action.required_permission || undefined,
+  }));
+};
 
-      // Load educational resources data
-      const resourcesData: EducationalResource[] = [
-        {
-          id: 'res_001',
-          title: 'Introduction to Algebra - Video Series',
-          description: 'Comprehensive video series covering basic algebraic concepts',
-          type: 'video',
-          category: 'lesson_plan',
-          subject: 'Mathematics',
-          grade: '9th Grade',
-          fileUrl: 'https://content.manushi.edu/videos/algebra-intro.mp4',
-          fileSize: 524288000, // 500MB
-          duration: 45,
-          thumbnailUrl: 'https://content.manushi.edu/thumbnails/algebra-intro.jpg',
-          tags: ['algebra', 'mathematics', 'introduction', 'video'],
-          visibility: 'public',
-          approvalStatus: 'approved',
-          version: '2.1',
-          createdBy: 'teacher_001',
-          createdAt: '2024-09-01T08:00:00Z',
-          lastModified: '2024-11-01T10:30:00Z',
-          modifiedBy: 'teacher_001',
-          downloadCount: 1247,
-          viewCount: 3456,
-          rating: 4.7,
-          reviews: [
-            {
-              id: 'rev_001',
-              userId: 'student_001',
-              userName: 'Alex Johnson',
-              userRole: 'student',
-              rating: 5,
-              comment: 'Very helpful and easy to understand!',
-              createdAt: '2024-11-02T14:15:00Z',
-            },
-            {
-              id: 'rev_002',
-              userId: 'teacher_002',
-              userName: 'Dr. Sarah Williams',
-              userRole: 'teacher',
-              rating: 4,
-              comment: 'Good content, could use more examples.',
-              createdAt: '2024-11-05T09:30:00Z',
-            },
-          ],
-          isActive: true,
-        },
-        {
-          id: 'res_002',
-          title: 'Physics Lab Manual - Mechanics',
-          description: 'Laboratory experiments and procedures for mechanics concepts',
-          type: 'document',
-          category: 'reference',
-          subject: 'Physics',
-          grade: '11th Grade',
-          fileUrl: 'https://content.manushi.edu/documents/physics-lab-manual.pdf',
-          fileSize: 15728640, // 15MB
-          tags: ['physics', 'laboratory', 'mechanics', 'experiments'],
-          visibility: 'restricted',
-          approvalStatus: 'pending',
-          version: '1.0',
-          createdBy: 'teacher_003',
-          createdAt: '2024-11-20T16:00:00Z',
-          lastModified: '2024-11-20T16:00:00Z',
-          modifiedBy: 'teacher_003',
-          downloadCount: 0,
-          viewCount: 12,
-          rating: 0,
-          reviews: [],
-          isActive: true,
-        },
-        {
-          id: 'res_003',
-          title: 'Interactive Chemistry Simulator',
-          description: 'Web-based chemistry simulation tool for virtual experiments',
-          type: 'interactive',
-          category: 'tool',
-          subject: 'Chemistry',
-          grade: '12th Grade',
-          fileUrl: 'https://tools.manushi.edu/chemistry-sim',
-          tags: ['chemistry', 'simulation', 'interactive', 'experiments'],
-          visibility: 'public',
-          approvalStatus: 'approved',
-          version: '3.2',
-          createdBy: 'teacher_004',
-          createdAt: '2024-08-15T12:00:00Z',
-          lastModified: '2024-11-10T08:45:00Z',
-          modifiedBy: 'developer_001',
-          downloadCount: 0, // Not applicable for interactive tools
-          viewCount: 5678,
-          rating: 4.9,
-          reviews: [
-            {
-              id: 'rev_003',
-              userId: 'student_002',
-              userName: 'Maria Garcia',
-              userRole: 'student',
-              rating: 5,
-              comment: 'Amazing tool! Makes chemistry come alive.',
-              createdAt: '2024-11-12T11:20:00Z',
-            },
-          ],
-          isActive: true,
-        },
-      ];
+const fetchStatistics = async (): Promise<Statistics> => {
+  const { data, error } = await supabase.rpc('get_content_statistics');
+  if (error) throw error;
 
-      // Load approval workflows data
-      const approvalData: ContentApprovalWorkflow[] = [
-        {
-          id: 'wf_001',
-          resourceId: 'res_002',
-          resourceTitle: 'Physics Lab Manual - Mechanics',
-          submittedBy: 'teacher_003',
-          submittedAt: '2024-11-20T16:00:00Z',
-          reviewers: [
-            {
-              userId: 'admin_001',
-              userName: 'Jennifer Anderson',
-              role: 'admin',
-              status: 'pending',
-            },
-            {
-              userId: 'head_physics',
-              userName: 'Dr. Robert Chen',
-              role: 'department_head',
-              status: 'pending',
-            },
-          ],
-          currentStage: 'under_review',
-          comments: [
-            {
-              id: 'comm_001',
-              userId: 'teacher_003',
-              userName: 'Dr. Lisa Park',
-              comment: 'Updated lab manual with new safety protocols and modern equipment procedures.',
-              timestamp: '2024-11-20T16:05:00Z',
-              isInternal: false,
-            },
-          ],
-        },
-        {
-          id: 'wf_002',
-          resourceId: 'res_004',
-          resourceTitle: 'Advanced Calculus Problem Set',
-          submittedBy: 'teacher_002',
-          submittedAt: '2024-11-18T14:30:00Z',
-          reviewers: [
-            {
-              userId: 'admin_001',
-              userName: 'Jennifer Anderson',
-              role: 'admin',
-              status: 'approved',
-              reviewedAt: '2024-11-19T10:15:00Z',
-              comments: 'Excellent problem set, well structured.',
-            },
-            {
-              userId: 'head_math',
-              userName: 'Dr. Michael Thompson',
-              role: 'department_head',
-              status: 'revision_required',
-              reviewedAt: '2024-11-19T15:45:00Z',
-              comments: 'Please add more worked examples for complex problems.',
-            },
-          ],
-          currentStage: 'revision_required',
-          comments: [
-            {
-              id: 'comm_002',
-              userId: 'teacher_002',
-              userName: 'Prof. Sarah Williams',
-              comment: 'Comprehensive problem set for advanced calculus students.',
-              timestamp: '2024-11-18T14:35:00Z',
-              isInternal: false,
-            },
-            {
-              id: 'comm_003',
-              userId: 'head_math',
-              userName: 'Dr. Michael Thompson',
-              comment: 'Internal note: Check alignment with curriculum standards.',
-              timestamp: '2024-11-19T15:50:00Z',
-              isInternal: true,
-            },
-          ],
-        },
-      ];
+  const stats = (data && data.length > 0) ? data[0] : null;
+  if (!stats) {
+    return {
+      totalAnnouncements: 0,
+      publishedAnnouncements: 0,
+      draftAnnouncements: 0,
+      totalResources: 0,
+      totalResourceSize: 0,
+      totalViews: 0,
+      totalReactions: 0,
+      averageEngagementRate: 0,
+    };
+  }
 
-      // Load version history data
-      const versionData: VersionControl[] = [
-        {
-          id: 'ver_001',
-          resourceId: 'res_001',
-          version: '2.1',
-          changes: ['Updated examples in chapter 3', 'Fixed audio sync issues', 'Added closed captions'],
-          changedBy: 'teacher_001',
-          changedAt: '2024-11-01T10:30:00Z',
-          fileUrl: 'https://content.manushi.edu/videos/algebra-intro-v2.1.mp4',
-          isActive: true,
-          parentVersion: '2.0',
-        },
-        {
-          id: 'ver_002',
-          resourceId: 'res_001',
-          version: '2.0',
-          changes: ['Major content restructure', 'Added practice problems', 'Improved video quality'],
-          changedBy: 'teacher_001',
-          changedAt: '2024-10-01T08:15:00Z',
-          fileUrl: 'https://content.manushi.edu/videos/algebra-intro-v2.0.mp4',
-          isActive: false,
-          parentVersion: '1.5',
-        },
-        {
-          id: 'ver_003',
-          resourceId: 'res_003',
-          version: '3.2',
-          changes: ['Added new reaction simulations', 'Fixed periodic table display bug', 'Performance optimizations'],
-          changedBy: 'developer_001',
-          changedAt: '2024-11-10T08:45:00Z',
-          fileUrl: 'https://tools.manushi.edu/chemistry-sim',
-          isActive: true,
-          parentVersion: '3.1',
-        },
-      ];
-
-      // Load content analytics data
-      const analyticsData: ContentAnalytics[] = [
-        {
-          id: 'ana_001',
-          resourceId: 'res_001',
-          resourceTitle: 'Introduction to Algebra - Video Series',
-          period: 'month',
-          views: 3456,
-          downloads: 1247,
-          uniqueUsers: 892,
-          averageRating: 4.7,
-          engagementTime: 38.5,
-          completionRate: 78.3,
-          topViewers: [
-            {
-              userId: 'student_001',
-              userName: 'Alex Johnson',
-              role: 'student',
-              views: 15,
-              downloads: 3,
-              engagementTime: 145,
-              lastAccessed: '2024-12-02T14:30:00Z',
-            },
-            {
-              userId: 'teacher_002',
-              userName: 'Prof. Sarah Williams',
-              role: 'teacher',
-              views: 8,
-              downloads: 2,
-              engagementTime: 67,
-              lastAccessed: '2024-12-01T10:15:00Z',
-            },
-          ],
-          deviceBreakdown: [
-            { device: 'mobile', count: 1890, percentage: 54.7 },
-            { device: 'desktop', count: 1234, percentage: 35.7 },
-            { device: 'tablet', count: 332, percentage: 9.6 },
-          ],
-          geographicDistribution: [
-            { location: 'New York', count: 1456, percentage: 42.1 },
-            { location: 'California', count: 987, percentage: 28.6 },
-            { location: 'Texas', count: 543, percentage: 15.7 },
-            { location: 'Others', count: 470, percentage: 13.6 },
-          ],
-        },
-        {
-          id: 'ana_002',
-          resourceId: 'res_003',
-          resourceTitle: 'Interactive Chemistry Simulator',
-          period: 'month',
-          views: 5678,
-          downloads: 0,
-          uniqueUsers: 1234,
-          averageRating: 4.9,
-          engagementTime: 52.3,
-          completionRate: 85.7,
-          topViewers: [],
-          deviceBreakdown: [
-            { device: 'desktop', count: 3407, percentage: 60.0 },
-            { device: 'tablet', count: 1702, percentage: 30.0 },
-            { device: 'mobile', count: 569, percentage: 10.0 },
-          ],
-          geographicDistribution: [
-            { location: 'California', count: 2271, percentage: 40.0 },
-            { location: 'New York', count: 1703, percentage: 30.0 },
-            { location: 'Others', count: 1704, percentage: 30.0 },
-          ],
-        },
-      ];
-
-      setCurriculumMaps(curriculumData);
-      setResources(resourcesData);
-      setApprovalWorkflows(approvalData);
-      setVersionHistory(versionData);
-      setContentAnalytics(analyticsData);
-    } catch (error) {
-      Alert.alert('error', 'Failed to load content management data');
-    } finally {
-      setLoading(false);
-    }
+  return {
+    totalAnnouncements: stats.total_announcements,
+    publishedAnnouncements: stats.published_announcements,
+    draftAnnouncements: stats.draft_announcements,
+    totalResources: stats.total_resources,
+    totalResourceSize: stats.total_resource_size,
+    totalViews: stats.total_views,
+    totalReactions: stats.total_reactions,
+    averageEngagementRate: stats.average_engagement_rate,
   };
+};
 
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await loadData();
-    setRefreshing(false);
-  };
-
-  // Content management actions
-  const handleApproveResource = (workflowId: string) => {
-    Alert.alert(
-      'Approve Resource',
-      'Are you sure you want to approve this resource?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Approve',
-          onPress: () => {
-            setApprovalWorkflows(workflows => workflows.map(workflow =>
-              workflow.id === workflowId
-                ? {
-                    ...workflow,
-                    currentStage: 'approved' as const,
-                    approvedAt: new Date().toISOString(),
-                    approvedBy: adminId
-                  }
-                : workflow
-            ));
-            Alert.alert('success', 'Resource approved successfully');
-          }
-        }
-      ]
-    );
-  };
-
-  const handleRejectResource = (workflowId: string) => {
-    Alert.prompt(
-      'Reject Resource',
-      'Please provide a reason for rejection:',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Reject',
-          onPress: (reason) => {
-            setApprovalWorkflows(workflows => workflows.map(workflow =>
-              workflow.id === workflowId
-                ? {
-                    ...workflow,
-                    currentStage: 'rejected' as const,
-                    rejectionReason: reason || 'No reason provided'
-                  }
-                : workflow
-            ));
-            Alert.alert('Resource Rejected', 'The resource has been rejected and the author has been notified.');
-          }
-        }
-      ]
-    );
-  };
-
-  const handleBulkApproval = () => {
-    const pendingWorkflows = approvalWorkflows.filter(wf => wf.currentStage === 'under_review');
-    if (pendingWorkflows.length === 0) {
-      Alert.alert('No Pending Resources', 'There are no resources pending approval.');
-      return;
-    }
-
-    Alert.alert(
-      'Bulk Approval',
-      `Are you sure you want to approve ${pendingWorkflows.length} pending resources?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Approve All',
-          onPress: () => {
-            setApprovalWorkflows(workflows => workflows.map(workflow =>
-              workflow.currentStage === 'under_review'
-                ? {
-                    ...workflow,
-                    currentStage: 'approved' as const,
-                    approvedAt: new Date().toISOString(),
-                    approvedBy: adminId
-                  }
-                : workflow
-            ));
-            Alert.alert('success', `${pendingWorkflows.length} resources approved successfully`);
-          }
-        }
-      ]
-    );
-  };
-
-  // Filter data based on search and filters
-  const filteredResources = resources.filter((resource) => {
-    const matchesSearch = searchQuery === '' || 
-      resource.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      resource.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
-    
-    const matchesSubject = filterSubject === '' || resource.subject === filterSubject;
-    const matchesGrade = filterGrade === '' || resource.grade === filterGrade;
-    
-    return matchesSearch && matchesSubject && matchesGrade;
+export default function ContentManagementScreen() {
+  // Fetch data using React Query
+  const {
+    data: announcements = [],
+    isLoading: announcementsLoading,
+    error: announcementsError,
+  } = useQuery({
+    queryKey: ['content_announcements'],
+    queryFn: fetchAnnouncements,
+    refetchInterval: 60000, // Refetch every 60 seconds
   });
 
-  const filteredWorkflows = approvalWorkflows.filter((workflow) => {
-    return searchQuery === '' || 
-      workflow.resourceTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      workflow.submittedBy.toLowerCase().includes(searchQuery.toLowerCase());
+  const {
+    data: analytics = [],
+    isLoading: analyticsLoading,
+    error: analyticsError,
+  } = useQuery({
+    queryKey: ['content_analytics'],
+    queryFn: fetchAnalytics,
+    refetchInterval: 60000,
   });
 
-  // Helper functions
-  const getApprovalStatusColor = (status: string) => {
-    switch (status) {
-      case 'approved': return LightTheme.Success;
-      case 'pending': return LightTheme.Warning;
-      case 'rejected': return LightTheme.Error;
-      case 'revision_required': return LightTheme.Info;
-      default: return LightTheme.OnSurfaceVariant;
-    }
+  const {
+    data: resources = [],
+    isLoading: resourcesLoading,
+    error: resourcesError,
+  } = useQuery({
+    queryKey: ['content_resources'],
+    queryFn: fetchResources,
+    refetchInterval: 60000,
+  });
+
+  const {
+    data: quickActions = [],
+    isLoading: quickActionsLoading,
+    error: quickActionsError,
+  } = useQuery({
+    queryKey: ['content_quick_actions'],
+    queryFn: fetchQuickActions,
+    refetchInterval: 60000,
+  });
+
+  const {
+    data: statistics,
+    isLoading: statisticsLoading,
+    error: statisticsError,
+  } = useQuery({
+    queryKey: ['content_statistics'],
+    queryFn: fetchStatistics,
+    refetchInterval: 60000,
+  });
+
+  // Combined loading and error states
+  const isLoading = announcementsLoading || analyticsLoading || resourcesLoading || quickActionsLoading || statisticsLoading;
+  const error = announcementsError || analyticsError || resourcesError || quickActionsError || statisticsError;
+
+  // Helper function to format file size
+  const formatFileSize = (bytes?: number): string => {
+    if (!bytes) return '0 B';
+    const mb = bytes / (1024 * 1024);
+    return `${mb.toFixed(1)} MB`;
   };
 
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  // Helper function to get time ago
+  const getTimeAgo = (dateString?: string): string => {
+    if (!dateString) return 'Unknown';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return '1 day ago';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 14) return '1 week ago';
+    return `${Math.floor(diffDays / 7)} weeks ago`;
   };
-
-  const getResourceTypeIcon = (type: string) => {
-    switch (type) {
-      case 'video': return '🎥';
-      case 'document': return '📄';
-      case 'audio': return '🎵';
-      case 'interactive': return '🔧';
-      case 'assessment': return '📝';
-      case 'presentation': return '📊';
-      case 'image': return '🖼️';
-      default: return '📁';
-    }
-  };
-
-  // Render functions
-  const renderCurriculumItem = ({ item: curriculum }: { item: CurriculumMap }) => (
-    <View style={styles.curriculumCard}>
-      <View style={styles.curriculumHeader}>
-        <View style={styles.curriculumInfo}>
-          <Text style={styles.curriculumTitle}>
-            {curriculum.subject} - {curriculum.grade}
-          </Text>
-          <Text style={styles.curriculumSubtitle}>
-            Academic Year: {curriculum.academicYear}
-          </Text>
-          <Text style={styles.curriculumMeta}>
-            Last updated: {new Date(curriculum.lastUpdated).toLocaleDateString()} by {curriculum.updatedBy}
-          </Text>
-        </View>
-        <View style={[styles.statusTag, { backgroundColor: getApprovalStatusColor(curriculum.status) }]}>
-          <Text style={styles.statusTagText}>{curriculum.status.toUpperCase()}</Text>
-        </View>
-      </View>
-      
-      <View style={styles.progressContainer}>
-        <Text style={styles.progressText}>
-          Progress: {curriculum.completedUnits}/{curriculum.totalUnits} units
-        </Text>
-        <View style={styles.progressBar}>
-          <View style={[styles.progressFill, {
-            width: `${(curriculum.completedUnits / curriculum.totalUnits) * 100}%`
-          }]} />
-        </View>
-      </View>
-
-      <View style={styles.curriculumActions}>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.editButton]}
-          onPress={() => Alert.alert('Edit Curriculum', `Edit ${curriculum.subject} curriculum`)}
-        >
-          <Text style={styles.actionButtonText}>Edit</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.viewButton]}
-          onPress={() => Alert.alert('View Details', `View detailed curriculum for ${curriculum.subject}`)}
-        >
-          <Text style={styles.actionButtonText}>View Details</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-
-  const renderResourceItem = ({ item: resource }: { item: EducationalResource }) => (
-    <View style={styles.resourceCard}>
-      <View style={styles.resourceHeader}>
-        <View style={styles.resourceInfo}>
-          <View style={styles.resourceTitleRow}>
-            <Text style={styles.resourceIcon}>{getResourceTypeIcon(resource.type)}</Text>
-            <Text style={styles.resourceTitle}>{resource.title}</Text>
-          </View>
-          <Text style={styles.resourceDescription}>{resource.description}</Text>
-          <View style={styles.resourceMeta}>
-            <Text style={styles.resourceMetaText}>{resource.subject} • {resource.grade}</Text>
-            <Text style={styles.resourceMetaText}>v{resource.version}</Text>
-            {resource.fileSize && (
-              <Text style={styles.resourceMetaText}>{formatFileSize(resource.fileSize)}</Text>
-            )}
-            {resource.duration && (
-              <Text style={styles.resourceMetaText}>{resource.duration} min</Text>
-            )}
-          </View>
-        </View>
-        <View style={[styles.statusTag, { backgroundColor: getApprovalStatusColor(resource.approvalStatus) }]}>
-          <Text style={styles.statusTagText}>{resource.approvalStatus.replace('_', ' ').toUpperCase()}</Text>
-        </View>
-      </View>
-
-      <View style={styles.resourceStats}>
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>{resource.viewCount.toLocaleString()}</Text>
-          <Text style={styles.statLabel}>Views</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>{resource.downloadCount.toLocaleString()}</Text>
-          <Text style={styles.statLabel}>Downloads</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>⭐ {resource.rating.toFixed(1)}</Text>
-          <Text style={styles.statLabel}>Rating</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>{resource.reviews.length}</Text>
-          <Text style={styles.statLabel}>Reviews</Text>
-        </View>
-      </View>
-
-      <View style={styles.resourceTags}>
-        {resource.tags.slice(0, 4).map((tag, index) => (
-          <View key={index} style={styles.tag}>
-            <Text style={styles.tagText}>{tag}</Text>
-          </View>
-        ))}
-        {resource.tags.length > 4 && (
-          <Text style={styles.moreTagsText}>+{resource.tags.length - 4} more</Text>
-        )}
-      </View>
-
-      <View style={styles.resourceActions}>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.editButton]}
-          onPress={() => {
-            setSelectedResource(resource);
-            setShowResourceModal(true);
-          }}
-        >
-          <Text style={styles.actionButtonText}>Edit</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.analyticsButton]}
-          onPress={() => Alert.alert('Analytics', `View analytics for ${resource.title}`)}
-        >
-          <Text style={styles.actionButtonText}>Analytics</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.versionsButton]}
-          onPress={() => Alert.alert('Versions', `View version history for ${resource.title}`)}
-        >
-          <Text style={styles.actionButtonText}>Versions</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-
-  const renderApprovalItem = ({ item: workflow }: { item: ContentApprovalWorkflow }) => (
-    <View style={styles.approvalCard}>
-      <View style={styles.approvalHeader}>
-        <View style={styles.approvalInfo}>
-          <Text style={styles.approvalTitle}>{workflow.resourceTitle}</Text>
-          <Text style={styles.approvalSubtitle}>
-            Submitted by: {workflow.submittedBy}
-          </Text>
-          <Text style={styles.approvalMeta}>
-            Submitted: {new Date(workflow.submittedAt).toLocaleString()}
-          </Text>
-        </View>
-        <View style={[styles.statusTag, { backgroundColor: getApprovalStatusColor(workflow.currentStage) }]}>
-          <Text style={styles.statusTagText}>{workflow.currentStage.replace('_', ' ').toUpperCase()}</Text>
-        </View>
-      </View>
-
-      <View style={styles.reviewersContainer}>
-        <Text style={styles.reviewersTitle}>Reviewers:</Text>
-        {workflow.reviewers.map((reviewer, index) => (
-          <View key={index} style={styles.reviewerItem}>
-            <Text style={styles.reviewerName}>{reviewer.userName} ({reviewer.role})</Text>
-            <View style={[styles.reviewerStatus, { 
-              backgroundColor: getApprovalStatusColor(reviewer.status) 
-            }]}>
-              <Text style={styles.reviewerStatusText}>{reviewer.status.replace('_', ' ').toUpperCase()}</Text>
-            </View>
-          </View>
-        ))}
-      </View>
-
-      {workflow.comments.length > 0 && (
-        <View style={styles.commentsContainer}>
-          <Text style={styles.commentsTitle}>Latest Comment:</Text>
-          <Text style={styles.commentText}>
-            "{workflow.comments[workflow.comments.length - 1].comment}"
-          </Text>
-          <Text style={styles.commentMeta}>
-            - {workflow.comments[workflow.comments.length - 1].userName}
-          </Text>
-        </View>
-      )}
-
-      {workflow.currentStage === 'under_review' && (
-        <View style={styles.approvalActions}>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.approveButton]}
-            onPress={() => handleApproveResource(workflow.id)}
-          >
-            <Text style={styles.actionButtonText}>Approve</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.rejectButton]}
-            onPress={() => handleRejectResource(workflow.id)}
-          >
-            <Text style={styles.actionButtonText}>Reject</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.reviewButton]}
-            onPress={() => {
-              setSelectedWorkflow(workflow);
-              setShowApprovalModal(true);
-            }}
-          >
-            <Text style={styles.actionButtonText}>Review</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-    </View>
-  );
-
-  const renderAnalyticsItem = ({ item: analytics }: { item: ContentAnalytics }) => (
-    <View style={styles.analyticsCard}>
-      <Text style={styles.analyticsTitle}>{analytics.resourceTitle}</Text>
-      
-      <View style={styles.analyticsGrid}>
-        <View style={styles.analyticsItem}>
-          <Text style={styles.analyticsValue}>{analytics.views.toLocaleString()}</Text>
-          <Text style={styles.analyticsLabel}>Views</Text>
-        </View>
-        <View style={styles.analyticsItem}>
-          <Text style={styles.analyticsValue}>{analytics.uniqueUsers.toLocaleString()}</Text>
-          <Text style={styles.analyticsLabel}>Unique Users</Text>
-        </View>
-        <View style={styles.analyticsItem}>
-          <Text style={styles.analyticsValue}>{analytics.engagementTime.toFixed(1)}m</Text>
-          <Text style={styles.analyticsLabel}>Avg Time</Text>
-        </View>
-        <View style={styles.analyticsItem}>
-          <Text style={styles.analyticsValue}>{analytics.completionRate.toFixed(1)}%</Text>
-          <Text style={styles.analyticsLabel}>Completion</Text>
-        </View>
-      </View>
-
-      <View style={styles.deviceBreakdown}>
-        <Text style={styles.breakdownTitle}>Device Usage:</Text>
-        {analytics.deviceBreakdown.map((device, index) => (
-          <View key={index} style={styles.deviceItem}>
-            <Text style={styles.deviceLabel}>
-              {device.device.charAt(0).toUpperCase() + device.device.slice(1)}
-            </Text>
-            <View style={styles.deviceBar}>
-              <View style={[styles.deviceBarFill, {
-                width: `${device.percentage}%`,
-                backgroundColor: index === 0 ? LightTheme.Primary : index === 1 ? LightTheme.Success : LightTheme.Warning
-              }]} />
-            </View>
-            <Text style={styles.devicePercentage}>{device.percentage.toFixed(1)}%</Text>
-          </View>
-        ))}
-      </View>
-    </View>
-  );
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => onNavigate('back')}
-        >
-          <Text style={styles.backButtonText}>← Admin Dashboard</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Content Management</Text>
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => Alert.alert('Add Content', 'Upload new educational resource')}
-        >
-          <Text style={styles.addButtonText}>📁 Upload</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Tab Navigation */}
-      <View style={styles.tabContainer}>
-        {['curriculum', 'resources', 'approval', 'versions', 'analytics'].map((tab) => (
-          <TouchableOpacity
-            key={tab}
-            style={[
-              styles.tab,
-              activeTab === tab && styles.activeTab
-            ]}
-            onPress={() => setActiveTab(tab as any)}
-          >
-            <Text style={[
-              styles.tabText,
-              activeTab === tab && styles.activeTabText
-            ]}>
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </Text>
+    <BaseScreen scrollable loading={isLoading} error={error}>
+      <View style={styles.container}>
+        {/* Top App Bar */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Content Dashboard</Text>
+          <TouchableOpacity style={styles.addButton}>
+            <Icon name="add" size={24} color="#FFFFFF" />
           </TouchableOpacity>
-        ))}
-      </View>
+        </View>
 
-      {/* Search and Filters */}
-      <View style={styles.searchContainer}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder={`Search ${activeTab}...`}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholderTextColor={LightTheme.OnSurfaceVariant}
-        />
-        {activeTab === 'approval' && (
-          <TouchableOpacity
-            style={styles.bulkApprovalButton}
-            onPress={handleBulkApproval}
-          >
-            <Text style={styles.bulkApprovalButtonText}>✓ Bulk Approve</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+        {/* Main Content */}
+        <ScrollView style={styles.mainContent} contentContainerStyle={styles.contentContainer}>
+          {/* Announcements Section */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Announcements</Text>
+              <TouchableOpacity>
+                <Text style={styles.viewAllText}>View All</Text>
+              </TouchableOpacity>
+            </View>
 
-      {/* Content */}
-      <ScrollView 
-        style={styles.content}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-        }
-      >
-        {activeTab === 'curriculum' && (
-          <FlatList
-            data={curriculumMaps}
-            keyExtractor={(item) => item.id}
-            renderItem={renderCurriculumItem}
-            scrollEnabled={false}
-            ItemSeparatorComponent={() => <View style={styles.separator} />}
-          />
-        )}
+            <View style={styles.announcementsContainer}>
+              {announcements.slice(0, 2).map((announcement) => (
+                <View key={announcement.id} style={styles.announcementCard}>
+                  <View style={styles.cardHeader}>
+                    <View style={styles.badges}>
+                      {/* Priority Badge */}
+                      {announcement.priority === 'high' || announcement.priority === 'urgent' ? (
+                        <View style={[styles.badge, styles.highPriorityBadge]}>
+                          <Text style={styles.highPriorityText}>
+                            {announcement.priority === 'urgent' ? 'Urgent' : 'High Priority'}
+                          </Text>
+                        </View>
+                      ) : announcement.priority === 'medium' ? (
+                        <View style={[styles.badge, styles.mediumPriorityBadge]}>
+                          <Text style={styles.mediumPriorityText}>Medium Priority</Text>
+                        </View>
+                      ) : null}
 
-        {activeTab === 'resources' && (
-          <FlatList
-            data={filteredResources}
-            keyExtractor={(item) => item.id}
-            renderItem={renderResourceItem}
-            scrollEnabled={false}
-            ItemSeparatorComponent={() => <View style={styles.separator} />}
-          />
-        )}
+                      {/* Status Badge */}
+                      {announcement.status === 'published' ? (
+                        <View style={[styles.badge, styles.publishedBadge]}>
+                          <Text style={styles.publishedText}>Published</Text>
+                        </View>
+                      ) : announcement.status === 'draft' ? (
+                        <View style={[styles.badge, styles.draftBadge]}>
+                          <Text style={styles.draftText}>Draft</Text>
+                        </View>
+                      ) : null}
+                    </View>
+                    <TouchableOpacity>
+                      <Icon name="more-vert" size={24} color="#8E8E93" />
+                    </TouchableOpacity>
+                  </View>
 
-        {activeTab === 'approval' && (
-          <FlatList
-            data={filteredWorkflows}
-            keyExtractor={(item) => item.id}
-            renderItem={renderApprovalItem}
-            scrollEnabled={false}
-            ItemSeparatorComponent={() => <View style={styles.separator} />}
-          />
-        )}
+                  <Text style={styles.announcementTitle}>{announcement.title}</Text>
+                  {announcement.description && (
+                    <Text style={styles.announcementDescription}>
+                      {announcement.description}
+                    </Text>
+                  )}
 
-        {activeTab === 'versions' && (
-          <View style={styles.versionContainer}>
-            <Text style={styles.sectionTitle}>Version Control</Text>
-            {versionHistory.map((version) => (
-              <View key={version.id} style={styles.versionCard}>
-                <View style={styles.versionHeader}>
-                  <Text style={styles.versionTitle}>
-                    Version {version.version}
-                  </Text>
-                  <Text style={styles.versionDate}>
-                    {new Date(version.changedAt).toLocaleDateString()}
-                  </Text>
+                  {announcement.tags.length > 0 && (
+                    <View style={styles.tags}>
+                      {announcement.tags.slice(0, 3).map((tag, index) => (
+                        <View key={index} style={styles.tag}>
+                          <Text style={styles.tagText}>{tag}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+
+                  <View style={styles.stats}>
+                    <View style={styles.stat}>
+                      <Icon name="visibility" size={14} color="#8E8E93" />
+                      <Text style={styles.statText}>{announcement.viewCount}</Text>
+                    </View>
+                    <View style={styles.stat}>
+                      <Icon name="favorite" size={14} color="#8E8E93" />
+                      <Text style={styles.statText}>{announcement.reactionCount}</Text>
+                    </View>
+                    <View style={styles.stat}>
+                      <Icon name="schedule" size={14} color="#8E8E93" />
+                      <Text style={styles.statText}>{getTimeAgo(announcement.publishedAt)}</Text>
+                    </View>
+                  </View>
                 </View>
-                <Text style={styles.versionAuthor}>
-                  Changed by: {version.changedBy}
-                </Text>
-                <View style={styles.changesContainer}>
-                  <Text style={styles.changesTitle}>Changes:</Text>
-                  {version.changes.map((change, index) => (
-                    <Text key={index} style={styles.changeText}>• {change}</Text>
-                  ))}
-                </View>
-              </View>
-            ))}
+              ))}
+            </View>
           </View>
-        )}
 
-        {activeTab === 'analytics' && (
-          <FlatList
-            data={contentAnalytics}
-            keyExtractor={(item) => item.id}
-            renderItem={renderAnalyticsItem}
-            scrollEnabled={false}
-            ItemSeparatorComponent={() => <View style={styles.separator} />}
-          />
-        )}
-      </ScrollView>
-    </View>
+          {/* Analytics Overview Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Analytics Overview</Text>
+            <View style={styles.analyticsGrid}>
+              {analytics.slice(0, 2).map((metric) => (
+                <View key={metric.id} style={styles.analyticsCard}>
+                  <Text style={styles.analyticsLabel}>{metric.metricName}</Text>
+                  <Text style={styles.analyticsValue}>
+                    {metric.metricValue.toLocaleString()}
+                    {metric.metricUnit === 'percentage' ? '%' : ''}
+                  </Text>
+
+                  {metric.metricName.toLowerCase().includes('viewed') && (
+                    <View style={styles.progressBar}>
+                      <View style={[styles.progressFill, { width: '80%' }]} />
+                    </View>
+                  )}
+
+                  {metric.changePercentage && metric.trend && (
+                    <View style={styles.engagementChange}>
+                      <Icon
+                        name={metric.trend === 'up' ? 'arrow-upward' : metric.trend === 'down' ? 'arrow-downward' : 'trending-flat'}
+                        size={16}
+                        color={metric.trend === 'up' ? '#34C759' : metric.trend === 'down' ? '#FF3B30' : '#8E8E93'}
+                      />
+                      <Text style={[
+                        styles.engagementText,
+                        { color: metric.trend === 'up' ? '#34C759' : metric.trend === 'down' ? '#FF3B30' : '#8E8E93' }
+                      ]}>
+                        {metric.changePercentage > 0 ? '+' : ''}{metric.changePercentage.toFixed(1)}%
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              ))}
+            </View>
+          </View>
+
+          {/* Resource Library Snapshot */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Resource Library</Text>
+              <TouchableOpacity>
+                <Text style={styles.viewAllText}>View All</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.resourceGrid}>
+              {resources.slice(0, 3).map((resource) => {
+                const isImage = resource.category === 'image' || ['png', 'jpg', 'jpeg', 'gif'].includes(resource.fileType.toLowerCase());
+                const isVideo = resource.category === 'video' || ['mp4', 'mov', 'avi'].includes(resource.fileType.toLowerCase());
+                const isDocument = resource.category === 'document' || ['pdf', 'doc', 'docx'].includes(resource.fileType.toLowerCase());
+
+                return (
+                  <View key={resource.id} style={styles.fileItem}>
+                    <View style={[
+                      styles.fileIcon,
+                      isImage ? styles.fileIconImage : isDocument ? styles.fileIconDocument : styles.fileIconVideo
+                    ]}>
+                      <Icon
+                        name={isImage ? 'image' : isDocument ? 'description' : 'videocam'}
+                        size={40}
+                        color={isImage ? '#007AFF' : isDocument ? '#34C759' : '#FF9500'}
+                      />
+                    </View>
+                    <Text style={styles.fileName} numberOfLines={1}>{resource.name}</Text>
+                    <Text style={styles.fileType}>{resource.fileType.toUpperCase()} • {formatFileSize(resource.fileSize)}</Text>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* Quick Access Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Quick Access</Text>
+            <View style={styles.quickAccessGrid}>
+              {quickActions.map((action) => (
+                <TouchableOpacity key={action.id} style={styles.quickAccessItem}>
+                  <View style={styles.quickAccessIcon}>
+                    <Icon name={action.icon} size={24} color="#007AFF" />
+                  </View>
+                  <Text style={styles.quickAccessText}>{action.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </ScrollView>
+      </View>
+    </BaseScreen>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: LightTheme.Background,
+    backgroundColor: '#FFFFFF',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: Spacing.MD,
-    paddingVertical: Spacing.SM,
-    backgroundColor: LightTheme.Surface,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    paddingHorizontal: Spacing?.base ?? 16,
+    paddingVertical: Spacing?.base ?? 16,
     borderBottomWidth: 1,
-    borderBottomColor: LightTheme.Outline,
-  },
-  backButton: {
-    padding: Spacing.XS,
-  },
-  backButtonText: {
-    ...Typography.bodyMedium,
-    color: LightTheme.Primary,
-    fontWeight: '500',
+    borderBottomColor: '#E5E5EA',
   },
   headerTitle: {
-    ...Typography.headlineMedium,
-    color: LightTheme.OnSurface,
-    fontWeight: '600',
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#333333',
   },
   addButton: {
-    backgroundColor: LightTheme.Primary,
-    paddingHorizontal: Spacing.MD,
-    paddingVertical: Spacing.XS,
-    borderRadius: BorderRadius.SM,
-  },
-  addButtonText: {
-    ...Typography.bodyMedium,
-    color: LightTheme.Surface,
-    fontWeight: '600',
-  },
-  tabContainer: {
-    flexDirection: 'row',
-    backgroundColor: LightTheme.Surface,
-    paddingHorizontal: Spacing.MD,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: Spacing.SM,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#007AFF',
     alignItems: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
+    justifyContent: 'center',
   },
-  activeTab: {
-    borderBottomColor: LightTheme.Primary,
+  mainContent: {
+    flex: 1,
   },
-  tabText: {
-    ...Typography.bodySmall,
-    color: LightTheme.OnSurfaceVariant,
-    fontWeight: '500',
+  contentContainer: {
+    padding: Spacing?.base ?? 16,
+    gap: 24,
   },
-  activeTabText: {
-    color: LightTheme.Primary,
-    fontWeight: '600',
+  section: {
+    marginBottom: 8,
   },
-  searchContainer: {
+  sectionHeader: {
     flexDirection: 'row',
-    paddingHorizontal: Spacing.MD,
-    paddingVertical: Spacing.SM,
-    backgroundColor: LightTheme.Surface,
     alignItems: 'center',
-    gap: Spacing.SM,
-  },
-  searchInput: {
-    flex: 1,
-    ...Typography.bodyMedium,
-    backgroundColor: LightTheme.Background,
-    paddingHorizontal: Spacing.MD,
-    paddingVertical: Spacing.SM,
-    borderRadius: BorderRadius.SM,
-    borderWidth: 1,
-    borderColor: LightTheme.Outline,
-    color: LightTheme.OnSurface,
-  },
-  bulkApprovalButton: {
-    backgroundColor: LightTheme.Success,
-    paddingHorizontal: Spacing.MD,
-    paddingVertical: Spacing.SM,
-    borderRadius: BorderRadius.SM,
-  },
-  bulkApprovalButtonText: {
-    ...Typography.bodyMedium,
-    color: LightTheme.Surface,
-    fontWeight: '600',
-  },
-  content: {
-    flex: 1,
-    padding: Spacing.MD,
+    justifyContent: 'space-between',
+    marginBottom: 12,
   },
   sectionTitle: {
-    ...Typography.headlineSmall,
-    color: LightTheme.OnSurface,
-    fontWeight: '600',
-    marginBottom: Spacing.MD,
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#333333',
   },
-  // Curriculum styles
-  curriculumCard: {
-    backgroundColor: LightTheme.Surface,
-    padding: Spacing.MD,
-    borderRadius: BorderRadius.SM,
-    borderWidth: 1,
-    borderColor: LightTheme.Outline,
+  viewAllText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#007AFF',
   },
-  curriculumHeader: {
+  announcementsContainer: {
+    gap: 16,
+  },
+  announcementCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: BorderRadius?.lg ?? 8,
+    padding: Spacing?.base ?? 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  cardHeader: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: Spacing.SM,
+    marginBottom: 8,
   },
-  curriculumInfo: {
-    flex: 1,
-    marginRight: Spacing.MD,
+  badges: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
-  curriculumTitle: {
-    ...Typography.bodyMedium,
-    color: LightTheme.OnSurface,
+  badge: {
+    paddingHorizontal: 10,
+    paddingVertical: 2,
+    borderRadius: 9999,
+  },
+  highPriorityBadge: {
+    backgroundColor: 'rgba(255, 59, 48, 0.1)',
+  },
+  highPriorityText: {
+    fontSize: 12,
     fontWeight: '600',
-    marginBottom: Spacing.XS / 2,
+    color: '#FF3B30',
   },
-  curriculumSubtitle: {
-    ...Typography.bodySmall,
-    color: LightTheme.OnSurfaceVariant,
-    marginBottom: Spacing.XS / 2,
+  publishedBadge: {
+    backgroundColor: 'rgba(52, 199, 89, 0.1)',
   },
-  curriculumMeta: {
-    ...Typography.bodySmall,
-    color: LightTheme.OnSurfaceVariant,
+  publishedText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#34C759',
   },
-  progressContainer: {
-    marginBottom: Spacing.SM,
+  mediumPriorityBadge: {
+    backgroundColor: 'rgba(255, 149, 0, 0.1)',
   },
-  progressText: {
-    ...Typography.bodySmall,
-    color: LightTheme.OnSurface,
-    marginBottom: Spacing.XS,
+  mediumPriorityText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FF9500',
+  },
+  draftBadge: {
+    backgroundColor: 'rgba(142, 142, 147, 0.2)',
+  },
+  draftText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#8E8E93',
+  },
+  announcementTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#333333',
+    marginBottom: 8,
+  },
+  announcementDescription: {
+    fontSize: 14,
+    color: '#8E8E93',
+    marginBottom: 12,
+  },
+  tags: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 12,
+  },
+  tag: {
+    backgroundColor: 'rgba(0, 122, 255, 0.1)',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 9999,
+    height: 28,
+    justifyContent: 'center',
+  },
+  tagText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#007AFF',
+  },
+  stats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  stat: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  statText: {
+    fontSize: 12,
+    color: '#8E8E93',
+  },
+  analyticsGrid: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  analyticsCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: BorderRadius?.xl ?? 12,
+    padding: Spacing?.base ?? 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 3,
+    gap: 8,
+  },
+  analyticsLabel: {
+    fontSize: 14,
+    color: '#8E8E93',
+  },
+  analyticsValue: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#333333',
   },
   progressBar: {
-    height: 4,
-    backgroundColor: LightTheme.Outline,
-    borderRadius: 2,
+    marginTop: 8,
+    height: 6,
+    width: '100%',
+    borderRadius: 3,
+    backgroundColor: '#E5E5EA',
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: LightTheme.Success,
+    backgroundColor: '#007AFF',
+    borderRadius: 3,
   },
-  curriculumActions: {
-    flexDirection: 'row',
-    gap: Spacing.SM,
-  },
-  // Resource styles
-  resourceCard: {
-    backgroundColor: LightTheme.Surface,
-    padding: Spacing.MD,
-    borderRadius: BorderRadius.SM,
-    borderWidth: 1,
-    borderColor: LightTheme.Outline,
-  },
-  resourceHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    marginBottom: Spacing.SM,
-  },
-  resourceInfo: {
-    flex: 1,
-    marginRight: Spacing.MD,
-  },
-  resourceTitleRow: {
+  engagementChange: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: Spacing.XS / 2,
+    gap: 4,
+    marginTop: 8,
   },
-  resourceIcon: {
-    fontSize: 20,
-    marginRight: Spacing.XS,
+  engagementText: {
+    fontSize: 14,
+    color: '#34C759',
   },
-  resourceTitle: {
-    ...Typography.bodyMedium,
-    color: LightTheme.OnSurface,
-    fontWeight: '600',
+  resourceGrid: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  fileItem: {
     flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: BorderRadius?.lg ?? 8,
+    padding: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 3,
+    alignItems: 'center',
+    gap: 8,
   },
-  resourceDescription: {
-    ...Typography.bodySmall,
-    color: LightTheme.OnSurfaceVariant,
-    marginBottom: Spacing.XS,
+  fileIcon: {
+    width: '100%',
+    height: 64,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  resourceMeta: {
+  fileIconImage: {
+    backgroundColor: 'rgba(0, 122, 255, 0.1)',
+  },
+  fileIconDocument: {
+    backgroundColor: 'rgba(52, 199, 89, 0.1)',
+  },
+  fileIconVideo: {
+    backgroundColor: 'rgba(255, 149, 0, 0.1)',
+  },
+  fileName: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#333333',
+    textAlign: 'center',
+  },
+  fileType: {
+    fontSize: 12,
+    color: '#8E8E93',
+  },
+  quickAccessGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.SM,
+    gap: 16,
   },
-  resourceMetaText: {
-    ...Typography.bodySmall,
-    color: LightTheme.OnSurfaceVariant,
-  },
-  resourceStats: {
-    flexDirection: 'row',
-    marginBottom: Spacing.SM,
-    gap: Spacing.MD,
-  },
-  statItem: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  statValue: {
-    ...Typography.bodySmall,
-    color: LightTheme.OnSurface,
-    fontWeight: '600',
-  },
-  statLabel: {
-    ...Typography.bodySmall,
-    color: LightTheme.OnSurfaceVariant,
-    marginTop: 2,
-  },
-  resourceTags: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.XS,
-    marginBottom: Spacing.SM,
-  },
-  tag: {
-    backgroundColor: LightTheme.primaryContainer,
-    paddingHorizontal: Spacing.XS,
-    paddingVertical: 2,
-    borderRadius: BorderRadius.XS,
-  },
-  tagText: {
-    ...Typography.bodySmall,
-    color: LightTheme.Primary,
-    fontWeight: '500',
-  },
-  moreTagsText: {
-    ...Typography.bodySmall,
-    color: LightTheme.OnSurfaceVariant,
-    alignSelf: 'center',
-  },
-  resourceActions: {
-    flexDirection: 'row',
-    gap: Spacing.SM,
-  },
-  // Approval styles
-  approvalCard: {
-    backgroundColor: LightTheme.Surface,
-    padding: Spacing.MD,
-    borderRadius: BorderRadius.SM,
-    borderWidth: 1,
-    borderColor: LightTheme.Outline,
-  },
-  approvalHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    marginBottom: Spacing.SM,
-  },
-  approvalInfo: {
-    flex: 1,
-    marginRight: Spacing.MD,
-  },
-  approvalTitle: {
-    ...Typography.bodyMedium,
-    color: LightTheme.OnSurface,
-    fontWeight: '600',
-    marginBottom: Spacing.XS / 2,
-  },
-  approvalSubtitle: {
-    ...Typography.bodySmall,
-    color: LightTheme.OnSurfaceVariant,
-    marginBottom: Spacing.XS / 2,
-  },
-  approvalMeta: {
-    ...Typography.bodySmall,
-    color: LightTheme.OnSurfaceVariant,
-  },
-  reviewersContainer: {
-    marginBottom: Spacing.SM,
-  },
-  reviewersTitle: {
-    ...Typography.bodySmall,
-    color: LightTheme.OnSurface,
-    fontWeight: '600',
-    marginBottom: Spacing.XS,
-  },
-  reviewerItem: {
+  quickAccessItem: {
+    width: '47%',
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: Spacing.XS / 2,
+    backgroundColor: '#FFFFFF',
+    borderRadius: BorderRadius?.xl ?? 12,
+    padding: Spacing?.base ?? 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 3,
+    gap: 12,
   },
-  reviewerName: {
-    ...Typography.bodySmall,
-    color: LightTheme.OnSurfaceVariant,
-    flex: 1,
-  },
-  reviewerStatus: {
-    paddingHorizontal: Spacing.XS,
-    paddingVertical: 1,
-    borderRadius: BorderRadius.XS,
-  },
-  reviewerStatusText: {
-    ...Typography.bodySmall,
-    color: LightTheme.Surface,
-    fontWeight: '500',
-  },
-  commentsContainer: {
-    backgroundColor: LightTheme.Background,
-    padding: Spacing.SM,
-    borderRadius: BorderRadius.XS,
-    marginBottom: Spacing.SM,
-  },
-  commentsTitle: {
-    ...Typography.bodySmall,
-    color: LightTheme.OnSurface,
-    fontWeight: '600',
-    marginBottom: Spacing.XS / 2,
-  },
-  commentText: {
-    ...Typography.bodySmall,
-    color: LightTheme.OnSurfaceVariant,
-    fontStyle: 'italic',
-    marginBottom: Spacing.XS / 2,
-  },
-  commentMeta: {
-    ...Typography.bodySmall,
-    color: LightTheme.OnSurfaceVariant,
-  },
-  approvalActions: {
-    flexDirection: 'row',
-    gap: Spacing.SM,
-  },
-  // Version styles
-  versionContainer: {
-    gap: Spacing.SM,
-  },
-  versionCard: {
-    backgroundColor: LightTheme.Surface,
-    padding: Spacing.MD,
-    borderRadius: BorderRadius.SM,
-    borderWidth: 1,
-    borderColor: LightTheme.Outline,
-  },
-  versionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: Spacing.XS,
-  },
-  versionTitle: {
-    ...Typography.bodyMedium,
-    color: LightTheme.OnSurface,
-    fontWeight: '600',
-  },
-  versionDate: {
-    ...Typography.bodySmall,
-    color: LightTheme.OnSurfaceVariant,
-  },
-  versionAuthor: {
-    ...Typography.bodySmall,
-    color: LightTheme.OnSurfaceVariant,
-    marginBottom: Spacing.SM,
-  },
-  changesContainer: {
-    backgroundColor: LightTheme.Background,
-    padding: Spacing.SM,
-    borderRadius: BorderRadius.XS,
-  },
-  changesTitle: {
-    ...Typography.bodySmall,
-    color: LightTheme.OnSurface,
-    fontWeight: '600',
-    marginBottom: Spacing.XS,
-  },
-  changeText: {
-    ...Typography.bodySmall,
-    color: LightTheme.OnSurfaceVariant,
-    marginBottom: 2,
-  },
-  // Analytics styles
-  analyticsCard: {
-    backgroundColor: LightTheme.Surface,
-    padding: Spacing.MD,
-    borderRadius: BorderRadius.SM,
-    borderWidth: 1,
-    borderColor: LightTheme.Outline,
-  },
-  analyticsTitle: {
-    ...Typography.bodyMedium,
-    color: LightTheme.OnSurface,
-    fontWeight: '600',
-    marginBottom: Spacing.MD,
-  },
-  analyticsGrid: {
-    flexDirection: 'row',
-    marginBottom: Spacing.MD,
-    gap: Spacing.SM,
-  },
-  analyticsItem: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  analyticsValue: {
-    ...Typography.headlineSmall,
-    color: LightTheme.Primary,
-    fontWeight: '700',
-  },
-  analyticsLabel: {
-    ...Typography.bodySmall,
-    color: LightTheme.OnSurfaceVariant,
-    marginTop: 2,
-  },
-  deviceBreakdown: {
-    backgroundColor: LightTheme.Background,
-    padding: Spacing.SM,
-    borderRadius: BorderRadius.XS,
-  },
-  breakdownTitle: {
-    ...Typography.bodySmall,
-    color: LightTheme.OnSurface,
-    fontWeight: '600',
-    marginBottom: Spacing.XS,
-  },
-  deviceItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: Spacing.XS,
-  },
-  deviceLabel: {
-    ...Typography.bodySmall,
-    color: LightTheme.OnSurfaceVariant,
-    width: 60,
-  },
-  deviceBar: {
-    flex: 1,
-    height: 4,
-    backgroundColor: LightTheme.Outline,
-    borderRadius: 2,
-    overflow: 'hidden',
-    marginHorizontal: Spacing.SM,
-  },
-  deviceBarFill: {
-    height: '100%',
-  },
-  devicePercentage: {
-    ...Typography.bodySmall,
-    color: LightTheme.OnSurfaceVariant,
+  quickAccessIcon: {
     width: 40,
-    textAlign: 'right',
-  },
-  // Common styles
-  statusTag: {
-    paddingHorizontal: Spacing.XS,
-    paddingVertical: 2,
-    borderRadius: BorderRadius.XS,
-    alignSelf: 'flex-start',
-  },
-  statusTagText: {
-    ...Typography.bodySmall,
-    color: LightTheme.Surface,
-    fontWeight: '500',
-  },
-  actionButton: {
-    flex: 1,
-    paddingVertical: Spacing.XS,
+    height: 40,
+    borderRadius: BorderRadius?.lg ?? 8,
+    backgroundColor: 'rgba(0, 122, 255, 0.1)',
     alignItems: 'center',
-    borderRadius: BorderRadius.XS,
+    justifyContent: 'center',
   },
-  editButton: {
-    backgroundColor: LightTheme.Info,
-  },
-  viewButton: {
-    backgroundColor: LightTheme.Primary,
-  },
-  analyticsButton: {
-    backgroundColor: LightTheme.Warning,
-  },
-  versionsButton: {
-    backgroundColor: LightTheme.Success,
-  },
-  approveButton: {
-    backgroundColor: LightTheme.Success,
-  },
-  rejectButton: {
-    backgroundColor: LightTheme.Error,
-  },
-  reviewButton: {
-    backgroundColor: LightTheme.Primary,
-  },
-  actionButtonText: {
-    ...Typography.bodySmall,
-    color: LightTheme.Surface,
-    fontWeight: '500',
-  },
-  separator: {
-    height: 1,
-    backgroundColor: LightTheme.Outline,
-    marginVertical: Spacing.XS,
+  quickAccessText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333333',
+    flex: 1,
   },
 });
-
-export default ContentManagementScreen;
